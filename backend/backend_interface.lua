@@ -1,0 +1,82 @@
+---@class Entity
+---@field name string
+---@field serverId number
+---@field targIndex number
+---@field x string
+---@field y string
+---@field z string
+---@field r string
+---@field hpp number
+
+--- @class KeybindParams
+--- @field key string      -- The key combination to bind (e.g., "Ctrl+Shift+A").
+--- @field down boolean?   -- Whether the keybind is for a key-down event.
+--- @field alt boolean?    -- Whether the Alt key is part of the combination.
+--- @field apps boolean?   -- Whether the Apps key is part of the combination.
+--- @field ctrl boolean?   -- Whether the Ctrl key is part of the combination.
+--- @field shift boolean?  -- Whether the Shift key is part of the combination.
+--- @field win boolean?    -- Whether the Windows key is part of the combination.
+
+---@class BackendBase
+---@field fileOpen fun(path: string, mode: string): { path: string, stream: FileHandle, locked: boolean, scheduled: boolean, buffer: string }
+---@field fileAppend fun(file: { path: string, stream: FileHandle, locked: boolean, scheduled: boolean, buffer: string }, text: string)
+---@field fileWrite fun(file: { path: string, stream: FileHandle, locked: boolean, scheduled: boolean, buffer: string })
+---@field fileClear fun(file: { path: string, stream: FileHandle, locked: boolean, scheduled: boolean, buffer: string })
+---@field databaseOpen fun(path: string, opts?: { [string]: any }): Database
+---@field boxCreate fun(boxTemplate: string, boxData: { [string]: any }, freeze: boolean)
+---@field parsePacket fun(dir: string, packet: string): ParsedPacket? -- Parses a raw packet and returns the parsed data
+---@field getSetting fun(keyPath: string, default?: any): any?
+---@field setSetting fun(keyPath: string, value: any): boolean
+
+---@class BackendInterface
+---@field register_event_load fun(func: fun())
+---@field register_event_unload fun(func: fun())
+---@field register_command fun(func: fun(args: string[]))
+---@field register_event_incoming_packet fun(func: fun(id: number, data: number[], size: number))
+---@field register_event_outgoing_packet fun(func: fun(id: number, data: number[], size: number))
+---@field register_on_zone_change fun(func: fun(zone: number))
+---@field register_event_incoming_text fun(func: fun(mode: number, text: string))
+---@field register_event_prerender fun(func: fun())
+---@field dir_exists fun(path: string): boolean
+---@field file_exists fun(path: string): boolean
+---@field list_files fun(path: string): string[]
+---@field create_dir fun(filename: string)
+---@field textBox fun(id: string)
+---@field script_path fun(): string
+---@field msg fun(header: string, message: string)
+---@field player_name fun(): string
+---@field zone fun(): number
+---@field zone_name fun(zone: number): string
+---@field target_index fun(): number
+---@field target_name fun(): string
+---@field target_hpp fun(): number
+---@field get_player_entity_data fun(): Entity
+---@field get_target_entity_data fun(): Entity
+---@field get_monster_ability_name fun(id: number): string
+---@field get_job_ability_name fun(id: number): string
+---@field get_weapon_skill_name fun(id: number): string
+---@field get_spell_name fun(id: number): string
+---@field get_item_name fun(id: number): string
+---@field get_mob_by_index fun(index: number): Entity?
+---@field get_mob_by_id fun(id: number): Entity?
+---@field schedule fun(func: fun(), delay: number)
+---@field doWidescan fun()
+---@field injectPacket fun(id: number, content: number[])
+---@field registerKeyBind fun(params: KeybindParams, command: string)
+---@field deregisterKeyBind fun(params: KeybindParams)
+---@field loadConfig fun(name: string, defaults: table): table
+---@field saveConfig fun(name: string)
+---@field fontGet fun(fontName: string, fontSize: number): Font
+---@field boxDraw fun(box: Box): number
+---@field reloadSignal boolean
+---@field reload fun()
+---@field forever fun(func: fun(), delay: number, ...: any)
+---@field convert_int_to_float fun(raw: number): number
+---@field scale_font fun(height: number): number
+---@field scale_width fun(width: number): number
+---@field scale_height fun(height: number): number
+
+---@class Ashitav4Backend : BackendInterface
+---@class WindowerBackend : BackendInterface
+
+---@class FullBackend : BackendInterface, BackendBase

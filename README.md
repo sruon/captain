@@ -1,6 +1,7 @@
 # 👨‍✈️ captain
 
-A suite of packet capture and analysis tools for FFXI targeting Windower v4, Ashita v3, and Ashita v4.
+A suite of packet capture and analysis tools for FFXI targeting Windower v4, and Ashita v4.
+
 
 ## Goal
 
@@ -9,10 +10,6 @@ Windower and Ashita are both great, but they offer different APIs for inspecting
 - `captain` - The logic for capturing and analyzing packets.
 - `backend` - A "cross-platform" set of functions that can be used in both Windower and Ashita.
 
-### Ashita v3
-
-![Ashita v3 screenshot](_images/ashitav3.png)
-
 ### Ashita v4
 
 ![Ashita v4 screenshot](_images/ashitav4.png)
@@ -20,6 +17,26 @@ Windower and Ashita are both great, but they offer different APIs for inspecting
 ### Windower v4
 
 ![Windower v4 screenshot](_images/windowerv4.png)
+
+## Features
+### Addons
+
+Several addons ported from the original capture addon are available:
+- `actionview`   - Logs Mob TP moves, spells, and other actions. Displays notifications.
+- `caplog`       - Logs chatlog messages to a file.
+- `eventview`    - Logs NPC events, cutscenes, and other events. Displays notifications.
+- `hptrack`      - Logs defeated mobs estimated HP values.
+- `npclogger`    - Logs detected NPCs, along with their widescan data.
+- `packetviewer` - Logs packets to several files, split by incoming/outgoing and per IDs.
+- `playerinfo`   - Displays basic information about player in a floating text box.
+- `targetinfo`   - Displays basic information about current target in a floating text box.
+
+### Other
+- A library to parse packets
+- Structured data saving with history
+- Notifications display
+- Textbox display
+- Simple interface to create addons
 
 ## Instructions
 
@@ -42,14 +59,28 @@ Windower and Ashita are both great, but they offer different APIs for inspecting
 ### General
 
 - `/captain hide` to stop showing the GUI elements
-- `/captain show` to show the GUI elements
-- `/captain start` to begin a capture
-- `/captain stop` to end a capture
+- `/captain show`  to show the GUI elements
+- `/captain start` (`CTRL + ALT + C`) to begin a capture
+- `/captain stop` (`CTRL + ALT + V`) to end a capture
+- `/captain toggle` (`CTRL + X`) to toggle recording
 - `/captain split` to roll over to a new capture
+- `/captain reload` (`CTRL + Q`) to reload captain
 - `SHIFT + DRAG` to drag text boxes around
-- (TODO) To start a capture press: `CTRL + ALT + C`
-- (TODO) To end a capture press: `CTRL + ALT + V`
-- (TODO) Make addon respond to `/cap` as well as `/captain`
+
+### Differences with Windower capture
+- Data is stored in a slightly different format
+- Uses XiPacket field names where applicable. Certain legacy fields have been kept.
+- Lot less customization options
+- The existing addons commands (customization) were not ported. Customization happens through config files.
+- No concept of PASSIVE/OFF mode. The backend is either capturing or it's not.
+- Not all infos that were available in the text box were ported over. Moon phase etc.
+- PlayerInfo displays current ZoneServer IP/port. It is also logged in the capture folders.
+
+### TODO
+- Retail testing
+- Compare with Windower capture addon
+- Rewrite HPTrack
+- EventView zone events
 
 ### Development
 

@@ -1,0 +1,26 @@
+---@class PacketFilters
+---@field incoming? table<number, boolean>                 # Incoming packet filters
+---@field outgoing? table<number, boolean>                 # Outgoing packet filters
+
+---@class Command
+---@field cmd string
+---@field args? string[]
+---@field desc string
+---@field keybind? KeybindParams
+
+---@class AddonInterface
+---@field name string                                      # Full addon name (e.g. 'TargetInfo')
+---@field filters? PacketFilters                           # Declare which packets you want to receive
+---@field settings table                                   # Runtime config, automatically loaded from config files
+---@field defaultSettings? table                           # Static default configuration
+---@field onInitialize? fun(rootDir: string)               # Called once with the addon main data path
+---@field onUnload? fun()                                  # Called when the addon is unloaded
+---@field onPrerender? fun()                               # Called every frame before rendering
+---@field onCaptureStart? fun(captureDir: string)          # Called when capture begins
+---@field onCaptureStop? fun()                             # Called when capture ends
+---@field onIncomingPacket? fun(id: number, data: string, size: number)  # Raw incoming packet handler
+---@field onOutgoingPacket? fun(id: number, data: string, size: number)  # Raw outgoing packet handler
+---@field onIncomingText? fun(mode:string, text: string)   # Chatlog text handler
+---@field onZoneChange? fun(zoneId: number)                # Zone change handler
+---@field onCommand? fun(args: string[])                   # Command handler, i.e. /captain <lower_cased_addon_name> <args>
+---@field onHelp? fun(): Command[]                         # Help handler, display addon specific commands
