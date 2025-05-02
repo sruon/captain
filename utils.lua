@@ -1,44 +1,21 @@
-local backend = require('backend/backend')
+local backend  = require('backend/backend')
+local serpent  = require("libs/serpent")
 
-colors = {}
-colors['hexborder'] =   '\\cs(0,255,0)'
-colors['gray'] =        '\\cs(102,102,102)'
-colors[0] =             '\\cs(204,204,0)'
-colors[1] =             '\\cs(51,153,255)'
-colors[2] =             '\\cs(51,255,153)'
-colors[3] =             '\\cs(153,51,255)'
-colors[4] =             '\\cs(255,51,153)'
-colors[5] =             '\\cs(153,255,51)'
-colors[6] =             '\\cs(255,153,51)'
-colors[7] =             '\\cs(255,255,102)'
-colors[8] =             '\\cs(255,102,255)'
-colors[9] =             '\\cs(102,255,255)'
-colors[10] =            '\\cs(102,102,255)'
-colors[11] =            '\\cs(102,255,102)'
-colors[12] =            '\\cs(255,102,102)'
-colors[13] =            '\\cs(255,204,153)'
-colors[14] =            '\\cs(204,255,153)'
-colors[15] =            '\\cs(255,153,204)'
-colors[16] =            '\\cs(153,204,255)'
-colors[17] =            '\\cs(204,153,255)'
-colors[18] =            '\\cs(153,255,204)'
+local utils    = {}
 
-byte_colors = { colors.gray, colors.gray, colors.gray, colors.gray }
-
-local utils = {}
-
- -- Create a file name based on the current date and time
-local date = os.date('*t')
-local name = string.format('packets_%d_%d_%d_%d_%d_%d.txt', date['year'], date['month'], date['day'], date['hour'], date['min'], date['sec'])
+-- Create a file name based on the current date and time
+local date     = os.date('*t')
+local name     = string.format('packets_%d_%d_%d_%d_%d_%d.txt', date['year'], date['month'], date['day'], date['hour'],
+    date['min'], date['sec'])
 local filename = backend.script_path() .. 'captures/' .. name
 
-utils.log = function(str, ...)
+utils.log      = function(str, ...)
     backend.file_append(filename, str)
 end
 
-utils.hexdump = function(str, align, indent)
+utils.hexdump  = function(str, align, indent)
     local ret = ''
-    
+
     -- Loop the data string in steps..
     for x = 1, #str, align do
         local data = str:sub(x, x + 15)
@@ -48,17 +25,18 @@ utils.hexdump = function(str, align, indent)
         ret = ret .. ' ' .. data:gsub('%c', '.')
         ret = ret .. '\n'
     end
-    
+
     -- Fix percents from breaking string.format..
     ret = string.gsub(ret, '%%', '%%%%')
     ret = ret .. '\n'
-    
+
     return ret
 end
 
 do
     -- Precompute hex string tables for lookups, instead of constant computation.
-    local top_row = '        |  0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F      | 0123456789ABCDEF\n    ' .. string.rep('-', (16+1)*3 + 2) .. '  ' .. string.rep('-', 16 + 6) .. '\n'
+    local top_row = '        |  0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F      | 0123456789ABCDEF\n    ' ..
+        string.rep('-', (16 + 1) * 3 + 2) .. '  ' .. string.rep('-', 16 + 6) .. '\n'
 
     local chars = {}
     for i = 0x00, 0xFF do
@@ -73,7 +51,8 @@ do
 
     local line_replace = {}
     for i = 0x01, 0x10 do
-        line_replace[i] = '    %%%%3X |' .. string.rep(' %.2X', i) .. string.rep(' --', 0x10 - i) .. '  %%%%3X | ' .. '%%s\n'
+        line_replace[i] = '    %%%%3X |' ..
+            string.rep(' %.2X', i) .. string.rep(' --', 0x10 - i) .. '  %%%%3X | ' .. '%%s\n'
     end
     local short_replace = {}
     for i = 0x01, 0x10 do
@@ -86,8 +65,8 @@ do
         local str_table = {}
         local from = 1
         local to = 16
-        for i = 0, math.floor((length - 1)/0x10) do
-            local partial_str = {str:byte(from, to)}
+        for i = 0, math.floor((length - 1) / 0x10) do
+            local partial_str = { str:byte(from, to) }
             local char_table = {
                 [0x01] = chars[partial_str[0x01]],
                 [0x02] = chars[partial_str[0x02]],
@@ -120,9 +99,10 @@ end
 
 -- Rounds to prec decimal digits. Accepts negative numbers for precision.
 function math.round(num, prec)
-    local mult = 10^(prec or 0)
+    local mult = 10 ^ (prec or 0)
     return math.floor(num * mult + 0.5) / mult
 end
+
 utils.round = math.round
 
 utils.headingToByteRotation = function(oldHeading)
@@ -135,50 +115,67 @@ end
 
 function string.fromhex(str)
     if str == nil then return "" end
-    return (str:gsub('..', function (cc)
+    return (str:gsub('..', function(cc)
         return string.char(tonumber(cc, 16))
     end))
 end
 
 function string.tohex(str)
     if str == nil then return "" end
-    return (str:gsub('.', function (c)
+    return (str:gsub('.', function(c)
         return string.format('%02X ', string.byte(c))
     end))
 end
 
-local function getTableKeys(tab)
+utils.getTableKeys    = function(tab)
     local keyset = {}
-    for k,v in pairs(tab) do
+    for k, v in pairs(tab) do
         keyset[#keyset + 1] = k
     end
     return keyset
 end
 
-utils.dumpTableToString = nil
-utils.dumpTableToString = function(table, depth)
-    if table == nil then table = {} end
-    if depth == nil then depth = 0 end
+utils.dump            = function(o)
+    print(serpent.block(o, { comment = false, sortkeys = true }))
+end
 
-    local outputString = ""
-    for _, key in ipairs(getTableKeys(table)) do
-        local value = table[key]
-        if type(value) == "table" then
-            local keyStr = tostring(key)
-            local indent = ""
-            for i = 1, depth do indent = indent .. "    " end
-            outputString = outputString .. indent .. keyStr .. " : {\n"
-            outputString = outputString .. dumpTableToString(value, depth + 1)
-            outputString = outputString .. indent .. "}\n"
-        else
-            local keyStr = tostring(key)
-            local valueStr = tostring(value)
-            local indent = ""
-            for i = 1, depth do indent = indent .. "    " end
-            outputString = outputString .. indent .. keyStr .. " : " .. valueStr .. "\n"
-        end
+utils.keyBindToString = function(keyBind)
+    local res = ''
+    if keyBind.ctrl then
+        res = res .. 'Ctrl+'
     end
-    return outputString
+    if keyBind.alt then
+        res = res .. 'Alt+'
+    end
+    if keyBind.shift then
+        res = res .. 'Shift+'
+    end
+    if keyBind.win then
+        res = res .. 'Win+'
+    end
+
+    res = res .. keyBind.key:upper()
+
+    return res
+end
+
+utils.deepCopy        = function(original)
+    local copy
+
+    if type(original) == 'table' then
+        copy = {}
+        for key, value in pairs(original) do
+            copy[key] = utils.deepCopy(value)
+        end
+
+        if getmetatable(original) then
+            setmetatable(copy, utils.deepCopy(getmetatable(original)))
+        end
+    else
+        copy = original
+    end
+
+    return copy
 end
 
 return utils

@@ -1,0 +1,57 @@
+---@class ColorEnumTable
+---@field White integer
+---@field Cyan integer
+---@field Pink integer
+---@field Salmon integer
+---@field Red integer
+---@field HotPink integer
+---@field Crimson integer
+---@field Ivory integer
+---@field Tan integer
+---@field LightYellow integer
+---@field Yellow integer
+---@field Lavender integer
+---@field Magenta integer
+---@field Violet integer
+---@field Orchid integer
+---@field Blue integer
+---@field Sky integer
+---@field SoftBlue integer
+---@field Purple integer
+---@field Aqua integer
+---@field Seafoam integer
+---@field Turquoise integer
+---@field Teal integer
+---@field Green integer
+---@field Slate integer
+---@field Navy integer
+
+---@type ColorEnumTable
+ColorEnum = {
+    White       = 1,
+    Cyan        = 2,
+    Pink        = 3,
+    Salmon      = 4,
+    Red         = 5,
+    HotPink     = 6,
+    Crimson     = 7,
+    Ivory       = 8,
+    Tan         = 9,
+    LightYellow = 10,
+    Yellow      = 11,
+    Lavender    = 12,
+    Magenta     = 13,
+    Violet      = 14,
+    Orchid      = 15,
+    Blue        = 16,
+    Sky         = 17,
+    SoftBlue    = 18,
+    Purple      = 19,
+    Aqua        = 20,
+    Seafoam     = 21,
+    Turquoise   = 22,
+    Teal        = 23,
+    Green       = 24,
+    Slate       = 25,
+    Navy        = 26,
+}
