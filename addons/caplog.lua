@@ -1,6 +1,6 @@
 -- Credits: sruon
 ---@class CapLogAddon : AddonInterface
----@field logs { global: file?, capture: file? }
+---@field logs { global: File?, capture: File? }
 local addon =
 {
     name     = 'CapLog',
@@ -12,18 +12,18 @@ local addon =
     }
 }
 
-addon.onIncomingText = function(mode, text)
+addon.onIncomingText = function(_, text)
     if not text then
         return
     end
 
     local tstamp = os.date('[%H:%M:%S]')
     if addon.logs.global then
-        backend.fileAppend(addon.logs.global, tstamp .. text .. '\n')
+        addon.logs.global:append(tstamp .. text .. '\n')
     end
 
     if addon.logs.capture then
-        backend.fileAppend(addon.logs.capture, tstamp .. text .. '\n')
+        addon.logs.capture:append(tstamp .. text .. '\n')
     end
 end
 
@@ -39,7 +39,7 @@ addon.onInitialize = function(rootDir)
     addon.logs.global = backend.fileOpen(rootDir .. backend.player_name() .. '.log')
 end
 
-addon.onCommand = function(args)
+addon.onCommand = function(_)
 end
 
 local commands =

@@ -1,7 +1,8 @@
 local s =
 {
-    box =
+    notifications =
     {
+        scale        = 1,
         show         = true,
         autoHide     = true,
         frozen       = false,
@@ -9,14 +10,25 @@ local s =
         hide_ticking = false,
         max_num      = 4,
         spacing      = 8,
+        offset       = -- Notifications will be offset from the bottom right of the screen
+        {
+            x = 20,
+            y = 20,
+        },
+        colors       =
+        {
+            title = ColorEnum.SoftBlue,
+            key   = ColorEnum.Purple,
+            value = ColorEnum.Seafoam,
+        },
         pos          =
         {
             x = 200,
-            y = 200,
+            y = 50,
         },
         text         =
         {
-            size  = 14,
+            size  = 16,
             font  = 'Consolas',
             alpha = 255,
             red   = 255,
@@ -40,10 +52,12 @@ local s =
             alpha = 230,
         },
     },
-    textBox =       -- Default text box settings
+    textBox = -- Default text box settings
     {
+        scale = 1,
         store = {}, -- Windower only: Individual box settings
-        defaults = {
+        defaults =
+        {
             pos =
             {
                 x = 290,
@@ -55,7 +69,7 @@ local s =
                 red     = 0,
                 green   = 0,
                 blue    = 0,
-                visible = true
+                visible = true,
             },
             flags =
             {
@@ -68,11 +82,11 @@ local s =
             padding = 3,
             text =
             {
-                size = 12,
+                size = 13,
                 font = 'Consolas',
-            }
-        }
-    }
+            },
+        },
+    },
 }
 
 return s

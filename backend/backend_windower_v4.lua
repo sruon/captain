@@ -23,15 +23,15 @@ require('pack')
 -- Event hooks
 -- https://github.com/Windower/Lua/wiki/Events
 --------------------------------
-backend.register_event_load = function(func)
+backend.register_event_load            = function(func)
     windower.register_event('load', func)
 end
 
-backend.register_event_unload = function(func)
+backend.register_event_unload          = function(func)
     windower.register_event('unload', func)
 end
 
-backend.register_command = function(func)
+backend.register_command               = function(func)
     windower.register_event('addon command', function(...)
         local args = { ... }
         func(args)
@@ -52,44 +52,44 @@ backend.register_event_outgoing_packet = function(func)
     windower.register_event('outgoing chunk', adaptor)
 end
 
-backend.register_on_zone_change = function(func)
+backend.register_on_zone_change        = function(func)
     windower.register_event('zone change', func)
 end
 
-backend.register_event_incoming_text = function(func)
+backend.register_event_incoming_text   = function(func)
     local adaptor = function(original, modified, original_mode, modified_mode)
         -- replace autotranslate tags with brackets
-        original = (original:gsub(string.char(0xEF) .. '[' .. string.char(0x27) .. ']', '{'));
-        original = (original:gsub(string.char(0xEF) .. '[' .. string.char(0x28) .. ']', '}'));
+        original = (original:gsub(string.char(0xEF) .. '[' .. string.char(0x27) .. ']', '{'))
+        original = (original:gsub(string.char(0xEF) .. '[' .. string.char(0x28) .. ']', '}'))
         func(original_mode, original:strip_colors())
     end
     windower.register_event('incoming text', adaptor)
 end
 
-backend.register_event_prerender = function(func)
+backend.register_event_prerender       = function(func)
     windower.register_event('prerender', func)
 end
 
-backend.register_event_postrender = function(func)
+backend.register_event_postrender      = function(func)
     windower.register_event('postrender', func)
 end
 
 --------------------------------
 -- File IO
 --------------------------------
-backend.dir_exists = function(path)
+backend.dir_exists                     = function(path)
     return windower.dir_exists(path)
 end
 
-backend.file_exists = function(path)
+backend.file_exists                    = function(path)
     return windower.file_exists(path)
 end
 
-backend.create_dir = function(filename)
+backend.create_dir                     = function(filename)
     windower.create_dir(backend.script_path() .. filename)
 end
 
-backend.list_files = function(path)
+backend.list_files                     = function(path)
     return windower.get_dir(backend.script_path() .. path)
 end
 
@@ -97,11 +97,11 @@ end
 -- Text Display
 --------------------------------
 
--- Override texts.new and texts.destroy to enable
--- movement only on shift+click
-local texts_settings = T {}
-texts.oldnew = texts.new
-texts.new = function(str, settings, root_settings)
+--Override texts.new and texts.destroy to enable
+--movement only on shift+click
+local texts_settings                   = T {}
+texts.oldnew                           = texts.new
+texts.new                              = function(str, settings, root_settings)
     settings = settings or { flags = { draggable = false } }
     settings.flags = settings.flags or { draggable = false }
     settings.flags.draggable = false
@@ -110,7 +110,7 @@ texts.new = function(str, settings, root_settings)
     return ret
 end
 
-texts.destroy = function(t)
+texts.destroy                          = function(t)
     texts_settings[t._name] = nil
 end
 
@@ -131,72 +131,35 @@ windower.register_event('keyboard', function(dik, pressed, flags, blocked)
 end)
 
 backend.textBox                  = function(id)
-    local box                          = {}
+    local box       = {}
+    local newConf   = config.load(string.format('data/%s_textbox.xml', id), captain.settings.textBox.defaults)
 
-    captain.settings.textBox.store[id] = captain.settings.textBox.store[id] or
-        utils.deepCopy(captain.settings.textBox.defaults)
-    box.impl                           = texts.new('', captain.settings.textBox.store[id], captain.settings)
+    box.impl        = texts.new('', newConf, newConf)
 
-    box.title                          = ''
-    box.text                           = ''
+    box.title       = ''
+    box.text        = ''
 
-    box.show                           = function(self)
+    box.show        = function(self)
         self.impl:show()
     end
 
-    box.hide                           = function(self)
+    box.hide        = function(self)
         self.impl:hide()
     end
 
-    box.updateTitle                    = function(self, str)
+    box.updateTitle = function(self, str)
         self.title = str
         texts.text(self.impl, self.title .. '\n' .. self.text)
     end
 
-    box.updateText                     = function(self, str)
+    box.updateText  = function(self, str)
         self.text = str
         texts.text(self.impl, self.title .. '\n' .. self.text)
     end
 
-    box.updatePos                      = function(self, x, y)
-        texts.pos(self.impl, x, y)
-    end
-
-    box.applySettings                  = function(self, settings)
-        if settings.bg then
-            texts.bg_alpha(self.impl, settings.bg.alpha)
-            texts.bg_color(self.impl, settings.bg.red, settings.bg.green, settings.bg.blue)
-            texts.bg_visible(self.impl, settings.bg.visible)
-        end
-
-        if settings.text then
-            texts.color(self.impl, settings.text.red, settings.text.green, settings.text.blue)
-            texts.alpha(self.impl, settings.text.alpha)
-            texts.font(self.impl, settings.text.font)
-            texts.size(self.impl, settings.text.size)
-        end
-
-        texts.pad(self.impl, settings.padding)
-
-        if settings.flags then
-            texts.italic(self.impl, settings.flags.italic)
-            texts.bold(self.impl, settings.flags.bold)
-            texts.right_justified(self.impl, settings.flags.right)
-            texts.bottom_justified(self.impl, settings.flags.bottom)
-        end
-
-        if settings.text.stroke then
-            texts.stroke_width(self.impl, settings.text.stroke.width)
-            texts.stroke_color(self.impl, settings.text.stroke.red, settings.text.stroke.green, settings.text.stroke
-            .blue)
-            texts.stroke_alpha(self.impl, settings.text.stroke.alpha)
-        end
-    end
-
-    box:applySettings(captain.settings.textBox.store[id])
     box:updateText('')
     box:show()
-    config.reload(captain.settings)
+    config.reload(newConf)
 
     return box
 end
@@ -394,7 +357,7 @@ end
 -- Keybinds
 --------------------------------
 
-backend.registerKeyBind   = function(params, command)
+backend.registerKeyBind          = function(params, command)
     local modifiers = ''
 
     if params.ctrl then
@@ -415,7 +378,7 @@ backend.registerKeyBind   = function(params, command)
     windower.send_command(string.format('bind %s %s', keybind, command))
 end
 
-backend.deregisterKeyBind = function(params)
+backend.deregisterKeyBind        = function(params)
     local modifiers = ''
 
     if params.ctrl then
@@ -437,116 +400,198 @@ backend.deregisterKeyBind = function(params)
 end
 
 
-backend.convert_int_to_float     = function(raw)
+backend.convert_int_to_float = function(raw)
     return string.pack('I', raw):unpack('f')
 end
 
-local notificationBoxes          = nil
-
-backend.boxDestroy               = function(box)
-
-    if notificationBoxes and box and box._impl then
-        box._impl:hide()
-    end
-end
-
 local function strip_colors(s)
-    return s:gsub("\\cs%(%d+,%d+,%d+%)", "")
+    return s:gsub('\\cs%(%d+,%d+,%d+%)', '')
 end
 
-backend.boxDraw           = function(box)
-    -- Precreate boxes
-    if not notificationBoxes then
-        notificationBoxes = {}
-        local font_size = captain.settings.box.text.size or 10
-        local line_count = 5
-        local line_spacing = 2
-        local box_padding = 50 -- as determined by the scientific process of incrementing and retrying
-        local height = (font_size * line_count) + (line_spacing * (line_count - 1)) + box_padding
+local notifications = {}
+local notificationPositions = {}
 
-        local base_x = captain.settings.textBox.store.box.pos.x or captain.settings.box.pos.x
-        local base_y = captain.settings.textBox.store.box.pos.y or captain.settings.box.pos.y
+backend.notificationDestroy = function(_)
+    local highest_visible_index = 0
 
-        for i = 1, captain.settings.box.max_num do
-            local nb = backend.textBox('box')
-            nb:applySettings(captain.settings.box)
-            local y_pos = base_y + (i - 1) * height
-            nb:updatePos(base_x, y_pos)
-            nb:hide()
-            notificationBoxes[i] = nb
+    for i = 1, captain.settings.notifications.max_num do
+        if notifications[i] and notifications[i]:visible() then
+            highest_visible_index = i
         end
     end
 
-    local c = ''
-    local lines = {}
-    local current_line = ""
+    if highest_visible_index > 0 and notifications[highest_visible_index] then
+        notifications[highest_visible_index]:hide()
+    end
+end
 
-    for _, segment in ipairs(box.segments) do
-        if segment.newline then
-            table.insert(lines, current_line)
-            current_line = ""
-        elseif segment.text then
-            if segment.color then
-                current_line = current_line ..
-                    string.format('\\cs(%d,%d,%d)', segment.color[1], segment.color[2], segment.color[3]) .. segment
-                    .text
-            else
-                current_line = current_line .. segment.text
+local function notificationInit()
+    notificationPositions =
+    {
+        [1] = { x = captain.settings.notifications.pos.x, y = captain.settings.notifications.pos.y },
+    }
+    for i = 2, captain.settings.notifications.max_num do
+        notificationPositions[i] =
+        {
+            x = captain.settings.notifications.pos.x,
+            y = captain.settings.notifications.pos.y -
+              (((captain.settings.notifications.text.size + captain.settings.notifications.spacing + 2) * 4) * (i - 1)),
+        }
+    end
+
+    for i = 1, #notificationPositions do
+        local notification = texts.new('notification' .. i, captain.settings.notifications)
+        table.insert(notifications, notification)
+        texts.pos(notification, notificationPositions[i].x, notificationPositions[i].y)
+        texts.text(notification, 'Hello world!\n\n\n' .. i)
+    end
+
+    windower.register_event('mouse', function(type, x, y, delta)
+        if type == 2 and notifications[1]:hover(x, y) then
+            local cx, cy = notifications[1]:pos()
+            captain.settings.notifications.pos.x = cx
+            captain.settings.notifications.pos.y = cy
+            config.save(captain.settings)
+            for _, notification in ipairs(notifications) do
+                notification:hide()
+                texts.destroy(notification)
             end
+            notifications = {}
+            notificationInit()
+        end
+    end)
+end
+
+backend.notificationsRender = function(allNotifications)
+    if not notificationPositions[1] then
+        notificationInit()
+    end
+
+    -- Process each notification
+    for i, notification in ipairs(allNotifications) do
+        -- Assign a display index
+        notification.displayIndex = i
+        
+        -- Only process if we have an available slot
+        if i <= #notificationPositions then
+            -- Generate display content
+            local c = ''
+            local lines = {}
+            local current_line = ''
+            
+            -- Handle new-style notifications with title and data
+            if notification.title then
+                -- Add title line
+                current_line = string.format('\\cs(%d,%d,%d)', 255, 255, 255) .. notification.title
+                table.insert(lines, current_line)
+                current_line = ''
+                
+                -- Add data fields
+                if notification.data then
+                    for _, field in ipairs(notification.data) do
+                        current_line = string.format('\\cs(%d,%d,%d)', 200, 200, 255) .. field.key .. 
+                                       ': ' .. 
+                                       string.format('\\cs(%d,%d,%d)', 150, 255, 200) .. field.value
+                        table.insert(lines, current_line)
+                        current_line = ''
+                    end
+                end
+            -- Handle old-style notifications with segments
+            elseif notification.segments then
+                for _, segment in ipairs(notification.segments) do
+                    if segment.newline then
+                        table.insert(lines, current_line)
+                        current_line = ''
+                    elseif segment.text then
+                        if segment.color then
+                            current_line = current_line ..
+                              string.format('\\cs(%d,%d,%d)', segment.color[1], segment.color[2], segment.color[3]) .. segment
+                              .text
+                        else
+                            current_line = current_line .. segment.text
+                        end
+                    end
+                end
+                
+                -- Add last line if leftover
+                if current_line ~= '' then
+                    table.insert(lines, current_line)
+                end
+            end
+            
+            -- Ensure we have at least one line
+            if #lines == 0 then
+                lines[1] = ''
+            end
+
+            -- Ensure first line has at least 50 visible chars (exclude color codes)
+            if lines[1] then
+                local visible_len = #strip_colors(lines[1])
+                if visible_len < 50 then
+                    lines[1] = lines[1] .. string.rep(' ', 50 - visible_len)
+                end
+            else
+                lines[1] = string.rep(' ', 50)
+            end
+
+            -- Ensure we have at least 5 lines
+            while #lines < 5 do
+                table.insert(lines, '')
+            end
+
+            c = table.concat(lines, '\n')
+
+            notifications[notification.displayIndex]:text(c)
+            notifications[notification.displayIndex]:show()
         end
     end
-
-    -- Add last line if leftover
-    if current_line ~= "" or #lines == 0 then
-        table.insert(lines, current_line)
-    end
-
-    -- Ensure first line has at least 50 visible chars (exclude color codes)
-    if lines[1] then
-        local visible_len = #strip_colors(lines[1])
-        if visible_len < 50 then
-            lines[1] = lines[1] .. string.rep(' ', 50 - visible_len)
+    
+    -- Hide any unused notification slots
+    for i = #allNotifications + 1, #notifications do
+        if notifications[i] then
+            notifications[i]:hide()
         end
-    else
-        lines[1] = string.rep(' ', 50)
     end
+end
 
-    -- Ensure we have at least 5 lines
-    while #lines < 5 do
-        table.insert(lines, "")
-    end
-
-    c = table.concat(lines, '\n')
-    local nb = notificationBoxes[box.displayIndex]
-    if nb then
-        nb:updateText(c)
-        nb:show()
-        box._impl = nb
-    end
-
+backend.boxDraw = function(box)
+    backend.notificationsRender({box})
     return 0
 end
 
-backend.loadConfig        = function(name, defaults)
+backend.loadConfig   = function(name, defaults)
     return config.load('data/' .. name .. '.xml', defaults)
 end
 
-backend.scale_font        = function(height)
+backend.saveConfig   = function(confTable)
+    if not confTable then
+        confTable = captain.settings
+    end
+
+    return config.save(confTable)
+end
+
+backend.scale_font   = function(height)
     return height
 end
 
-backend.scale_width       = function(width)
+backend.scale_width  = function(width)
     return width
 end
 
-backend.scale_height      = function(height)
+backend.scale_height = function(height)
     return height
 end
 
-backend.reload            = function()
+backend.reload       = function()
     captain.reloadSignal = true
+    windower.send_command('captain stop')
     backend.msg('captain', 'Reloading. Coroutines may take a moment to finish.')
-    windower.send_command('lua reload captain')
+    backend.schedule(function() windower.send_command('lua reload captain') end, 2)
+end
+
+backend.configMenu   = function()
+    -- Configuration menu not available for Windower
 end
 
 return backend

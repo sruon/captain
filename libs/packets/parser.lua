@@ -1,5 +1,7 @@
 local breader     = require('libs/packets/bitreader');
 local definitions = require('libs/packets/definitions')
+---@type table
+local bit         = bit or require('bit')
 
 local parser      = {};
 
@@ -48,6 +50,14 @@ local function parse_layout(reader, layout, context)
                     end
 
                     result[field.name][#result[field.name] + 1] = value
+                elseif #field.layout == 1 and field.layout[1].type == "string" then
+                    -- Handle string arrays directly without nesting
+                    local chars = {}
+                    for _ = 1, field.layout[1].size do
+                        chars[#chars + 1] = string.char(reader:read(8))
+                    end
+                    local str = table.concat(chars):gsub('%z.*$', '')
+                    result[field.name][#result[field.name] + 1] = str
                 else
                     -- Complex sub-struct
                     result[field.name][#result[field.name] + 1] = parse_layout(reader, field.layout, result)

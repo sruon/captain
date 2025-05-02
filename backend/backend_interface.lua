@@ -8,25 +8,53 @@
 ---@field r string
 ---@field hpp number
 
---- @class KeybindParams
---- @field key string      -- The key combination to bind (e.g., "Ctrl+Shift+A").
---- @field down boolean?   -- Whether the keybind is for a key-down event.
---- @field alt boolean?    -- Whether the Alt key is part of the combination.
---- @field apps boolean?   -- Whether the Apps key is part of the combination.
---- @field ctrl boolean?   -- Whether the Ctrl key is part of the combination.
---- @field shift boolean?  -- Whether the Shift key is part of the combination.
---- @field win boolean?    -- Whether the Windows key is part of the combination.
+---@class PlayerEntity : Entity
+---@field mJob string
+---@field sJob string
+---@field mJobLevel number
+---@field sJobLevel number
+---@field zoneID number
+---@field zoneName string
+
+---@class TextBox
+---@field name string
+---@field title string
+---@field text string
+---@field visible boolean
+---@field show fun(self: TextBox)
+---@field hide fun(self: TextBox)
+---@field updateText fun(self: TextBox, text: string)
+---@field updateTitle fun(self: TextBox, text: string)
+
+---@class File
+---@field path string
+---@field stream FileHandle
+---@field locked boolean
+---@field scheduled boolean
+---@field buffer string
+---@field read fun(self: File): string
+---@field flush fun(self: File)
+---@field append fun(self: File, text: string)
+---@field clear fun(self: File)
+
+---@class KeybindParams
+---@field key string      -- The key combination to bind (e.g., "Ctrl+Shift+A").
+---@field down boolean?   -- Whether the keybind is for a key-down event.
+---@field alt boolean?    -- Whether the Alt key is part of the combination.
+---@field apps boolean?   -- Whether the Apps key is part of the combination.
+---@field ctrl boolean?   -- Whether the Ctrl key is part of the combination.
+---@field shift boolean?  -- Whether the Shift key is part of the combination.
+---@field win boolean?    -- Whether the Windows key is part of the combination.
 
 ---@class BackendBase
----@field fileOpen fun(path: string, mode: string): { path: string, stream: FileHandle, locked: boolean, scheduled: boolean, buffer: string }
----@field fileAppend fun(file: { path: string, stream: FileHandle, locked: boolean, scheduled: boolean, buffer: string }, text: string)
----@field fileWrite fun(file: { path: string, stream: FileHandle, locked: boolean, scheduled: boolean, buffer: string })
----@field fileClear fun(file: { path: string, stream: FileHandle, locked: boolean, scheduled: boolean, buffer: string })
+---@field fileOpen fun(path: string): File
+---@field fileAppend fun(file: File, text: string)
+---@field fileRead fun(file: File) : string
+---@field fileWrite fun(file: File)
+---@field fileClear fun(file: File)
 ---@field databaseOpen fun(path: string, opts?: { [string]: any }): Database
----@field boxCreate fun(boxTemplate: string, boxData: { [string]: any }, freeze: boolean)
+---@field notificationCreate fun(emitter: string,title: string, notificationData: { [string]: any }, freeze: boolean)
 ---@field parsePacket fun(dir: string, packet: string): ParsedPacket? -- Parses a raw packet and returns the parsed data
----@field getSetting fun(keyPath: string, default?: any): any?
----@field setSetting fun(keyPath: string, value: any): boolean
 
 ---@class BackendInterface
 ---@field register_event_load fun(func: fun())
@@ -41,16 +69,16 @@
 ---@field file_exists fun(path: string): boolean
 ---@field list_files fun(path: string): string[]
 ---@field create_dir fun(filename: string)
----@field textBox fun(id: string)
+---@field textBox fun(id: string) : TextBox
 ---@field script_path fun(): string
 ---@field msg fun(header: string, message: string)
 ---@field player_name fun(): string
 ---@field zone fun(): number
----@field zone_name fun(zone: number): string
+---@field zone_name fun(zone: number?): string
 ---@field target_index fun(): number
 ---@field target_name fun(): string
 ---@field target_hpp fun(): number
----@field get_player_entity_data fun(): Entity
+---@field get_player_entity_data fun(): PlayerEntity
 ---@field get_target_entity_data fun(): Entity
 ---@field get_monster_ability_name fun(id: number): string
 ---@field get_job_ability_name fun(id: number): string
@@ -67,7 +95,8 @@
 ---@field loadConfig fun(name: string, defaults: table): table
 ---@field saveConfig fun(name: string)
 ---@field fontGet fun(fontName: string, fontSize: number): Font
----@field boxDraw fun(box: Box): number
+---@field notificationDestroy? fun(notification: Notification)
+---@field notificationsRender fun(notifications: Notification[]): number
 ---@field reloadSignal boolean
 ---@field reload fun()
 ---@field forever fun(func: fun(), delay: number, ...: any)
@@ -75,8 +104,4 @@
 ---@field scale_font fun(height: number): number
 ---@field scale_width fun(width: number): number
 ---@field scale_height fun(height: number): number
-
----@class Ashitav4Backend : BackendInterface
----@class WindowerBackend : BackendInterface
-
----@class FullBackend : BackendInterface, BackendBase
+---@field configMenu fun()

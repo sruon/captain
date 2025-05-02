@@ -4,6 +4,7 @@
 ---@field notifications table
 ---@field rootDir? string
 ---@field captureDir? string
+---@field databases { capture: Database?, global: Database? }
 local addon = {
     name            = 'NPCLogger',
     filters         =
@@ -50,7 +51,7 @@ local addon = {
         npcUpdated = {},
         npcCreated = {},
     },
-    database        =
+    databases       =
     {
         global  = nil,
         capture = nil,
@@ -61,37 +62,50 @@ local addon = {
 
 addon.onCaptureStart = function(captureDir)
     addon.captureDir = captureDir
-    addon.database.capture = backend.databaseOpen(
+    addon.databases.capture = backend.databaseOpen(
         string.format('%s/databases/%s.lua', captureDir, backend.zone_name()), addon.settings.database)
 end
 
 addon.onCaptureStop = function()
     addon.captureDir = nil
-    addon.database.capture:close()
-    addon.database.capture = nil
+    if addon.databases.capture then
+        addon.databases.capture:close()
+        addon.databases.capture = nil
+    end
 end
 
 addon.onZoneChange = function(zoneId)
-    addon.database.global:close()
-    addon.database.global = backend.databaseOpen(
-        string.format('%s/databases/%s/%s.lua', addon.rootDir, backend.player_name(),backend.zone_name(zoneId)), addon.settings.database)
+    if addon.databases.global then
+        addon.databases.global:close()
+    end
 
-    if addon.database.capture then
-        addon.database.capture:close()
-        addon.database.capture = backend.databaseOpen(
+    addon.databases.global = backend.databaseOpen(
+        string.format('%s/databases/%s/%s.lua', addon.rootDir, backend.player_name(), backend.zone_name(zoneId)),
+        addon.settings.database)
+
+    if addon.databases.capture then
+        addon.databases.capture:close()
+        addon.databases.capture = backend.databaseOpen(
             string.format('%s/databases/%s.lua', addon.captureDir, backend.zone_name(zoneId)),
             addon.settings.database)
     end
 end
 
 local function getCurrentDb()
-    return addon.database.capture or addon.database.global
+    return addon.databases.capture or addon.databases.global
 end
 
 local function parseNpcUpdate(data)
     local packet = backend.parsePacket('incoming', data)
+    if not packet then
+        return
+    end
 
     local db = getCurrentDb()
+    if not db then
+        return
+    end
+
     local npc = db:get(packet.UniqueNo)
     if not npc then
         npc = { UniqueNo = packet.UniqueNo }
@@ -103,22 +117,23 @@ local function parseNpcUpdate(data)
 
     -- Depending on the flags set, we can capture different fields
     if packet.SendFlg.Position then
-        npc.dir = packet.dir
-        npc.x = packet.x
-        npc.y = packet.y -- might be z
-        npc.z = packet.z -- might be y
-        npc.Flags0 = packet.Flags0
-        npc.Flags1 = packet.Flags1
-        npc.Speed = packet.Speed
+        npc.dir       = packet.dir
+        npc.x         = packet.x
+        npc.y         = packet.z -- Backwards compatibility, this should be y!
+        npc.z         = packet.y -- Backwards compatibility, this should be z!
+        npc.Flags0    = packet.Flags0
+        npc.Flags1    = packet.Flags1
+        npc.Speed     = packet.Speed
         npc.SpeedBase = packet.SpeedBase
     end
 
     if packet.SendFlg.General then
-        npc.Hpp = packet.Hpp
+        npc.Hpp           = packet.Hpp
         npc.server_status = packet.server_status
-        npc.Flags1 = packet.Flags1
-        npc.Flags2 = packet.Flags2
-        npc.Flags3 = packet.Flags3
+        npc.Flags1        = packet.Flags1
+        npc.Flags2        = packet.Flags2
+        npc.Flags3        = packet.Flags3
+        npc.SubAnimation  = packet.SubAnimation
     end
 
     if packet.SendFlg.Model then
@@ -219,6 +234,9 @@ end
 local function parseWidescanUpdate(data)
     local packet = backend.parsePacket('incoming', data)
     local db = getCurrentDb()
+    if not db then
+        return
+    end
 
     -- WS Packet only contains the index of the NPC, so we need to look it up in the main NPC DB
     local npc, UniqueNo = db:find_by('ActIndex', packet.ActIndex)
@@ -251,7 +269,7 @@ end
 
 addon.onInitialize = function(rootDir)
     addon.rootDir = rootDir
-    addon.database.global = backend.databaseOpen(
+    addon.databases.global = backend.databaseOpen(
         string.format('%s/databases/%s/%s.lua', rootDir, backend.player_name(), backend.zone_name()),
         addon.settings.database)
 end

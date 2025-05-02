@@ -89,10 +89,10 @@ local function processDeath(mob_id)
 
     backend.msg('HPTrack', log_string)
 
-    backend.fileAppend(addon.file.simple, log_string .. "\n\n")
+    addon.file.simple:append(log_string .. "\n\n")
 
     if captain.isCapturing then
-        backend.fileAppend(addon.file.capture.simple, log_string .. "\n\n")
+        addon.file.capture.simple:append(log_string .. "\n\n")
     end
 end
 

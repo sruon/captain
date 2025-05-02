@@ -9,7 +9,6 @@ AshitaCore = AshitaCore
 ---@type any
 addon = addon
 
----@type Ashitav4Backend
 local backend = {}
 
 require('common')
@@ -39,7 +38,7 @@ backend.register_command               = function(func)
     ashita.events.register('command', 'command_cb', function(e)
         local args = e.command:args()
         if
-            #args < 1
+          #args < 1
         then
             return
         end
@@ -84,27 +83,31 @@ end
 -- from logs addon
 local cleanStr                         = function(str)
     -- Parse the strings auto-translate tags..
-    str = AshitaCore:GetChatManager():ParseAutoTranslate(str, true);
+    str = AshitaCore:GetChatManager():ParseAutoTranslate(str, true)
 
     -- Strip FFXI-specific color and translate tags..
-    str = str:strip_colors();
-    str = str:strip_translate(true);
+    str = str:strip_colors()
+    str = str:strip_translate(true)
 
     -- Strip line breaks..
     while (true) do
-        local hasN = str:endswith('\n');
-        local hasR = str:endswith('\r');
+        local hasN = str:endswith('\n')
+        local hasR = str:endswith('\r')
 
         if (not hasN and not hasR) then
-            break;
+            break
         end
 
-        if (hasN) then str = str:trimend('\n'); end
-        if (hasR) then str = str:trimend('\r'); end
+        if (hasN) then
+            str = str:trimend('\n')
+        end
+        if (hasR) then
+            str = str:trimend('\r')
+        end
     end
 
     -- Replace mid-linebreaks..
-    return (str:gsub(string.char(0x07), '\n'));
+    return (str:gsub(string.char(0x07), '\n'))
 end
 
 backend.register_event_incoming_text   = function(func)
@@ -117,8 +120,7 @@ backend.register_event_incoming_text   = function(func)
 end
 
 backend.register_event_prerender       = function(func)
-    local customFont = backend.fontGet(backend.getSetting('box.text.font', 'Consolas'),
-        backend.scale_font(backend.getSetting('box.text.size', 16)))
+    local customFont = backend.fontGet('Consolas', backend.scale_font(captain.settings.box.text.size))
 
     local adaptor = function()
         imgui.PushFont(customFont)
@@ -133,10 +135,13 @@ backend.register_event_prerender       = function(func)
 
         for _, box in pairs(gui) do
             imgui.SetNextWindowBgAlpha(0.6)
-            imgui.SetNextWindowSize({ -1, -1, }, ImGuiCond_Always)
-            imgui.SetNextWindowSizeConstraints({ -1, -1, }, { FLT_MAX, FLT_MAX, })
+            imgui.SetNextWindowSize({ -1, -1 }, ImGuiCond_Always)
+            imgui.SetNextWindowSizeConstraints({ -1, -1 }, { FLT_MAX, FLT_MAX })
 
             if box.text ~= nil and box.visible and imgui.Begin(box.name, true, flags) then
+                -- Apply scaling to content
+                imgui.SetWindowFontScale(captain.settings.textBox.scale)
+
                 if box.title then
                     imgui.TextColored(CORAL, box.title)
                     imgui.Separator()
@@ -174,7 +179,7 @@ end
 --------------------------------
 -- Text Display
 --------------------------------
-textBoxIdCounter                       = 0
+local textBoxIdCounter                 = 0
 
 backend.textBox                        = function(_)
     local box = {}
@@ -227,7 +232,7 @@ backend.player_name                    = function()
     if player ~= nil then
         return player.Name
     end
-    return "Unknown"
+    return 'Unknown'
 end
 
 backend.zone                           = function()
@@ -254,7 +259,7 @@ backend.target_name                    = function()
     local target = GetEntity(index)
 
     if target == nil then
-        return "Unknown"
+        return 'Unknown'
     end
 
     return target.Name
@@ -283,8 +288,8 @@ backend.get_player_entity_data         = function()
     {
         name = party:GetMemberName(0),
         serverId = party:GetMemberServerId(0),
-        mJob = AshitaCore:GetResourceManager():GetString("jobs.names_abbr", player:GetMainJob()),
-        sJob = AshitaCore:GetResourceManager():GetString("jobs.names_abbr", player:GetSubJob()),
+        mJob = AshitaCore:GetResourceManager():GetString('jobs.names_abbr', player:GetMainJob()),
+        sJob = AshitaCore:GetResourceManager():GetString('jobs.names_abbr', player:GetSubJob()),
         mJobLevel = player:GetMainJobLevel(),
         sJobLevel = player:GetSubJobLevel(),
         zoneID = playerZoneID,
@@ -319,7 +324,7 @@ backend.get_target_entity_data         = function()
 end
 
 backend.get_monster_ability_name       = function(id)
-    return AshitaCore:GetResourceManager():GetString("monsters.abilities", id - 256):gsub('%z', '')
+    return AshitaCore:GetResourceManager():GetString('monsters.abilities', id - 256):gsub('%z', '')
 end
 
 backend.get_job_ability_name           = function(id)
@@ -369,10 +374,10 @@ backend.get_mob_by_id                  = function(id)
     local target
     local tIdx = 0
     for x = 0, 2302 do
-        local e = mgr:GetEntity(x);
+        local e = mgr:GetEntity(x)
         if (e and e:GetServerId(x) == id) then
-            target = e;
-            tIdx = x;
+            target = e
+            tIdx = x
         end
     end
 
@@ -417,7 +422,7 @@ backend.forever                        = function(func, delay, ...)
 end
 
 backend.convert_int_to_float           = function(raw)
-    return string.unpack("f", string.pack("I4", raw))
+    return string.unpack('f', string.pack('I4', raw))
 end
 
 --------------------------------
@@ -435,13 +440,13 @@ end
 -- Adds an arbitrary packet to the outgoing queue
 --------------------------------
 backend.injectPacket                   = function(id, content)
-    AshitaCore:GetPacketManager():AddOutgoingPacket(id, content);
+    AshitaCore:GetPacketManager():AddOutgoingPacket(id, content)
 end
 
 backend.registerKeyBind                = function(params, command)
     local kb = AshitaCore:GetInputManager():GetKeyboard()
-    if not command:startswith("/") then
-        command = "/" .. command
+    if not command:startswith('/') then
+        command = '/' .. command
     end
 
     kb:Bind(
@@ -489,87 +494,196 @@ backend.fontGet                        = function(fontName, fontSize)
     return fontCache[key]
 end
 
-backend.boxDraw                        = function(box)
-    local flags = bit.bor(
-        ImGuiWindowFlags_NoDecoration,
-        ImGuiWindowFlags_NoSavedSettings,
-        ImGuiWindowFlags_NoFocusOnAppearing,
-        ImGuiWindowFlags_NoNav
+backend.notificationsRender            = function(notifications)
+    local vp_size =
+    {
+        x = AshitaCore:GetConfigurationManager():GetUInt32('boot', 'ffxi.registry', '0001', 800),
+        y = AshitaCore:GetConfigurationManager():GetUInt32('boot', 'ffxi.registry', '0002', 600),
+    }
+
+    local NOTIFY_TOAST_FLAGS = bit.bor(
+        ImGuiWindowFlags_NoTitleBar, ImGuiWindowFlags_NoResize, ImGuiWindowFlags_NoScrollbar,
+        ImGuiWindowFlags_NoCollapse, ImGuiWindowFlags_AlwaysAutoResize,
+        ImGuiWindowFlags_NoSavedSettings, ImGuiWindowFlags_NoFocusOnAppearing
     )
-    imgui.SetNextWindowPos({ box.x, box.y }, ImGuiCond_Always)
 
-    imgui.SetNextWindowBgAlpha(box.bg.alpha / 255)
+    local height = 0
 
-    local font_size = imgui.GetFontSize()
-    local style = imgui.GetStyle()
+    -- Push styles for the notifications
+    imgui.PushStyleVar(ImGuiStyleVar_WindowPadding, { 8, 8 })
+    imgui.PushStyleVar(ImGuiStyleVar_FramePadding, { 2, 2 })
+    imgui.PushStyleVar(ImGuiStyleVar_ItemSpacing, { 4, 4 })
 
-    local avg_char_width = font_size * 0.55
-    local line_height = font_size + style.ItemSpacing.y
-    local width = (box.max_chars_per_line or 60) * avg_char_width + 8
+    -- Calculate width for uniform notifications
+    local avg_char_width = imgui.GetFontSize() * 0.5
+    local uniform_width = (80 * avg_char_width * captain.settings.notifications.scale) + 20
 
-    local line_count = 1
-    for _, segment in ipairs(box.segments) do
-        if segment.newline then
-            line_count = line_count + 1
-        end
+    -- Define colors
+    local function normalizeColor(colorEnum, alpha)
+        return
+        {
+            colors[colorEnum].rgb[1] / 255,
+            colors[colorEnum].rgb[2] / 255,
+            colors[colorEnum].rgb[3] / 255,
+            alpha or 1.0,
+        }
     end
 
-    local height = (box.max_lines or 5) * line_height
+    local KEY_COLOR = normalizeColor(captain.settings.notifications.colors.key)
+    local VALUE_COLOR = normalizeColor(captain.settings.notifications.colors.value)
+    local TITLE_COLOR = normalizeColor(captain.settings.notifications.colors.title)
+    local WHITE_COLOR = { 1.0, 1.0, 1.0, 1.0 }
+    local TRANSPARENT = { 0.0, 0.0, 0.0, 0.0 }
 
-    imgui.SetNextWindowSize({ width, height }, ImGuiCond_Always)
-
-    if imgui.Begin('##' .. box.id, true, flags) then
-        imgui.PushStyleColor(ImGuiCol_WindowBg,
-            { box.bg.red / 255, box.bg.green / 255, box.bg.blue / 255, box.bg.alpha / 255 })
-
-        if imgui.IsWindowHovered() and imgui.IsMouseDragging(0) then
-            local delta_x, delta_y = imgui.GetMouseDragDelta(0)
-
-            -- Automatically save the new position
-            backend.setSetting('box.pos.x', backend.getSetting('box.pos.x', 0) + delta_x)
-            backend.setSetting('box.pos.y', backend.getSetting('box.pos.y', 0) + delta_y)
-            backend.saveConfig('captain')
-
-            imgui.ResetMouseDragDelta(0)
-        end
-
-        imgui.PushStyleVar(ImGuiStyleVar_ItemSpacing, { style.ItemSpacing.x, 4 })
-
-        local first_in_line = true
-        for _, segment in ipairs(box.segments) do
-            if segment.newline then
-                imgui.Spacing()
-                first_in_line = true
-            elseif segment.text then
-                if not first_in_line then
-                    imgui.SameLine(0, 0)
-                end
-                if segment.color then
-                    imgui.PushStyleColor(ImGuiCol_Text, {
-                        segment.color[1] / 255,
-                        segment.color[2] / 255,
-                        segment.color[3] / 255,
-                        1
-                    })
-                else
-                    imgui.PushStyleColor(ImGuiCol_Text, WHITE)
-                end
-
-                imgui.TextUnformatted(segment.text)
-                imgui.PopStyleColor()
-                first_in_line = false
+    local typeHandlers =
+    {
+        ['table'] = function(fieldName, value)
+            local values = {}
+            for i, v in ipairs(value) do table.insert(values, tostring(v)) end
+            if #values == 0 then
+                for k, v in pairs(value) do table.insert(values, tostring(k) .. '=' .. tostring(v)) end
             end
-        end
+            return fieldName .. '[]', table.concat(values, ', ')
+        end,
 
-        imgui.PopStyleVar()
-        imgui.PopStyleColor()
+        ['nil'] = function(fieldName, _) return fieldName, 'nil' end,
 
-        imgui.End()
+        ['number'] = function(fieldName, value)
+            return fieldName, math.floor(value) == value and tostring(value) or string.format('%.2f', value)
+        end,
 
-        return height -- Use our known value
+        ['string'] = function(fieldName, value)
+            return fieldName, #value > 40 and value:sub(1, 37) .. '...' or value
+        end,
+
+        ['default'] = function(fieldName, value)
+            local strValue = tostring(value)
+            return fieldName, #strValue > 40 and strValue:sub(1, 37) .. '...' or strValue
+        end,
+    }
+
+    local function processFieldValue(fieldName, value)
+        local handler = typeHandlers[type(value)] or typeHandlers['default']
+        return handler(fieldName, value)
     end
 
-    return 0
+    -- Process notifications from newest to oldest
+    for i = #notifications, 1, -1 do
+        local toast = notifications[i]
+
+        -- Prepare notification background
+        local opacity = toast.bg.alpha / 255
+        local bg_color =
+        {
+            toast.bg.red / 255, toast.bg.green / 255, toast.bg.blue / 255, opacity,
+        }
+
+        -- Position notification
+        imgui.SetNextWindowPos(
+            { vp_size.x - captain.settings.notifications.offset.x, vp_size.y - captain.settings.notifications.offset.y - height },
+            ImGuiCond_Always, { 1.0, 1.0 }
+        )
+
+        -- Set window style
+        imgui.PushStyleColor(ImGuiCol_WindowBg, bg_color)
+        imgui.PushStyleColor(ImGuiCol_Border, TRANSPARENT)
+        imgui.SetNextWindowSizeConstraints(
+            { uniform_width, 0 }, { vp_size.x * 0.7, vp_size.y * 0.8 }
+        )
+
+        -- Create window
+        if imgui.Begin(string.format('##TOAST%d', i), { true }, NOTIFY_TOAST_FLAGS) then
+            imgui.SetWindowFontScale(captain.settings.notifications.scale)
+            imgui.PushTextWrapPos(uniform_width)
+
+            -- Handle dragging
+            if imgui.IsWindowHovered() and imgui.IsMouseDragging(0) then
+                local delta_x, delta_y = imgui.GetMouseDragDelta(0)
+                captain.settings.notifications.offset.x = captain.settings.notifications.offset.x - delta_x
+                captain.settings.notifications.offset.y = captain.settings.notifications.offset.y - delta_y
+                backend.saveConfig('captain')
+                imgui.ResetMouseDragDelta(0)
+            end
+
+            -- Render title
+            imgui.TextColored(TITLE_COLOR, tostring(toast.title))
+            imgui.Spacing()
+
+            -- Render data if available
+            if toast.data and type(toast.data) == 'table' then
+                local max_line_width = uniform_width
+                local current_line_width = 0
+                local is_first_in_line = true
+                local grouped_data = {}
+
+                -- Preprocess data
+                for i, pair in ipairs(toast.data) do
+                    local key, value = processFieldValue(pair[1], pair[2])
+                    local key_size = { imgui.CalcTextSize(key) }
+                    local colon_size = { imgui.CalcTextSize(': ') }
+                    local value_size = { imgui.CalcTextSize(value) }
+
+                    table.insert(grouped_data,
+                        {
+                            key = key,
+                            value = value,
+                            width = key_size[1] + colon_size[1] + value_size[1] + 15,
+                            orig_index = i,
+                        })
+                end
+
+                -- Render data items
+                for _, item in ipairs(grouped_data) do
+                    local key, value, width = item.key, item.value, item.width
+                    local is_array = key:match('%[%]$') ~= nil
+                    local is_long_value = width > (max_line_width * 0.8)
+                    local needs_new_line = (is_array or is_long_value) or
+                      (not is_first_in_line and current_line_width + width > max_line_width)
+
+                    -- Start new line if needed
+                    if needs_new_line and not is_first_in_line then
+                        imgui.Spacing()
+                        current_line_width, is_first_in_line = 0, true
+                    end
+
+                    -- Add spacing between items on the same line
+                    if not is_first_in_line then
+                        imgui.SameLine()
+                        imgui.TextUnformatted(' ')
+                        imgui.SameLine()
+                    end
+
+                    -- Render key-value pair
+                    imgui.TextColored(KEY_COLOR, key)
+                    imgui.SameLine(0, 0)
+                    imgui.TextColored(WHITE_COLOR, ': ')
+                    imgui.SameLine(0, 2)
+                    imgui.TextColored(VALUE_COLOR, value)
+
+                    -- Update line state
+                    if is_array or is_long_value then
+                        imgui.Spacing()
+                        current_line_width, is_first_in_line = 0, true
+                    else
+                        current_line_width = current_line_width + width
+                        is_first_in_line = false
+                    end
+                end
+
+                -- Final spacing if needed
+                if not is_first_in_line then imgui.Spacing() end
+            end
+
+            imgui.PopTextWrapPos()
+            height = height + imgui.GetWindowHeight() + captain.settings.notifications.spacing
+            imgui.End()
+        end
+
+        imgui.PopStyleColor(2)
+    end
+
+    imgui.PopStyleVar(3)
+    return height
 end
 
 backend.scale_font                     = scaling.scale_f
@@ -579,7 +693,189 @@ backend.scale_height                   = scaling.scale_h
 backend.reload                         = function()
     captain.reloadSignal = true
     backend.msg('captain', 'Reloading. Coroutines may take a moment to finish.')
-    AshitaCore:GetChatManager():QueueCommand(-1, "/addon reload captain")
+    AshitaCore:GetChatManager():QueueCommand(-1, '/addon reload captain')
+end
+
+backend.configMenu                     = function()
+    -- TODO: Refactor in a generic fashion closer to the actual settings
+    if not captain.showConfig then
+        return
+    end
+
+    -- Load defaults for reset buttons
+    local defaults = require('data/defaults')
+
+    local configurableValues =
+    {
+        {
+            title = 'Notifications',
+            entries =
+            {
+                {
+                    title = 'Max',
+                    path = 'notifications.max_num',
+                    min = 3,
+                    max = 10,
+                    incr = 1,
+                },
+                {
+                    title = 'Auto-hide delay',
+                    path = 'notifications.hideDelay',
+                    min = 1,
+                    max = 10,
+                    incr = 1,
+                },
+                {
+                    title = 'Spacing',
+                    path = 'notifications.spacing',
+                    min = 0,
+                    max = 20,
+                    incr = 1,
+                },
+                {
+                    title = 'Offset X (from bottom right)',
+                    path = 'notifications.offset.x',
+                    min = 0,
+                    max = AshitaCore:GetConfigurationManager():GetUInt32('boot', 'ffxi.registry', '0001', 1920),
+                    incr = 5,
+                },
+                {
+                    title = 'Offset Y (from bottom right)',
+                    path = 'notifications.offset.y',
+                    min = 0,
+                    max = AshitaCore:GetConfigurationManager():GetUInt32('boot', 'ffxi.registry', '0002', 1080),
+                    incr = 5,
+                },
+                {
+                    title = 'Scale',
+                    path = 'notifications.scale',
+                    min = 0.1,
+                    max = 5,
+                    incr = 0.05,
+                },
+            },
+        },
+        {
+            title = 'TextBox',
+            entries =
+            {
+                {
+                    title = 'Scale',
+                    path = 'textBox.scale',
+                    min = 0.5,
+                    max = 5,
+                    incr = 0.1,
+                },
+            },
+        },
+    }
+
+    local isOpen = { true }
+
+    if imgui.Begin('captain Configuration', isOpen, ImGuiWindowFlags_AlwaysAutoResize) then
+        if not isOpen[1] then
+            captain.showConfig = false
+        end
+
+        if imgui.BeginTabBar('##captain_config_tabbar', ImGuiTabBarFlags_NoCloseWithMiddleMouseButton) then
+            for i, configCategory in ipairs(configurableValues) do
+                if imgui.BeginTabItem(configCategory.title) then
+                    imgui.BeginGroup()
+                    for j, configEntry in ipairs(configCategory.entries) do
+                        local parts = {}
+                        for part in string.gmatch(configEntry.path, '[^%.]+') do
+                            table.insert(parts, part)
+                        end
+
+                        local settingRef = captain.settings
+                        for k = 1, #parts - 1 do
+                            settingRef = settingRef[parts[k]]
+                        end
+
+                        -- Get default value from defaults
+                        local defaultRef = defaults
+                        for k = 1, #parts do
+                            defaultRef = defaultRef[parts[k]]
+                        end
+
+                        imgui.TextColored(CORAL, string.format('%s', configEntry.title))
+
+                        local buffer = { settingRef[parts[#parts]] }
+                        local controlID = string.format('##captain_setting_%s_%s',
+                            configCategory.title:gsub(' ', '_'):lower(),
+                            configEntry.title:gsub(' ', '_'):lower())
+
+                        local isInteger = configEntry.incr == math.floor(configEntry.incr) and configEntry.incr == 1
+                        local valueChanged = false
+
+                        -- Use a relative width based on the window width
+                        imgui.PushItemWidth(imgui.GetWindowWidth() * 0.8)
+
+                        if isInteger then
+                            valueChanged = imgui.SliderInt(
+                                controlID,
+                                buffer,
+                                math.floor(configEntry.min),
+                                math.floor(configEntry.max),
+                                '%d',
+                                ImGuiSliderFlags_AlwaysClamp
+                            )
+                        else
+                            local format = '%.1f'
+                            if configEntry.incr < 0.1 then
+                                format = '%.2f'
+                            elseif configEntry.incr < 0.01 then
+                                format = '%.3f'
+                            end
+
+                            valueChanged = imgui.SliderFloat(
+                                controlID,
+                                buffer,
+                                configEntry.min,
+                                configEntry.max,
+                                format,
+                                ImGuiSliderFlags_AlwaysClamp
+                            )
+                        end
+
+                        imgui.PopItemWidth()
+
+                        if valueChanged then
+                            settingRef[parts[#parts]] = buffer[1]
+                            backend.saveConfig('captain')
+                        end
+
+                        -- Add reset button on the same line
+                        imgui.SameLine()
+                        local resetID = string.format('Reset##captain_reset_%s_%s',
+                            configCategory.title:gsub(' ', '_'):lower(),
+                            configEntry.title:gsub(' ', '_'):lower())
+
+                        if imgui.Button(resetID) and defaultRef ~= nil then
+                            settingRef[parts[#parts]] = defaultRef
+                            backend.saveConfig('captain')
+                        end
+
+                        -- Show tooltip on hover
+                        if imgui.IsItemHovered() and defaultRef ~= nil then
+                            imgui.BeginTooltip()
+                            imgui.Text(string.format('Reset to default: %s', tostring(defaultRef)))
+                            imgui.EndTooltip()
+                        end
+                    end
+
+                    imgui.EndGroup()
+                    imgui.EndTabItem()
+                end
+            end
+
+            imgui.EndTabBar()
+        end
+
+        imgui.End()
+    else
+        captain.showConfig = false
+    end
 end
 
 return backend

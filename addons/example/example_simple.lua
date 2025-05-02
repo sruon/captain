@@ -2,11 +2,12 @@
 -- A handful of globals are available:
 -- - backend: interact with FFXI launcher/client
 -- - colors: list of color codes for chatlog and UI display
--- - packetId: list of packet IDs
+-- - PacketId: list of packet IDs
 -- - captain: global captain object
 -- - utils: certain utility functions
 
 ---@class ExampleSimpleAddon : AddonInterface
+---@field logFile File?
 local addon =
 {
     -- Name of your addon (required)
@@ -17,8 +18,7 @@ local addon =
     {
         incoming =
         {
-            -- 0x0F4 is the widescan update packet
-            [packetId.GP_SERV_COMMAND_TRACKING_LIST] = true, -- 0x0F4 is the widescan update packet
+            [PacketId.GP_SERV_COMMAND_TRACKING_LIST] = true, -- 0x0F4 is the widescan update packet
         },
     },
 
@@ -77,24 +77,15 @@ addon.onIncomingPacket = function(id, data)
             -- The parser returned a table with all fields parsed
             -- Each packet type will look different, see libs/packets/definitions.lua
             -- The widescan packet contains: ActIndex, Level, Type among other things
-            backend.fileAppend(addon.logFile,
-                string.format('Widescan update: %d, %d, %d\n', packet.ActIndex, packet.Level, packet.Type))
+            addon.logFile:append(string.format('Widescan update: %d, %d, %d\n', packet.ActIndex, packet.Level,
+                packet.Type))
 
             -- Optionally you can show a notification
             -- The first argument is a template for your notification
             -- The second argument is the data to fill in the template
             -- The third argument is whether or not the box will persist until the next notification
 
-            local boxTemplate =
-            {
-                { text = 'Widescan update' },
-                { newline = true },
-                { text = 'ActIndex: ${ActIndex|%d}' },
-                { text = 'Level: ${Level|%d}' }, -- No newline means this will on the same level as ActIndex
-                { newline = true },
-                { text = 'Type: ${Type|%d}' },
-            }
-            backend.boxCreate(boxTemplate, data, false)
+            -- TBD Doc update, see EventView for an example
         end
     end
 end

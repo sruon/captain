@@ -1,8 +1,10 @@
 -- Credits: zach2good
 -- Displays a floating text box with the player's job levels, coordinates, rotation, zone ID, capture state and server IP/port.
 ---@class PlayerInfoAddon : AddonInterface
----@field playerInfo? any
+---@field playerInfo TextBox?
 ---@field server { ip: string, port: number }
+---@field databases { global: Database?, capture: Database? }
+
 local addon =
 {
     name            = 'PlayerInfo',
@@ -27,7 +29,7 @@ local addon =
             max_history = 10,
         },
     },
-    database        =
+    databases       =
     {
         global  = nil,
         capture = nil,
@@ -37,13 +39,20 @@ local addon =
 addon.onIncomingPacket = function(id, data)
     if id == PacketId.GP_SERV_COMMAND_LOGOUT then
         local zoneOutPacket = backend.parsePacket('incoming', data)
+        if not zoneOutPacket then
+            return
+        end
+
         addon.server.ip = zoneOutPacket.GP_SERV_LOGOUTSUB.ip
         addon.server.port = zoneOutPacket.GP_SERV_LOGOUTSUB.port
-        addon.database.global:add_or_update('ZoneServer', addon.server)
-        addon.database.global:save()
-        if addon.database.capture then
-            addon.database.capture:add_or_update('ZoneServer', addon.server)
-            addon.database.capture:save()
+        if addon.databases.global then
+            addon.databases.global:add_or_update('ZoneServer', addon.server)
+            addon.databases.global:save()
+        end
+
+        if addon.databases.capture then
+            addon.databases.capture:add_or_update('ZoneServer', addon.server)
+            addon.databases.capture:save()
         end
     end
 end
@@ -73,24 +82,26 @@ addon.onPrerender = function()
 
     local titleStr = string.format('%s[%d/%d] %s - %s - %s:%d', playerData.name, playerData.serverId,
         playerData.targIndex, playerJobString, zoneInfo, addon.server.ip, addon.server.port)
-    addon.playerInfo:updateTitle(titleStr)
-    addon.playerInfo:updateText(playerOutputStr)
+    if addon.playerInfo then
+        addon.playerInfo:updateTitle(titleStr)
+        addon.playerInfo:updateText(playerOutputStr)
+    end
 end
 
 addon.onCaptureStop = function()
-    if addon.database.capture then
-        addon.database.capture:close()
-        addon.database.capture = nil
+    if addon.databases.capture then
+        addon.databases.capture:close()
+        addon.databases.capture = nil
     end
 end
 
 addon.onCaptureStart = function(captureDir)
-    addon.database.capture = backend.databaseOpen(string.format('%s/%s.lua', captureDir, backend.player_name()))
+    addon.databases.capture = backend.databaseOpen(string.format('%s/%s.lua', captureDir, backend.player_name()))
 end
 
 addon.onInitialize = function(rootDir)
-    addon.playerInfo = backend.textBox('player')
-    addon.database.global = backend.databaseOpen(string.format('%s/databases/%s.lua', rootDir, backend.player_name()),
+    addon.playerInfo = backend.textBox('playerinfo')
+    addon.databases.global = backend.databaseOpen(string.format('%s/databases/%s.lua', rootDir, backend.player_name()),
         addon.settings.database)
 end
 

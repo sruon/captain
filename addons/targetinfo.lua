@@ -1,10 +1,10 @@
 -- Credits: zach2good
 ---@class TargetInfoAddon : AddonInterface
----@field targetInfo? any
+---@field targetInfo TextBox?
 local addon = {
-    name            = 'TargetInfo',
-    targetInfo      = nil,
-    settings        = {},
+    name       = 'TargetInfo',
+    targetInfo = nil,
+    settings   = {},
 }
 
 addon.onPrerender = function()
@@ -19,11 +19,15 @@ addon.onPrerender = function()
             'Y: ' .. targetData.y .. ' ' ..
             'Z: ' .. targetData.z .. ' ' ..
             'R: ' .. targetData.r
-        addon.targetInfo:updateTitle(targetTitleStr)
-        addon.targetInfo:updateText(targetOutputStr)
-        addon.targetInfo:show()
+        if addon.targetInfo then
+            addon.targetInfo:updateTitle(targetTitleStr)
+            addon.targetInfo:updateText(targetOutputStr)
+            addon.targetInfo:show()
+        end
     else
-        addon.targetInfo:hide()
+        if addon.targetInfo then
+            addon.targetInfo:hide()
+        end
     end
 end
 

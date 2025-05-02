@@ -9,11 +9,8 @@
 ---@field GP_SERV_COMMAND_LOGOUT integer
 ---@field GP_SERV_COMMAND_CHAR_PC integer
 ---@field GP_SERV_COMMAND_CHAR_NPC integer
----@field GP_SERV_COMMAND_CHAR_DEL integer
 ---@field GP_SERV_COMMAND_GM integer
 ---@field GP_SERV_COMMAND_GMCOMMAND integer
----@field GP_SERV_COMMAND_TELL integer
----@field GP_SERV_COMMAND_TALK integer
 ---@field GP_SERV_COMMAND_CHAT_STD integer
 ---@field GP_SERV_COMMAND_ITEM_MAX integer
 ---@field GP_SERV_COMMAND_ITEM_SAME integer
@@ -321,8 +318,10 @@
 ---@field GP_CLI_COMMAND_UNKNOWN_011C integer
 ---@field GP_CLI_COMMAND_UNKNOWN_011D integer
 ---@field MAGIC_ALL_PACKETS integer
-
-PacketId = {}
+-- Deprecated packets
+-- ---@field GP_SERV_COMMAND_CHAR_DEL integer
+-- ---@field GP_SERV_COMMAND_TELL integer
+-- ---@field GP_SERV_COMMAND_TALK integer
 
 ---@type PacketId
 PacketId =
@@ -335,11 +334,11 @@ PacketId =
     GP_SERV_COMMAND_LOGOUT              = 0x00B,
     GP_SERV_COMMAND_CHAR_PC             = 0x00D,
     GP_SERV_COMMAND_CHAR_NPC            = 0x00E,
-    GP_SERV_COMMAND_CHAR_DEL            = 0x011,
+    --GP_SERV_COMMAND_CHAR_DEL            = 0x011, -- deprecated
     GP_SERV_COMMAND_GM                  = 0x012,
     GP_SERV_COMMAND_GMCOMMAND           = 0x013,
-    GP_SERV_COMMAND_TELL                = 0x014,
-    GP_SERV_COMMAND_TALK                = 0x016,
+    --GP_SERV_COMMAND_TELL                = 0x014, -- deprecated
+    --GP_SERV_COMMAND_TALK                = 0x016, -- deprecated
     GP_SERV_COMMAND_CHAT_STD            = 0x017,
     GP_SERV_COMMAND_ITEM_MAX            = 0x01C,
     GP_SERV_COMMAND_ITEM_SAME           = 0x01D,
@@ -651,5 +650,27 @@ PacketId =
 }
 
 _G.PacketId = PacketId
+
+-- Create reverse lookup mapping for packet IDs
+---@class PacketReverseLookup
+---@field incoming table<number, string>
+---@field outgoing table<number, string>
+_G.PacketIdToName = {
+    incoming = {},
+    outgoing = {}
+}
+
+-- Build the reverse mapping with a loop
+for name, id in pairs(PacketId) do
+    if type(id) == 'number' then
+        if name:match('^GP_SERV_') then
+            -- Incoming packet (server to client)
+            _G.PacketIdToName.incoming[id] = name
+        elseif name:match('^GP_CLI_') then
+            -- Outgoing packet (client to server)
+            _G.PacketIdToName.outgoing[id] = name
+        end
+    end
+end
 
 return PacketId

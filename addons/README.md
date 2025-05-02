@@ -67,8 +67,10 @@ The full list of events is defined in [example/interface.lua](example/interface.
 
 ### About packets
 
-Packets require defining exactly which packets you wish to receive in `addon.filters`. A special value of `0x255`
-signifies all packets.
+Packets require defining exactly which packets you wish to receive in `addon.filters`.
+A global `PacketId` table is available to define the packet IDs.
+
+A special value of `PacketId.MAGIC_ALL_PACKETS` indicates the addon receives all packet types.
 
 ```lua
 -- my_addon.lua
@@ -79,12 +81,12 @@ local addon =
     {
         incoming = 
         {
-            [0x00E] = true, -- Receive inbound NPC updates
+            [PacketId.GP_SERV_COMMAND_CHAR_NPC] = true, -- Receive inbound NPC updates
         },
         
         outgoing = 
         {
-            [0x255] = true, -- Receive ALL outgoing packets
+            [PacketId.MAGIC_ALL_PACKETS]        = true, -- Receive ALL outgoing packets
         },
     }
 }
@@ -132,7 +134,7 @@ local addon =
 
 addon.onIncomingPacket = function(id, data)
     if addon.file then
-        backend.fileAppend(addon.file, 'received packet: ' .. id .. '\n')
+        addon.file:append('received packet: ' .. id .. '\n')
     end
 end
 
@@ -197,16 +199,17 @@ local addon =
     {
         incoming = 
         {
-            [0x0F4] = true, -- Receive widescan updates
+            [PacketId.GP_SERV_COMMAND_TRACKING_LIST] = true, -- Receive widescan updates
         },
     }
 }
 
 addon.onIncomingPacket = function(id, data)
-    if id == 0x0F4 then
+    if id == PacketId.GP_SERV_COMMAND_TRACKING_LIST then
         local packet = backend.parsePacket('incoming', data)
         if packet then
             print(packet.Level)
+            -- utils.dump(packet) will print the entire table to the chatlog
         end
     end
 end
@@ -231,56 +234,41 @@ addon.onPrerender = function()
 end
 
 addon.onInitialize = function(_)
-    addon.playerInfo = backend.textBox()
+    addon.playerInfo = backend.textBox('PlayerInfo')
 end
 
 return addon
 ```  
 
-### Creating box notifications
+### Creating notifications
 
-The notifications can be dragged around the screen.
+This is an example template for creating notifications:
 
 ```lua
--- my_addon.lua
-local addon = 
+addon.template =
 {
-    name = 'my_addon',
-    -- A template defines a list of segment and how they are displayed
-    -- Each segment is a table with the following keys:
-    --   - color (optional, white if not specified): The color of the text. See libs/colors/colors.lua (rgb field)
-    --   - text (required if not newline): The text to display. Can contain format specifiers like ${name|%s}
-    --   - padLeft (optional): The number of spaces to pad on the left side of the text
-    --   - padRight (optional): The number of spaces to pad on the right side of the text
-    --   - newline (optional): If true, a new line will be created. Other options ignored if set
-    template = 
-    {
-            { color = addon.color.box.NAME,      text = "${name|%s}" },
-            { newline = true },
-            { color = addon.color.box.SYSTEM,    text = "Actor: " },
-            { color = addon.color.box.ACTOR,     text = "${actor|%s}",     padLeft = 11 },
-            { newline = true },
-            { color = addon.color.box.SYSTEM,    text = "C: " },
-            { color = addon.color.box.CATEGORY,  text = "${category|%s}",  padLeft = 5 },
-            { color = addon.color.box.SYSTEM,    text = " ID: " },
-            { color = addon.color.box.ID,        text = "${id|%s}",        padLeft = 5 },
-            { color = addon.color.box.SYSTEM,    text = " Anim: " },
-            { color = addon.color.box.ANIMATION, text = "${animation|%s}", padLeft = 4 },
-            { color = addon.color.box.SYSTEM,    text = " Msg: " },
-            { color = addon.color.box.MESSAGE,   text = "${message|%s}",   padLeft = 3 },
-            { newline = true },
-    },
+    { color = addon.color.notification.NAME,      text = "${name|%s}" },
+    { newline = true },
+    { color = addon.color.notification.SYSTEM,    text = "Actor: " },
+    { color = addon.color.notification.ACTOR,     text = "${actor|%s}",     padLeft = 11 },
+    { newline = true },
+    { color = addon.color.notification.SYSTEM,    text = "C: " },
+    { color = addon.color.notification.CATEGORY,  text = "${category|%s}",  padLeft = 5 },
+    { color = addon.color.notification.SYSTEM,    text = " ID: " },
+    { color = addon.color.notification.ID,        text = "${id|%s}",        padLeft = 5 },
+    { color = addon.color.notification.SYSTEM,    text = " Anim: " },
+    { color = addon.color.notification.ANIMATION, text = "${animation|%s}", padLeft = 4 },
+    { color = addon.color.notification.SYSTEM,    text = " Msg: " },
+    { color = addon.color.notification.MESSAGE,   text = "${message|%s}",   padLeft = 3 },
 }
+```
 
-addon.onIncomingText = function(mode, text)
-    local data = { text = text }
-    -- Template: A list of segments to be rendered
-    -- Values: A table of values to replace in the template. The keys are the format specifiers in the template
-    -- Freeze: If true, will prevent the box from being closed until another box unfreezes it
-    backend.boxCreate(addon.template, data, false)
-end
+Then, when you have data to display:
 
-return addon
+```lua
+local data = { name = "Name", actor = 5, category = 10, id = 15, animation = 20, message = 25 }
+-- Freeze: If true, will prevent the notification from being closed until another notification unfreezes it
+backend.notificationCreate(addon.template, data, false)
 ```
 
 ### Storing data in a structured way

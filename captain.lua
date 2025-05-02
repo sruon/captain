@@ -1,3 +1,6 @@
+---@diagnostic disable: undefined-global
+---@diagnostic disable: lowercase-global
+
 -- Addon info
 local name     = 'captain'
 local author   = 'zach2good'
@@ -19,28 +22,54 @@ elseif _addon then
 end
 
 -- Globals
----@type FullBackend
-backend           = require('backend/backend')
-utils             = require('utils')
+---@type Ashitav4Backend|WindowerBackend
+backend                 = require('backend/backend')
+utils                   = require('utils')
 ---@type table<number, ColorData>
-colors            = require('libs/colors/colors')
+colors                  = require('libs/colors/colors')
+local notifications     = require('libs/notifications')
 
-captain           =
+captain                 =
 {
-    addons       = {},
-    boxMgr       = nil,
-    isCapturing  = false,
-    reloadSignal = false,
-    settings     = backend.loadConfig('captain', require('data/defaults'))
+    addons          = {},
+    isCapturing     = false,
+    reloadSignal    = false,
+    showConfig      = false,
+    settings        = backend.loadConfig('captain', require('data/defaults')),
+    notificationMgr = nil,
 }
 
+captain.notificationMgr = notifications.new(captain.settings.notifications or {})
+
 ---@type Command[]
-local commandsMap = {
-    { cmd = 'start',  desc = 'Start capturing',              keybind = { key = 'c', down = true, ctrl = true, alt = true } },
-    { cmd = 'stop',   desc = 'Stop capturing',               keybind = { key = 'v', down = true, ctrl = true, alt = true } },
-    { cmd = 'toggle', desc = 'Start/stop capturing',         keybind = { key = 'x', down = true, ctrl = true } },
-    { cmd = 'split',  desc = 'Stop and start a new capture', keybind = nil },
-    { cmd = 'reload', desc = 'Reload captain',               keybind = { key = 'z', down = true, ctrl = true } },
+local commandsMap       =
+{
+    { cmd = '',       desc = 'Open configuration menu (Ashita only)' },
+    {
+        cmd = 'start',
+        desc = 'Start capturing',
+        keybind =
+        {
+            key = 'c',
+            down = true,
+            ctrl = true,
+            alt = true,
+        },
+    },
+    {
+        cmd = 'stop',
+        desc = 'Stop capturing',
+        keybind =
+        {
+            key = 'v',
+            down = true,
+            ctrl = true,
+            alt = true,
+        },
+    },
+    { cmd = 'toggle', desc = 'Start/stop capturing',                 keybind = { key = 'x', down = true, ctrl = true } },
+    { cmd = 'split',  desc = 'Stop and start a new capture',         keybind = nil },
+    { cmd = 'reload', desc = 'Reload captain',                       keybind = { key = 'z', down = true, ctrl = true } },
 }
 
 ---@param name string
@@ -48,10 +77,11 @@ local commandsMap = {
 ---@param ... any
 ---@return boolean, any
 local function safe_call(name, func, ...)
+    ---@diagnostic disable-next-line: deprecated
     local unpack = unpack or table.unpack
     local args = table.pack(...)
     local function handler(err)
-        return debug.traceback(string.format("[%s] %s", name, tostring(err)), 2)
+        return debug.traceback(string.format('[%s] %s', name, tostring(err)), 2)
     end
 
     local ok, result = xpcall(function()
@@ -67,6 +97,11 @@ end
 
 -- Notify addons of a capture starting
 local function StartCapture()
+    if captain.isCapturing then
+        backend.msg('captain', 'already capturing')
+        return
+    end
+
     local date = os.date('*t')
     local foldername = string.format('%d-%d-%d_%d_%d', date['year'], date['month'], date['day'], date['hour'],
         date['min'])
@@ -83,12 +118,16 @@ local function StartCapture()
             end
         end
     else
-        backend.msg('captain', "charname was nil, aborting capture")
+        backend.msg('captain', 'charname was nil, aborting capture')
     end
 end
 
 -- Notify addons of a capture stopping
 local function StopCapture()
+    if not captain.isCapturing then
+        return
+    end
+
     backend.msg('captain', 'stopping capture')
 
     for addonName, addon in pairs(captain.addons) do
@@ -146,7 +185,7 @@ backend.register_event_load(function()
     for _, fileName in pairs(backend.list_files('addons')) do
         local addonName, modulePath
 
-        local normalizedFileName = fileName:gsub("\\", "/")
+        local normalizedFileName = fileName:gsub('\\', '/')
 
         -- addons/actionview.lua
         local rootAddon = normalizedFileName:match('^([^/]+)%.lua$')
@@ -163,10 +202,10 @@ backend.register_event_load(function()
         end
 
         if addonName then
-            local requirePath = modulePath:gsub("[/\\]", ".")
+            local requirePath = modulePath:gsub('[/\\]', '.')
             local addon = require(requirePath)
 
-            if addon and type(addon) == "table" then
+            if addon and type(addon) == 'table' then
                 local parsedAddonName = addon.name or addonName
                 captain.addons[parsedAddonName] = addon
             else
@@ -207,6 +246,8 @@ end)
 
 -- Unload event, removes keybinds
 backend.register_event_unload(function()
+    StopCapture()
+
     -- captain keybinds
     for _, entry in pairs(commandsMap) do
         if entry.keybind then
@@ -238,7 +279,7 @@ end)
 -- Handle addon specific commands
 backend.register_command(function(args)
     if #args == 0 then
-        return
+        captain.showConfig = not captain.showConfig
     end
 
     for addonName, addon in pairs(captain.addons) do
@@ -274,8 +315,8 @@ end)
 backend.register_event_incoming_packet(function(id, data, size)
     for addonName, addon in pairs(captain.addons) do
         if
-            (addon.filters and addon.filters.incoming and addon.filters.incoming[id]) or
-            (addon.filters and addon.filters.incoming and addon.filters.incoming[0x255])
+          (addon.filters and addon.filters.incoming and addon.filters.incoming[id]) or
+          (addon.filters and addon.filters.incoming and addon.filters.incoming[0x255])
         then
             if type(addon.onIncomingPacket) == 'function' then
                 -- addon.onIncomingPacket(id, data, size)
@@ -289,8 +330,8 @@ end)
 backend.register_event_outgoing_packet(function(id, data, size)
     for addonName, addon in pairs(captain.addons) do
         if
-            (addon.filters and addon.filters.outgoing and addon.filters.outgoing[id]) or
-            (addon.filters and addon.filters.outgoing and addon.filters.outgoing[0x255])
+          (addon.filters and addon.filters.outgoing and addon.filters.outgoing[id]) or
+          (addon.filters and addon.filters.outgoing and addon.filters.outgoing[0x255])
         then
             if type(addon.onOutgoingPacket) == 'function' then
                 safe_call(addonName .. '.onOutgoingPacket', addon.onOutgoingPacket, id, data, size)
@@ -317,12 +358,17 @@ backend.register_on_zone_change(function(zoneId)
     end
 end)
 
--- Render boxes, text boxes, if any. Notify addons of render event
+-- Render notifications, text boxes, if any. Notify addons of render event
 backend.register_event_prerender(function()
-    if captain.boxMgr then
-        captain.boxMgr:render()
+    -- User requested config menu
+    if captain.showConfig then
+        backend.configMenu()
     end
 
+    -- Render notifications
+    captain.notificationMgr:render()
+
+    -- Notify addons of render event
     for addonName, addon in pairs(captain.addons) do
         if type(addon.onPrerender) == 'function' then
             safe_call(addonName .. '.onPrerender', addon.onPrerender)

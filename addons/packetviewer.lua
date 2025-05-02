@@ -1,6 +1,6 @@
 -- Credits: Based on zach2good original work, adapted by sruon
 ---@class PacketViewerAddon : AddonInterface
----@field files { incomingAll: file?, outgoingAll: file?, bothAll: file?, outgoingPerId: table<number, file>, incomingPerId: table<number, file> }
+---@field files { incomingAll: File?, outgoingAll: File?, bothAll: File?, outgoingPerId: table<number, File>, incomingPerId: table<number, File> }
 ---@field captureDir? string
 ---@field windows { inputPacket: any, outputPacket: any }
 local addon =
@@ -40,17 +40,23 @@ addon.onIncomingPacket = function(id, data, size)
     local hexidstr = string.format('0x%.3X', id)
 
     if captain.isCapturing then
-        backend.fileAppend(addon.files.incomingAll, string.format('[%s] Packet %s\n', timestr, hexidstr))
-        backend.fileAppend(addon.files.incomingAll, string.hexformat_file(data, size) .. '\n')
-        backend.fileAppend(addon.files.bothAll, string.format('[%s] Incoming packet %s\n', timestr, hexidstr))
-        backend.fileAppend(addon.files.bothAll, string.hexformat_file(data, size) .. '\n')
-        if addon.files.incomingPerId[id] == nil then
-            addon.files.incomingPerId[id] = backend.fileOpen(addon.captureDir ..
-                'packetviewer/incoming/' .. hexidstr .. '.log')
+        if addon.files.incomingAll then
+            addon.files.incomingAll:append(string.format('[%s] Packet %s\n', timestr, hexidstr))
+            addon.files.incomingAll:append(string.hexformat_file(data, size) .. '\n')
         end
 
-        backend.fileAppend(addon.files.incomingPerId[id], string.format('[%s] Packet %s\n', timestr, hexidstr))
-        backend.fileAppend(addon.files.incomingPerId[id], string.hexformat_file(data, size) .. '\n')
+        if addon.files.bothAll then
+            addon.files.bothAll:append(string.format('[%s] Incoming packet %s\n', timestr, hexidstr))
+            addon.files.bothAll:append(string.hexformat_file(data, size) .. '\n')
+        end
+
+        if addon.files.incomingPerId[id] == nil then
+            addon.files.incomingPerId[id] = backend.fileOpen(addon.captureDir ..
+                'incoming/' .. hexidstr .. '.log')
+        end
+
+        addon.files.incomingPerId[id]:append(string.format('[%s] Packet %s\n', timestr, hexidstr))
+        addon.files.incomingPerId[id]:append(string.hexformat_file(data, size) .. '\n')
     end
 
     --addon.windows.inputPacket:updateTitle(string.format('[%s] Incoming packet %s', timestr, hexidstr))
@@ -62,17 +68,23 @@ addon.onOutgoingPacket = function(id, data, size)
     local hexidstr = string.format('0x%.3X', id)
 
     if captain.isCapturing then
-        backend.fileAppend(addon.files.outgoingAll, string.format('[%s] Packet %s\n', timestr, hexidstr))
-        backend.fileAppend(addon.files.outgoingAll, string.hexformat_file(data, size) .. '\n')
-        backend.fileAppend(addon.files.bothAll, string.format('[%s] Outgoing packet %s\n', timestr, hexidstr))
-        backend.fileAppend(addon.files.bothAll, string.hexformat_file(data, size) .. '\n')
-        if addon.files.outgoingPerId[id] == nil then
-            addon.files.outgoingPerId[id] = backend.fileOpen(addon.captureDir ..
-                'packetviewer/outgoing/' .. hexidstr .. '.log')
+        if addon.files.outgoingAll then
+            addon.files.outgoingAll:append(string.format('[%s] Packet %s\n', timestr, hexidstr))
+            addon.files.outgoingAll:append(string.hexformat_file(data, size) .. '\n')
         end
 
-        backend.fileAppend(addon.files.outgoingPerId[id], string.format('[%s] Packet %s\n', timestr, hexidstr))
-        backend.fileAppend(addon.files.outgoingPerId[id], string.hexformat_file(data, size) .. '\n')
+        if addon.files.bothAll then
+            addon.files.bothAll:append(string.format('[%s] Outgoing packet %s\n', timestr, hexidstr))
+            addon.files.bothAll:append(string.hexformat_file(data, size) .. '\n')
+        end
+
+        if addon.files.outgoingPerId[id] == nil then
+            addon.files.outgoingPerId[id] = backend.fileOpen(addon.captureDir ..
+                'outgoing/' .. hexidstr .. '.log')
+        end
+
+        addon.files.outgoingPerId[id]:append(string.format('[%s] Packet %s\n', timestr, hexidstr))
+        addon.files.outgoingPerId[id]:append(string.hexformat_file(data, size) .. '\n')
     end
 
     --addon.windows.outputPacket:updateTitle(string.format('[%s] Outgoing packet %s', timestr, hexidstr))
@@ -81,9 +93,9 @@ end
 
 addon.onCaptureStart = function(captureDir)
     addon.captureDir        = captureDir
-    addon.files.incomingAll = backend.fileOpen(addon.captureDir .. 'packetviewer/incoming.log')
-    addon.files.outgoingAll = backend.fileOpen(addon.captureDir .. 'packetviewer/outgoing.log')
-    addon.files.bothAll     = backend.fileOpen(addon.captureDir .. 'packetviewer/full.log')
+    addon.files.incomingAll = backend.fileOpen(addon.captureDir .. 'incoming.log')
+    addon.files.outgoingAll = backend.fileOpen(addon.captureDir .. 'outgoing.log')
+    addon.files.bothAll     = backend.fileOpen(addon.captureDir .. 'full.log')
 end
 
 addon.onCaptureStop = function()

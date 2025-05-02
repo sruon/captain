@@ -1,3 +1,17 @@
+---@diagnostic disable
+---@lint-ignore
+-- luacheck: ignore
+-- stylua: ignore
+
+---@class BitReader
+---@field data number[]|nil                                         -- The byte data being read
+---@field bit number                                                -- The current bit position within the current byte
+---@field pos number                                                -- The current byte position in the data
+---@field new fun(self: BitReader, o?: table): BitReader            -- Creates a new BitReader instance
+---@field set_data fun(self: BitReader, data: string|number[]): nil -- Sets the data to read
+---@field set_pos fun(self: BitReader, pos: number): nil            -- Sets the current position
+---@field read fun(self: BitReader, bits: number): number           -- Reads bits from the data
+
 -- Slightly modified to play nice with Windower Lua 5.1
 -- - Removed common require that's already available globally to the Ashita backend
 -- - Changed the ashita.switch() to use if/else if/else
@@ -24,11 +38,13 @@
 * along with Ashita.  If not, see <https://www.gnu.org/licenses/>.
 --]]
 
-local bitreader = T {
-    data = nil,
-    bit  = 0,
-    pos  = 0,
-};
+---@type BitReader
+local bitreader = T
+  {
+      data = nil,
+      bit  = 0,
+      pos  = 0,
+  }
 
 --[[
 * Creates and returns a new bit reader instance.
@@ -37,12 +53,12 @@ local bitreader = T {
 * @return {table} The bit reader instance.
 --]]
 function bitreader:new(o)
-    o = o or T {};
+    o = o or T {}
 
-    setmetatable(o, self);
-    self.__index = self;
+    setmetatable(o, self)
+    self.__index = self
 
-    return o;
+    return o
 end
 
 --[[
@@ -73,8 +89,8 @@ end
 * @param {number} pos - The byte position to set the reader to. (Resets the bit position.)
 --]]
 function bitreader:set_pos(pos)
-    self.bit = 0;
-    self.pos = pos;
+    self.bit = 0
+    self.pos = pos
 end
 
 --[[
@@ -84,28 +100,28 @@ end
 * @return {number} The read value.
 --]]
 function bitreader:read(bits)
-    local ret = 0;
+    local ret = 0
 
     if (self.data == nil) then
-        return ret;
+        return ret
     end
 
     for x = 0, bits - 1 do
         if self.pos + 1 <= #self.data then
-            local val = bit.lshift(bit.band(self.data[self.pos + 1], 1), x);
-            self.data[self.pos + 1] = bit.rshift(self.data[self.pos + 1], 1);
-            ret = bit.bor(ret, val);
+            local val = bit.lshift(bit.band(self.data[self.pos + 1], 1), x)
+            self.data[self.pos + 1] = bit.rshift(self.data[self.pos + 1], 1)
+            ret = bit.bor(ret, val)
         end
 
-        self.bit = self.bit + 1;
+        self.bit = self.bit + 1
         if (self.bit == 8) then
-            self.bit = 0;
-            self.pos = self.pos + 1;
+            self.bit = 0
+            self.pos = self.pos + 1
         end
     end
 
-    return ret;
+    return ret
 end
 
 -- Return the BitReader table..
-return bitreader;
+return bitreader

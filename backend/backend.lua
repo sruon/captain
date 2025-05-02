@@ -1,4 +1,7 @@
----@type BackendBase
+---@class BackendBase
+---@class Ashitav4Backend : BackendBase, BackendInterface
+---@class WindowerBackend : BackendBase, BackendInterface
+
 local backend
 
 --------------------------------
@@ -18,29 +21,46 @@ end
 --------------------------------
 -- Add additional _platform agnostic_ functions to supplement backends
 --------------------------------
-local files             = require('backend/files')
-local packets           = require('libs/packets/parser')
-local boxes             = require('libs/boxes')
-local database          = require('libs/database')
+local files                = require('backend/files')
+local packets              = require('libs/packets/parser')
+local database             = require('libs/database')
 
 --------------------------------
 -- Handles opening, or creating, a file object. Returns it.
 --------------------------------
-backend.fileOpen        = function(path)
-    local file = {
+backend.fileOpen           = function(path)
+    local file =
+    {
         path = backend.script_path() .. path,
         stream = files.new(path, true),
         locked = false,
         scheduled = false,
-        buffer = ''
+        buffer = '',
     }
+
+    file.append = function(self, text)
+        backend.fileAppend(self, text)
+    end
+
+    file.flush = function(self)
+        backend.fileWrite(self)
+    end
+
+    file.clear = function(self)
+        backend.fileClear(self)
+    end
+
+    file.read = function(self)
+        return backend.fileRead(self)
+    end
+
     return file
 end
 
 --------------------------------
 -- Handles writing to a file (gently)
 --------------------------------
-backend.fileAppend      = function(file, text)
+backend.fileAppend         = function(file, text)
     if not file.locked then
         file.buffer = file.buffer .. text
         if not file.scheduled then
@@ -55,7 +75,7 @@ end
 --------------------------------
 -- Writes to a file and empties the buffer
 --------------------------------
-backend.fileWrite       = function(file)
+backend.fileWrite          = function(file)
     file.locked = true
     local to_write = file.buffer
     file.buffer = ''
@@ -65,91 +85,68 @@ backend.fileWrite       = function(file)
 end
 
 --------------------------------
+-- Reads the entire file and returns it
+--------------------------------
+backend.fileRead           = function(file)
+    local data = file.stream:read('*all*')
+    if data == nil then
+        return ''
+    end
+    return data
+end
+
+--------------------------------
 -- Zero out a file and empties the buffer
 --------------------------------
-backend.fileClear       = function(file)
+backend.fileClear          = function(file)
     file.stream:write('')
     file.buffer = ''
     file.scheduled = false
 end
 
-backend.databaseOpen    = function(path, opts)
+backend.databaseOpen       = function(path, opts)
     local file = backend.fileOpen(path)
     local db = database.new(file, opts)
+    db:load()
     return db
 end
 
 --------------------------------
--- Box display
+-- Notification display
 --------------------------------
-backend.boxCreate       = function(boxTemplate, boxData, freeze)
-    if not captain.boxMgr then
-        captain.boxMgr = boxes.new(backend.getSetting('box', {}))
+
+backend.notificationCreate = function(emitter, title, dataFields, frozen)
+    if not dataFields or type(dataFields) ~= 'table' then
+        dataFields = {}
     end
 
-    if captain.boxMgr then
-        local segments = captain.boxMgr:renderSegments(boxTemplate, boxData)
-        captain.boxMgr:create(segments, freeze)
+    -- Temporary: Send notifications to chatlog, until we figure out a better mechanism
+    if #dataFields > 0 then
+        local fieldMsg = ''
+        for i, field in ipairs(dataFields) do
+            fieldMsg = fieldMsg .. string.format('%s: %s',
+                colors[captain.settings.notifications.colors.key].chatColorCode .. field[1],
+                colors[captain.settings.notifications.colors.value].chatColorCode .. tostring(field[2]))
+            if i < #dataFields then
+                fieldMsg = fieldMsg .. ', '
+            end
+        end
+        backend.msg(emitter, colors[captain.settings.notifications.colors.title].chatColorCode .. title .. '\n' .. fieldMsg)
     end
+
+    -- Pass directly to the notification manager
+    captain.notificationMgr:create(
+        {
+            title = title,
+            data = dataFields, -- Array of key-value pairs
+        }, frozen or false)
 end
 
 --------------------------------
 -- Packets parsing
 --------------------------------
-backend.parsePacket     = function(dir, packet)
+backend.parsePacket        = function(dir, packet)
     return packets.parse(dir, packet)
-end
-
---------------------------------
--- Captain specific settings
---------------------------------
-backend.getSetting      = function(keyPath, default)
-    if not captain.settings then
-        captain.settings = backend.loadConfig('captain', require('data/defaults'))
-    end
-
-    local value = captain.settings
-    for key in string.gmatch(keyPath, "([^%.]+)") do
-        if type(value) ~= "table" then return nil end
-        value = value[key]
-        if value == nil then
-            return nil or default
-        end
-    end
-
-    return value
-end
-
-backend.setSetting      = function(keyPath, value)
-    if not captain.settings then
-        captain.settings = backend.loadConfig('captain', require('data/defaults'))
-    end
-
-    local keys = {}
-    for key in string.gmatch(keyPath, "([^%.]+)") do
-        table.insert(keys, key)
-    end
-
-    if #keys == 1 then
-        captain.settings[keys[1]] = value
-
-        backend.saveConfig('captain')
-        return true
-    end
-
-    local current = captain.settings
-    for i = 1, #keys - 1 do
-        local key = keys[i]
-        if type(current[key]) ~= "table" then
-            current[key] = {}
-        end
-        current = current[key]
-    end
-
-    current[keys[#keys]] = value
-
-    backend.saveConfig('captain')
-    return true
 end
 
 return backend

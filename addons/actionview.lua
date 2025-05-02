@@ -1,5 +1,12 @@
 -- Credits: Original code written by ibm2431, ported by sruon
 ---@class ActionViewAddon : AddonInterface
+---@field files { simple: File?, capture: { simple: File? } } File handles for logging
+---@field rootDir string Directory where logs are stored
+---@field captureDir string? Directory where capture logs are stored
+---@field color { log: table, box: table, notification: table } Color settings for display
+---@field h table Headers for log strings
+---@field vars { zone_start: number, zone_end: number } Zone-specific variables
+---@field databases { global: table, capture: table } Action databases
 local addon =
 {
     name            = 'ActionView',
@@ -14,7 +21,8 @@ local addon =
     defaultSettings =
     {
         mobsOnly = true,
-        category = {
+        category =
+        {
             [1]  = false, -- Melee Attack
             [2]  = false, -- Ranged Attack execution
             [3]  = true,  -- WS or some damaging JAs; "ability IDs are unshifted, WS IDs shifted to +768"
@@ -29,16 +37,17 @@ local addon =
             [12] = false, -- Ranged Attack initiation
             [13] = true,  -- Pet TP Moves
             [14] = true,  -- Non-blinkable job abilities (Jigs, Sambas, Steps, Waltzes, Flourish)
-            [15] = true   -- Some RUN job abilities
+            [15] = true,  -- Some RUN job abilities
         },
-        color = {
+        color =
+        {
             id        = 22, -- Red Lotus Blade
             name      = 24, -- 34
             actor     = 12, -- 01234567 (Name)
             animation = 20, -- 3
             category  = 11, -- 3
             message   = 25, -- 185
-            system    = 19
+            system    = 19,
         },
         database =
         {
@@ -50,8 +59,8 @@ local addon =
             },
             ignore_updates =
             {
-            }
-        }
+            },
+        },
     },
     databases       =
     {
@@ -61,24 +70,50 @@ local addon =
             category =
             {
 
-            }
+            },
         },
         capture =
         {
             zone = nil,
             category =
             {
-            }
-        }
-    }
+            },
+        },
+    },
+    files           =
+    {
+        simple  = nil,
+        capture =
+        {
+            simple = nil,
+        },
+    },
+    category        =
+    {
+        ['1']  = 'Melee', -- Melee Attack
+        ['2']  = 'RA',    -- Ranged Attack execution
+        ['3']  = 'WS-JA', -- WS or some damaging JAs; "ability IDs are unshifted, WS IDs shifted to +768"
+        ['4']  = 'MA',    -- Casted magic
+        ['5']  = 'Item',  -- Item Usage execution
+        ['6']  = 'JA',    -- Most job abilities
+        ['7']  = 'TP-St', -- TP Move Start "Players: add 768, compare abils.xml. Mobs: -256, mabils.xml"
+        ['8']  = 'MA-St', -- Spell Start
+        ['9']  = 'Itm-S', -- Item Usage initiation
+        ['10'] = 'Unkwn', -- Unknown category
+        ['11'] = 'Mb-TP', -- Mob TP moves
+        ['12'] = 'RA-St', -- Ranged Attack initiation
+        ['13'] = 'Pt-TP', -- Pet TP Moves
+        ['14'] = 'Nb-JA', -- Non-blinkable job abilities (Jigs, Sambas, Steps, Waltzes, Flourish)
+        ['15'] = 'RN-JA', -- Some RUN job abilities
+    },
 }
 
 -- Builds a colorized chatlog string
 --------------------------------------------------
 local function buildChatlogString(info)
     local chatlog_string = addon.h.name .. addon.h.category .. '%s ' ..
-        addon.h.id .. '%s ' .. addon.h.animation .. '%s ' ..
-        addon.h.message .. '%s'
+      addon.h.id .. '%s ' .. addon.h.animation .. '%s ' ..
+      addon.h.message .. '%s'
     return string.format(chatlog_string, info.name, info.category, info.id, info.animation, info.message)
 end
 
@@ -99,7 +134,8 @@ end
 local function parseAction(action)
     local result = {}
 
-    local categories = {
+    local categories =
+    {
         [1] = function(action)
             return 'Melee Attack'
         end,                                               -- Melee Attack
@@ -118,7 +154,7 @@ local function parseAction(action)
             return backend.get_spell_name(action.cmd_arg)
         end,
         [5] = function(action) return backend.get_item_name(action.cmd_arg) end, -- Item Usage execution
-        [6] = function(action)                                                         -- Most job abilities; can include monster abilities
+        [6] = function(action)                                                   -- Most job abilities; can include monster abilities
             if isMob(action.m_uID) then
                 return backend.get_monster_ability_name(action.cmd_arg)
             else
@@ -131,16 +167,16 @@ local function parseAction(action)
             else
                 return backend.get_weapon_skill_name(action.target[1].result[1].value)
             end
-        end,                                                                                              -- TP Move Start
+        end,                                                                                        -- TP Move Start
         [8] = function(action) return backend.get_spell_name(action.target[1].result[1].value) end, -- Spell Start
         [9] = function(action) return backend.get_item_name(action.target[1].result[1].value) end,  -- Item Usage initiation
         [11] = function(action)
             return backend.get_monster_ability_name(action.cmd_arg)
         end,
-        [12] = function(action) return 'Ranged Attack (Start)' end,                            -- Ranged Attack initiation
+        [12] = function(action) return 'Ranged Attack (Start)' end,                      -- Ranged Attack initiation
         [13] = function(action) return backend.get_job_ability_name(action.cmd_arg) end, -- Pet TP Moves
         [14] = function(action) return backend.get_job_ability_name(action.cmd_arg) end, -- Non-blinkable job abilities (Jigs, Sambas, Steps, Waltzes, Flourish)
-        [15] = function(action) return backend.get_job_ability_name(action.cmd_arg) end  -- Some RUN job abilities
+        [15] = function(action) return backend.get_job_ability_name(action.cmd_arg) end, -- Some RUN job abilities
     }
     result.ActionType = action.ActionType
     result.category = action.cmd_no
@@ -217,12 +253,39 @@ local function recordAction(result, str_info)
     local new_mob_ability = addActionToMobList(addon.databases.global, result)
 
     local simple_string = buildSimpleString(str_info)
-    backend.fileAppend(addon.file.simple, simple_string .. "\n\n")
+    addon.files.simple:append(simple_string .. '\n\n')
 
     if addon.databases.capture.zone then
         new_mob_ability = addActionToMobList(addon.databases.capture, result)
-        backend.fileAppend(addon.file.capture.simple, simple_string .. "\n\n")
+        addon.files.capture.simple:append(simple_string .. '\n\n')
     end
+end
+
+local function createActionNotification(result)
+    -- Create title with ability name
+    local title = string.format('%s [%s]', result.name, result.ActionType)
+
+    -- Extract data fields from result - use array of key-value pairs to preserve order
+    local dataFields = {}
+
+    -- Add actor information
+    local actorText = result.actor
+    local mob = backend.get_mob_by_id(result.actor)
+    if mob and mob.name then
+        actorText = string.format('%d (%s)', result.actor, mob.name)
+    end
+
+    table.insert(dataFields, { 'Actor', actorText })
+
+    -- Add important fields
+    table.insert(dataFields, { 'ID', result.id })
+    table.insert(dataFields, { 'Animation', result.animation })
+
+    if result.message then
+        table.insert(dataFields, { 'Message', result.message })
+    end
+
+    backend.notificationCreate('AView', title, dataFields, false)
 end
 
 local function checkAction(data)
@@ -237,34 +300,28 @@ local function checkAction(data)
             local result, str_info = parseAction(action)
             if result and (result.message ~= 84) then
                 recordAction(result, str_info)
-                local actionCopy = T {}
-                for k, v in pairs(result) do
-                    actionCopy[k] = v
-                end
 
-                actionCopy.category = actionCopy.ActionType
-                local mob = backend.get_mob_by_id(actionCopy.actor)
-                if mob and mob.name then
-                    actionCopy.actor = actionCopy.actor .. ' (' .. mob.name .. ')'
-                end
+                -- Create notification with the new API
+                createActionNotification(result)
 
-                backend.boxCreate(addon.template.all, actionCopy, false)
-                backend.msg('AView', buildChatlogString(str_info))
+                -- Notification already creates a chatlog string
+                -- backend.msg('AView', buildChatlogString(str_info))
             end
         end
     end
 end
+
 -- Prepares master databases for all action categories
 --------------------------------------------------
 local function prepareCategoryDatabases()
     for i = 1, 15 do
-        local path = string.format('%s/category/%s.lua', addon.rootDir, addon.template.category[tostring(i)])
+        local path = string.format('%s/category/%s.lua', addon.rootDir, addon.category[tostring(i)])
         addon.databases.global.category[i] = backend.databaseOpen(path, addon.settings.database)
 
         -- Prepare category databases for a capture
         if captain.isCapturing then
             local capture_path = string.format('%s/category/%s.lua', addon.captureDir,
-                addon.template.category[tostring(i)])
+                addon.category[tostring(i)])
             addon.databases.capture.category[i] = backend.databaseOpen(capture_path, addon.settings.database)
         end
     end
@@ -285,17 +342,16 @@ end
 -- Sets up tables and files for use in the current zone
 --------------------------------------------------
 local function setupZone(zone)
-    addon.vars.current_zone = zone
     local current_zone = backend.zone_name()
     prepareZoneDatabase(zone)
 
     addon.vars.zone_start = bit.lshift(zone, 12) + 0x1000000
     addon.vars.zone_end = addon.vars.zone_start + 1024 -- Full block of NPCs and mobs
 
-    addon.file.simple = backend.fileOpen(addon.rootDir .. 'simple/' .. current_zone .. '.log')
+    addon.files.simple = backend.fileOpen(addon.rootDir .. 'simple/' .. current_zone .. '.log')
 
     if captain.isCapturing then
-        addon.file.capture.simple = backend.fileOpen(addon.captureDir .. 'simple/' .. current_zone .. '.log')
+        addon.files.capture.simple = backend.fileOpen(addon.captureDir .. 'simple/' .. current_zone .. '.log')
     end
 end
 
@@ -309,7 +365,8 @@ local function initialize(rootDir)
 
     addon.rootDir = rootDir
     addon.color = {}
-    addon.color.log = { -- Preformatted character codes for log colors.
+    addon.color.log =
+    { -- Preformatted character codes for log colors.
         ID        = colors[addon.settings.color.id].chatColorCode,
         NAME      = colors[addon.settings.color.name].chatColorCode,
         ACTOR     = colors[addon.settings.color.actor].chatColorCode,
@@ -318,17 +375,19 @@ local function initialize(rootDir)
         MESSAGE   = colors[addon.settings.color.message].chatColorCode,
         SYSTEM    = colors[addon.settings.color.system].chatColorCode,
     }
-    addon.color.box = { -- \\cs(#,#,#) values for Windower text boxes
-        ID        = colors[addon.settings.color.id].rgb,
+    addon.color.notification =
+    { -- \\cs(#,#,#) values for Windower text boxes
+        SYSTEM    = colors[addon.settings.color.system].rgb,
         NAME      = colors[addon.settings.color.name].rgb,
         ACTOR     = colors[addon.settings.color.actor].rgb,
-        ANIMATION = colors[addon.settings.color.animation].rgb,
         CATEGORY  = colors[addon.settings.color.category].rgb,
+        ID        = colors[addon.settings.color.id].rgb,
+        ANIMATION = colors[addon.settings.color.animation].rgb,
         MESSAGE   = colors[addon.settings.color.message].rgb,
-        SYSTEM    = colors[addon.settings.color.system].rgb,
     }
 
-    addon.h = { -- Headers for log string. ex: NPC:
+    addon.h =
+    { -- Headers for log string. ex: NPC:
         id        = addon.color.log.SYSTEM .. 'ID: ' .. addon.color.log.ID,
         name      = addon.color.log.NAME .. '%s' .. addon.color.log.SYSTEM .. ' > ',
         animation = addon.color.log.SYSTEM .. 'Anim: ' .. addon.color.log.ANIMATION,
@@ -340,48 +399,11 @@ local function initialize(rootDir)
     -- VARIABLES AND TEMPLATES
     ---------------------------------------------------------------------------------
 
-    addon.template = {
-        all =
-        {
-            { color = addon.color.box.NAME,      text = "${name|%s}" },
-            { newline = true },
-            { color = addon.color.box.SYSTEM,    text = "Actor: " },
-            { color = addon.color.box.ACTOR,     text = "${actor|%s}",     padLeft = 11 },
-            { newline = true },
-            { color = addon.color.box.SYSTEM,    text = "C: " },
-            { color = addon.color.box.CATEGORY,  text = "${category|%s}",  padLeft = 5 },
-            { color = addon.color.box.SYSTEM,    text = " ID: " },
-            { color = addon.color.box.ID,        text = "${id|%s}",        padLeft = 5 },
-            { color = addon.color.box.SYSTEM,    text = " Anim: " },
-            { color = addon.color.box.ANIMATION, text = "${animation|%s}", padLeft = 4 },
-            { color = addon.color.box.SYSTEM,    text = " Msg: " },
-            { color = addon.color.box.MESSAGE,   text = "${message|%s}",   padLeft = 3 },
-            { newline = true },
-        },
-        category = {
-            ['1']  = 'Melee', -- Melee Attack
-            ['2']  = 'RA',    -- Ranged Attack execution
-            ['3']  = 'WS-JA', -- WS or some damaging JAs; "ability IDs are unshifted, WS IDs shifted to +768"
-            ['4']  = 'MA',    -- Casted magic
-            ['5']  = 'Item',  -- Item Usage execution
-            ['6']  = 'JA',    -- Most job abilities
-            ['7']  = 'TP-St', -- TP Move Start "Players: add 768, compare abils.xml. Mobs: -256, mabils.xml"
-            ['8']  = 'MA-St', -- Spell Start
-            ['9']  = 'Itm-S', -- Item Usage initiation
-            ['10'] = 'Unkwn', -- Unknown category
-            ['11'] = 'Mb-TP', -- Mob TP moves
-            ['12'] = 'RA-St', -- Ranged Attack initiation
-            ['13'] = 'Pt-TP', -- Pet TP Moves
-            ['14'] = 'Nb-JA', -- Non-blinkable job abilities (Jigs, Sambas, Steps, Waltzes, Flourish)
-            ['15'] = 'RN-JA'  -- Some RUN job abilities
-        }
-    }
-
     addon.vars = {}
 
-    addon.file = T {}
-    addon.file.capture = T {}
-    addon.file.simple = backend.fileOpen(addon.rootDir .. backend.player_name() .. '/logs/simple.log')
+    addon.files = {}
+    addon.files.capture = {}
+    addon.files.simple = backend.fileOpen(addon.rootDir .. backend.player_name() .. '/logs/simple.log')
 
     prepareCategoryDatabases()
     setupZone(backend.zone())

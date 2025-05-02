@@ -1,3 +1,5 @@
+---@diagnostic disable: deprecated
+
 local backend  = require('backend/backend')
 local serpent  = require("libs/serpent")
 
@@ -135,8 +137,14 @@ utils.getTableKeys    = function(tab)
     return keyset
 end
 
-utils.dump            = function(o)
-    print(serpent.block(o, { comment = false, sortkeys = true }))
+utils.dump            = function(o, print)
+    local d = serpent.block(o, { comment = false, sortkeys = true })
+
+    if print then
+        backend.msg('dump', d)
+    end
+
+    return d
 end
 
 utils.keyBindToString = function(keyBind)

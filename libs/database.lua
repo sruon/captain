@@ -1,3 +1,7 @@
+-- Structured data storage and diffing
+-- This module provides a database-like structure for storing and diffing data.
+-- It allows for deep merging of data fragments, tracking changes, and saving to a file.
+-- It is fairly naive and not optimized for performance.
 local serpent = require('libs/serpent')
 
 local function deep_clone(tbl)
@@ -75,9 +79,22 @@ local function make_sortkeys(preferred_keys)
     end
 end
 
--- Database
-local Database = {}
-Database.__index = Database
+---@class Database
+---@field entries table
+---@field dirty boolean
+---@field file File
+---@field ignore_updates table
+---@field max_history number
+---@field sort_keys table
+---@field save fun(self): boolean
+---@field load fun(self): boolean
+---@field close fun(self)
+---@field add_or_update fun(self, id: any, fragment: table): number
+---@field get fun(self, id: any): table | nil
+---@field count fun(self): number
+---@field find_by fun(self, path: string, expected: any): table | nil, number | nil
+local Database          = {}
+Database.__index        = Database
 
 Database.RESULT_NEW     = 1
 Database.RESULT_UPDATED = 2
@@ -94,6 +111,9 @@ function Database.new(file, opts)
     }, Database)
 end
 
+-- Update or add a new entry at the specified key
+-- This function will merge the provided fragment into the existing data, if any
+-- History of changes is stored alongside the data, up to Database.max_history
 function Database:add_or_update(id, fragment)
     local entry = self.entries[id]
     local is_new = false
@@ -162,6 +182,7 @@ function Database:count()
     return count
 end
 
+-- Search entries by a specific path and value. Use when attempting to match data along non-PK paths.
 function Database:find_by(path, expected)
     local segments = {}
     for segment in string.gmatch(path, "[^%.]+") do
@@ -182,6 +203,7 @@ function Database:find_by(path, expected)
     return nil, nil
 end
 
+-- Serialize the database and saves it to the file
 function Database:save()
     if not self.dirty then
         return false
@@ -191,37 +213,68 @@ function Database:save()
     local serpent_opts_data = { comment = false, compact = false, sparse = true, sortkeys = data_sort }
     local serpent_opts_history = { comment = false, compact = true, sparse = true }
 
-    self.file.stream:write("return {\n")
+    self.file:clear()
+    self.file:append("return {\n")
 
     for id, entry in pairs(self.entries) do
         if entry then
             if not entry._dirty and entry._serialized then
                 -- Use cached serialized line if not dirty
-                self.file.stream:append(entry._serialized .. "\n")
+                self.file:append(entry._serialized .. "\n")
             else
                 -- Re-serialize because dirty
                 local sorted_data = serpent.line(entry.data, serpent_opts_data)
                 local history_line = serpent.line(entry.history, serpent_opts_history)
-
+                local pk = type(id) == "string" and string.format("'%s'", id) or tostring(id)
                 local line = string.format(
-                        "  ['%s'] = {version = %d, data = %s, history = %s},",
-                        tostring(id), entry.version, sorted_data, history_line
+                    "  [%s] = {version = %d, data = %s, history = %s},",
+                    pk, entry.version, sorted_data, history_line
                 )
 
                 entry._serialized = line
                 entry._dirty = false
 
-                self.file.stream:append(line .. "\n")
+                self.file:append(line .. "\n")
             end
         end
     end
 
-    self.file.stream:append("}\n")
+    self.file:append("}\n")
     self.dirty = false
 
     return true
 end
 
+function Database:load()
+  local content = self.file:read()
+
+  if not content or content == "" then
+    self.entries = {}
+    return false
+  end
+
+  ---@diagnostic disable-next-line
+  local chunk, err = (loadstring or load)(content)
+  if not chunk then
+    backend.msg('captain', string.format('failed to load existing database: %s', err))
+    return false
+  end
+
+  -- Execute the chunk to get the table
+  local success, result = pcall(chunk)
+  if not success then
+    backend.msg('captain', string.format('failed to execute existing database: %s', err))
+    return false
+  end
+
+  self.entries = result or {}
+
+  self.dirty = false
+
+  return true
+end
+
+-- Close the database and save changes
 function Database:close()
     self:save()
 end

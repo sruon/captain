@@ -58,13 +58,13 @@ Several addons ported from the original capture addon are available:
 
 ### General
 
-- `/captain hide` to stop showing the GUI elements
-- `/captain show`  to show the GUI elements
-- `/captain start` (`CTRL + ALT + C`) to begin a capture
-- `/captain stop` (`CTRL + ALT + V`) to end a capture
-- `/captain toggle` (`CTRL + X`) to toggle recording
-- `/captain split` to roll over to a new capture
-- `/captain reload` (`CTRL + Q`) to reload captain
+- `/cap hide` to stop showing the GUI elements
+- `/cap show`  to show the GUI elements
+- `/cap start` (`CTRL + ALT + C`) to begin a capture
+- `/cap stop` (`CTRL + ALT + V`) to end a capture
+- `/cap toggle` (`CTRL + X`) to toggle recording
+- `/cap split` to roll over to a new capture
+- `/cap reload` (`CTRL + Z`) to reload captain
 - `SHIFT + DRAG` to drag text boxes around
 
 ### Differences with Windower capture
@@ -77,6 +77,7 @@ Several addons ported from the original capture addon are available:
 - PlayerInfo displays current ZoneServer IP/port. It is also logged in the capture folders.
 
 ### TODO
+- Witness protection
 - Retail testing
 - Compare with Windower capture addon
 - Rewrite HPTrack
@@ -99,5 +100,6 @@ symbolic link created for C:\ffxi\Windower\addons\captain <<===>> C:\ffxi\captai
 - [Windower](https://www.windower.net/)
 - [Ashita](https://ashitaxi.com/)
 - `Packeteer` by atom0s
+- `XiPackets` by atom0s
 - `capture` by ibm2431
 - `PacketViewer` by Arcon
