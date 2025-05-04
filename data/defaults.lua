@@ -5,9 +5,7 @@ local s =
         scale        = 1,
         show         = true,
         autoHide     = true,
-        frozen       = false,
         hideDelay    = 5,
-        hide_ticking = false,
         max_num      = 4,
         spacing      = 8,
         offset       = -- Notifications will be offset from the bottom right of the screen
@@ -28,7 +26,7 @@ local s =
         },
         text         =
         {
-            size  = 16,
+            size  = 15,
             font  = 'Consolas',
             alpha = 255,
             red   = 255,
@@ -55,7 +53,6 @@ local s =
     textBox = -- Default text box settings
     {
         scale = 1,
-        store = {}, -- Windower only: Individual box settings
         defaults =
         {
             pos =

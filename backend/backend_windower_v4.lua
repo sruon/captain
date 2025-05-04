@@ -96,7 +96,6 @@ end
 --------------------------------
 -- Text Display
 --------------------------------
-
 --Override texts.new and texts.destroy to enable
 --movement only on shift+click
 local texts_settings                   = T {}
@@ -159,6 +158,8 @@ backend.textBox                  = function(id)
 
     box:updateText('')
     box:show()
+    box.impl:draggable(true)
+
     config.reload(newConf)
 
     return box
@@ -410,143 +411,281 @@ end
 
 local notifications = {}
 local notificationPositions = {}
+local is_dragging = false
+local drag_start = { x = 0, y = 0 }
+local drag_notification_pos = { x = 0, y = 0 }
+local dragged_notification = nil
+local drag_event_id = nil
+local move_event_id = nil
+local override_rendering = false
 
-backend.notificationDestroy = function(_)
-    local highest_visible_index = 0
-
-    for i = 1, captain.settings.notifications.max_num do
-        if notifications[i] and notifications[i]:visible() then
-            highest_visible_index = i
-        end
-    end
-
-    if highest_visible_index > 0 and notifications[highest_visible_index] then
-        notifications[highest_visible_index]:hide()
-    end
+-- Format text with color
+local function colorize(text, color_rgb)
+    return string.format('\\cs(%d,%d,%d)%s', color_rgb[1], color_rgb[2], color_rgb[3], text)
 end
 
+-- Centralized initialization for notifications
 local function notificationInit()
-    notificationPositions =
-    {
-        [1] = { x = captain.settings.notifications.pos.x, y = captain.settings.notifications.pos.y },
-    }
-    for i = 2, captain.settings.notifications.max_num do
-        notificationPositions[i] =
-        {
-            x = captain.settings.notifications.pos.x,
-            y = captain.settings.notifications.pos.y -
-              (((captain.settings.notifications.text.size + captain.settings.notifications.spacing + 2) * 4) * (i - 1)),
-        }
-    end
-
-    for i = 1, #notificationPositions do
-        local notification = texts.new('notification' .. i, captain.settings.notifications)
-        table.insert(notifications, notification)
-        texts.pos(notification, notificationPositions[i].x, notificationPositions[i].y)
-        texts.text(notification, 'Hello world!\n\n\n' .. i)
-    end
-
-    windower.register_event('mouse', function(type, x, y, delta)
-        if type == 2 and notifications[1]:hover(x, y) then
-            local cx, cy = notifications[1]:pos()
-            captain.settings.notifications.pos.x = cx
-            captain.settings.notifications.pos.y = cy
-            config.save(captain.settings)
-            for _, notification in ipairs(notifications) do
-                notification:hide()
-                texts.destroy(notification)
-            end
-            notifications = {}
-            notificationInit()
+    -- Basic validation
+    if not colors or not captain.settings or not captain.settings.notifications then return end
+    
+    -- Clear existing notifications
+    for _, notification in ipairs(notifications) do
+        if notification then
+            notification:hide()
+            texts.destroy(notification)
         end
+    end
+    notifications = {}
+    notificationPositions = {}
+    
+    -- Get screen dimensions and calculate scaled values
+    local screen_width = backend.get_resolution_width()
+    local screen_height = backend.get_resolution_height()
+    local scale = captain.settings.notifications.scale or 1
+    local scaled_width = 300 * scale
+    local scaled_height = 80 * scale
+    local scaled_spacing = (captain.settings.notifications.spacing or 8) * scale
+    local text_size = (captain.settings.notifications.text.size or 12) * scale
+    
+    -- Create positions for notifications
+    for i = 1, captain.settings.notifications.max_num do
+        local pos_x = screen_width - scaled_width - captain.settings.notifications.offset.x
+        local pos_y = screen_height - (scaled_height * i) - (scaled_spacing * (i-1)) - captain.settings.notifications.offset.y
+        notificationPositions[i] = { x = pos_x, y = pos_y }
+    end
+
+    -- Create notification objects
+    for i, pos in ipairs(notificationPositions) do
+        -- Define base settings
+        local base_settings = {
+            pos = { x = pos.x, y = pos.y },
+            text = { size = text_size },
+            bg = { 
+                alpha = captain.settings.notifications.bg.alpha or 230, 
+                red = captain.settings.notifications.bg.red or 30, 
+                green = captain.settings.notifications.bg.green or 30, 
+                blue = captain.settings.notifications.bg.blue or 60, 
+                visible = true 
+            },
+            flags = { right = false, draggable = false }
+        }
+        
+        -- Create and configure notification
+        local notification = texts.new('notification_' .. i, base_settings)
+        if notification then
+            table.insert(notifications, notification)
+            texts.text(notification, "")
+            texts.bg_alpha(notification, captain.settings.notifications.bg.alpha or 230)
+            texts.bg_color(notification, 
+                captain.settings.notifications.bg.red or 30, 
+                captain.settings.notifications.bg.green or 30, 
+                captain.settings.notifications.bg.blue or 60)
+            notification:show()
+        end
+    end
+
+    -- Clean up existing event handlers
+    if drag_event_id then windower.unregister_event(drag_event_id) end
+    if move_event_id then windower.unregister_event(move_event_id) end
+    
+    -- Register mouse down/up event handler
+    drag_event_id = windower.register_event('mouse', function(type, x, y)
+        -- Mouse down: start drag if hovering over a notification
+        if type == 1 then
+            for i, notification in ipairs(notifications) do
+                if notification:hover(x, y) then
+                    is_dragging = true
+                    dragged_notification = notification
+                    drag_start.x = x
+                    drag_start.y = y
+                    drag_notification_pos.x, drag_notification_pos.y = notification:pos()
+                    override_rendering = true
+                    return true
+                end
+            end
+        end
+        
+        -- Mouse up: end drag and save new position
+        if type == 2 and is_dragging and dragged_notification then
+            local final_x, final_y = dragged_notification:pos()
+            local screen_width = backend.get_resolution_width()
+            local screen_height = backend.get_resolution_height()
+            local scale = captain.settings.notifications.scale or 1
+            
+            -- Update offset settings
+            captain.settings.notifications.offset.x = math.max(0, screen_width - final_x - (300 * scale))
+            captain.settings.notifications.offset.y = math.max(0, screen_height - final_y - (80 * scale))
+            backend.saveConfig(captain.settings)
+            
+            -- Reset state and recreate notifications
+            is_dragging = false
+            dragged_notification = nil
+            override_rendering = false
+            backend.schedule(notificationInit, 0.1)
+            return true
+        end
+        
+        return false
+    end)
+    
+    -- Register mouse move event handler
+    move_event_id = windower.register_event('mouse', function(type, x, y)
+        if type == 0 and is_dragging and dragged_notification then
+            -- Update position during drag
+            local new_x = drag_notification_pos.x + (x - drag_start.x)
+            local new_y = drag_notification_pos.y + (y - drag_start.y)
+            texts.pos(dragged_notification, new_x, new_y)
+            return true
+        end
+        return false
     end)
 end
 
 backend.notificationsRender = function(allNotifications)
-    if not notificationPositions[1] then
-        notificationInit()
+    -- Skip rendering during drag operations
+    if override_rendering then return end
+    
+    -- Initialize if needed
+    if not notificationPositions[1] then notificationInit() end
+    if #notifications == 0 then return end
+    
+    -- Hide all if no notifications to render
+    if #allNotifications == 0 then
+        for i, notification in ipairs(notifications) do
+            if notification then 
+                notification:hide()
+                texts.text(notification, "")
+            end
+        end
+        return
     end
 
-    -- Process each notification
-    for i, notification in ipairs(allNotifications) do
-        -- Assign a display index
-        notification.displayIndex = i
-        
-        -- Only process if we have an available slot
-        if i <= #notificationPositions then
-            -- Generate display content
-            local c = ''
-            local lines = {}
-            local current_line = ''
-            
-            -- Handle new-style notifications with title and data
-            if notification.title then
-                -- Add title line
-                current_line = string.format('\\cs(%d,%d,%d)', 255, 255, 255) .. notification.title
-                table.insert(lines, current_line)
-                current_line = ''
-                
-                -- Add data fields
-                if notification.data then
-                    for _, field in ipairs(notification.data) do
-                        current_line = string.format('\\cs(%d,%d,%d)', 200, 200, 255) .. field.key .. 
-                                       ': ' .. 
-                                       string.format('\\cs(%d,%d,%d)', 150, 255, 200) .. field.value
-                        table.insert(lines, current_line)
-                        current_line = ''
-                    end
-                end
-            -- Handle old-style notifications with segments
-            elseif notification.segments then
-                for _, segment in ipairs(notification.segments) do
-                    if segment.newline then
-                        table.insert(lines, current_line)
-                        current_line = ''
-                    elseif segment.text then
-                        if segment.color then
-                            current_line = current_line ..
-                              string.format('\\cs(%d,%d,%d)', segment.color[1], segment.color[2], segment.color[3]) .. segment
-                              .text
-                        else
-                            current_line = current_line .. segment.text
-                        end
-                    end
-                end
-                
-                -- Add last line if leftover
-                if current_line ~= '' then
-                    table.insert(lines, current_line)
-                end
-            end
-            
-            -- Ensure we have at least one line
-            if #lines == 0 then
-                lines[1] = ''
-            end
-
-            -- Ensure first line has at least 50 visible chars (exclude color codes)
-            if lines[1] then
-                local visible_len = #strip_colors(lines[1])
-                if visible_len < 50 then
-                    lines[1] = lines[1] .. string.rep(' ', 50 - visible_len)
-                end
-            else
-                lines[1] = string.rep(' ', 50)
-            end
-
-            -- Ensure we have at least 5 lines
-            while #lines < 5 do
-                table.insert(lines, '')
-            end
-
-            c = table.concat(lines, '\n')
-
-            notifications[notification.displayIndex]:text(c)
-            notifications[notification.displayIndex]:show()
-        end
+    -- Reorder notifications so newest is at the bottom
+    local displayOrder = {}
+    for i = 1, #allNotifications do
+        table.insert(displayOrder, {
+            notification = allNotifications[i],
+            displayIndex = #allNotifications - i + 1
+        })
     end
     
-    -- Hide any unused notification slots
+    -- Get dimensions and scaling values
+    local scale = captain.settings.notifications.scale or 1
+    local scaled_spacing = (captain.settings.notifications.spacing or 8) * scale
+    local screen_width = backend.get_resolution_width()
+    local screen_height = backend.get_resolution_height()
+    local font_size = (captain.settings.notifications.text.size or 12) * scale
+    
+    -- Calculate text width constraint
+    local max_width = math.floor(screen_width * 0.67)
+    local notification_width = math.min(max_width, 300 * scale)
+    local chars_per_width = math.floor(notification_width / (font_size * 0.5))
+    
+    -- Process each notification
+    for _, item in ipairs(displayOrder) do
+        local notification = item.notification
+        local displayIndex = item.displayIndex
+        
+        if displayIndex > #notifications then break end  -- Skip if no slot available
+        
+        -- Get color values from settings
+        local title_rgb = colors[captain.settings.notifications.colors.title].rgb
+        local key_rgb = colors[captain.settings.notifications.colors.key].rgb
+        local value_rgb = colors[captain.settings.notifications.colors.value].rgb
+        
+        -- Format title
+        local lines = {}
+        local title = notification.title or 'Notification'
+        table.insert(lines, colorize(title, title_rgb))
+        
+        -- Process data entries
+        if notification.data and type(notification.data) == 'table' then
+            local current_line = ''
+            local line_length = 0
+            
+            for _, pair in ipairs(notification.data) do
+                if pair[1] and pair[2] ~= nil then
+                    -- Format value based on type
+                    local key, value = pair[1], pair[2]
+                    local is_array = type(value) == 'table'
+                    
+                    if is_array then
+                        local values = {}
+                        for i, v in ipairs(value) do table.insert(values, tostring(v)) end
+                        if #values == 0 then
+                            for k, v in pairs(value) do table.insert(values, tostring(k) .. '=' .. tostring(v)) end
+                        end
+                        value = table.concat(values, ', ')
+                        key = key .. '[]'
+                    elseif type(value) == 'number' then
+                        value = math.floor(value) == value and tostring(value) or string.format('%.2f', value)
+                    elseif type(value) == 'string' and #value > 60 then
+                        value = value:sub(1, 57) .. '...'
+                    else
+                        value = tostring(value)
+                    end
+                    
+                    -- Format key-value pair
+                    local entry_width = #key + #value + 2
+                    local formatted = colorize(key:gsub('%[%]$', ''), key_rgb) .. ': ' .. colorize(value, value_rgb)
+                    local is_long = entry_width > (chars_per_width * 0.8)
+                    
+                    -- Determine if needs new line
+                    if is_array or is_long or (line_length > 0 and line_length + entry_width > chars_per_width) then
+                        if line_length > 0 then
+                            table.insert(lines, current_line)
+                        end
+                        current_line = formatted
+                        line_length = entry_width
+                    else
+                        if line_length > 0 then
+                            current_line = current_line .. ' ' .. formatted
+                        else
+                            current_line = formatted
+                        end
+                        line_length = line_length + entry_width + (line_length > 0 and 1 or 0)
+                    end
+                    
+                    -- Force new line after arrays or long values
+                    if (is_array or is_long) and current_line ~= '' then
+                        table.insert(lines, current_line)
+                        current_line = ''
+                        line_length = 0
+                    end
+                end
+            end
+            
+            -- Add final line if not empty
+            if current_line ~= '' then
+                table.insert(lines, current_line)
+            end
+        end
+        
+        -- Update notification content and position
+        local notification_obj = notifications[displayIndex]
+        texts.text(notification_obj, table.concat(lines, '\n'))
+        
+        -- Calculate vertical positioning based on total height of previous notifications
+        local total_used_height = 0
+        for i = 1, displayIndex - 1 do
+            if notifications[i] then
+                local _, height = texts.extents(notifications[i])
+                total_used_height = total_used_height + height + scaled_spacing
+            end
+        end
+        
+        -- Position the notification
+        local scaled_width = 300 * scale
+        local width, height = texts.extents(notification_obj)
+        local target_x = screen_width - scaled_width - captain.settings.notifications.offset.x
+        local target_y = screen_height - total_used_height - captain.settings.notifications.offset.y - height
+        
+        texts.pos(notification_obj, target_x, target_y)
+        notification_obj:show()
+    end
+    
+    -- Hide unused notification slots
     for i = #allNotifications + 1, #notifications do
         if notifications[i] then
             notifications[i]:hide()
@@ -554,16 +693,11 @@ backend.notificationsRender = function(allNotifications)
     end
 end
 
-backend.boxDraw = function(box)
-    backend.notificationsRender({box})
-    return 0
-end
-
-backend.loadConfig   = function(name, defaults)
+backend.loadConfig          = function(name, defaults)
     return config.load('data/' .. name .. '.xml', defaults)
 end
 
-backend.saveConfig   = function(confTable)
+backend.saveConfig          = function(confTable)
     if not confTable then
         confTable = captain.settings
     end
@@ -571,26 +705,36 @@ backend.saveConfig   = function(confTable)
     return config.save(confTable)
 end
 
-backend.scale_font   = function(height)
+backend.scale_font          = function(height)
     return height
 end
 
-backend.scale_width  = function(width)
+backend.scale_width         = function(width)
     return width
 end
 
-backend.scale_height = function(height)
+backend.scale_height        = function(height)
     return height
 end
 
-backend.reload       = function()
+backend.get_resolution_width = function()
+    local info = windower.get_windower_settings()
+    return info.ui_x_res
+end
+
+backend.get_resolution_height = function()
+    local info = windower.get_windower_settings()
+    return info.ui_y_res
+end
+
+backend.reload              = function()
     captain.reloadSignal = true
     windower.send_command('captain stop')
     backend.msg('captain', 'Reloading. Coroutines may take a moment to finish.')
     backend.schedule(function() windower.send_command('lua reload captain') end, 2)
 end
 
-backend.configMenu   = function()
+backend.configMenu          = function()
     -- Configuration menu not available for Windower
 end
 

@@ -496,8 +496,8 @@ end
 backend.notificationsRender            = function(notifications)
     local vp_size =
     {
-        x = AshitaCore:GetConfigurationManager():GetUInt32('boot', 'ffxi.registry', '0001', 800),
-        y = AshitaCore:GetConfigurationManager():GetUInt32('boot', 'ffxi.registry', '0002', 600),
+        x = backend.get_resolution_width(),
+        y = backend.get_resolution_height()
     }
 
     local NOTIFY_TOAST_FLAGS = bit.bor(
@@ -689,6 +689,14 @@ backend.scale_font                     = scaling.scale_f
 backend.scale_width                    = scaling.scale_w
 backend.scale_height                   = scaling.scale_h
 
+backend.get_resolution_width           = function()
+    return AshitaCore:GetConfigurationManager():GetUInt32('boot', 'ffxi.registry', '0001', 1920)
+end
+
+backend.get_resolution_height          = function()
+    return AshitaCore:GetConfigurationManager():GetUInt32('boot', 'ffxi.registry', '0002', 1080)
+end
+
 backend.reload                         = function()
     captain.reloadSignal = true
     backend.msg('captain', 'Reloading. Coroutines may take a moment to finish.')
@@ -735,14 +743,14 @@ backend.configMenu                     = function()
                     title = 'Offset X (from bottom right)',
                     path = 'notifications.offset.x',
                     min = 0,
-                    max = AshitaCore:GetConfigurationManager():GetUInt32('boot', 'ffxi.registry', '0001', 1920),
+                    max = backend.get_resolution_width(),
                     incr = 5,
                 },
                 {
                     title = 'Offset Y (from bottom right)',
                     path = 'notifications.offset.y',
                     min = 0,
-                    max = AshitaCore:GetConfigurationManager():GetUInt32('boot', 'ffxi.registry', '0002', 1080),
+                    max = backend.get_resolution_height(),
                     incr = 5,
                 },
                 {
