@@ -5,7 +5,8 @@
 ---@field rootDir? string
 ---@field captureDir? string
 ---@field databases { capture: Database?, global: Database? }
-local addon = {
+local addon =
+{
     name            = 'NPCLogger',
     filters         =
     {
@@ -20,7 +21,7 @@ local addon = {
     {
         widescan =
         {
-            delay = 20
+            delay = 20,
         },
         database =
         {
@@ -40,9 +41,9 @@ local addon = {
                 'dir',
                 'Flags0.MovTime',
                 'Hpp',
-                'legacy.flag'
-            }
-        }
+                'legacy.flag',
+            },
+        },
     },
     coroutinesSetup = false,
     notifications   =
@@ -193,13 +194,13 @@ local function parseNpcUpdate(data)
             )
 
             -- Format as a 4-character hex string
-            npc.legacy.look = string.format("%04X", subkind_status)
+            npc.legacy.look = string.format('%04X', subkind_status)
 
             -- Add equipment data (0x32-0x43)
             for i = 1, 9 do
                 -- Format each 16-bit value as a 4-character hex string
                 local value = packet.Data.GrapIDTbl[i] or 0
-                npc.legacy.look = npc.legacy.look .. string.format("%04X", value)
+                npc.legacy.look = npc.legacy.look .. string.format('%04X', value)
             end
         elseif packet.SubKind == 0 or packet.SubKind == 5 or packet.SubKind == 6 then
             -- Create legacy_look string starting from 0x30 (SubKind and Status)
@@ -209,7 +210,7 @@ local function parseNpcUpdate(data)
             )
 
             -- Format as a 4-character hex string for SubKind+Status and another for model_id
-            npc.legacy.look = string.format("%04X%04X", subkind_status, packet.Data.model_id)
+            npc.legacy.look = string.format('%04X%04X', subkind_status, packet.Data.model_id)
         end
     end
 
@@ -232,6 +233,11 @@ local function parseNpcUpdate(data)
 end
 
 local function parseWidescanUpdate(data)
+    -- Reschedule another WS packet
+    backend.schedule(function()
+        backend.doWidescan()
+    end, addon.settings.widescan.delay)
+
     ---@type GP_SERV_COMMAND_TRACKING_LIST?
     local packet = backend.parsePacket('incoming', data)
     if not packet then
@@ -251,7 +257,8 @@ local function parseWidescanUpdate(data)
         return
     end
 
-    npc.ws = {
+    npc.ws =
+    {
         Level = packet.Level,
         sName = packet.sName,
         Type = packet.Type,
@@ -282,10 +289,6 @@ end
 addon.onPrerender = function()
     if not addon.coroutinesSetup then
         backend.forever(function()
-            backend.doWidescan()
-        end, addon.settings.widescan.delay)
-
-        backend.forever(function()
             local db = getCurrentDb()
             if db:save() then
                 local report = string.format('Database saved. %d NPCs (%d new, %d updates, %d WS updates)', db:count(),
@@ -297,6 +300,11 @@ addon.onPrerender = function()
             end
         end, 60)
 
+        -- Just schedule once, the handler will reschedule
+        backend.schedule(function()
+            backend.doWidescan()
+        end, addon.settings.widescan.delay)
+        
         addon.coroutinesSetup = true
     end
 end
