@@ -257,9 +257,9 @@ local definitions =
         },
         [PacketId.GP_SERV_COMMAND_TALKNUMWORK] =
         {
-            { name = 'UniqueNo', bits = 32 },  -- 0x04 - The message entity server id
+            { name = 'UniqueNo', bits = 32 }, -- 0x04 - The message entity server id
             {
-                name = 'num',                  -- 0x08 - 0x17 - The message number parameters
+                name = 'num',                 -- 0x08 - 0x17 - The message number parameters
                 type = 'array',
                 count = 4,
                 layout =
@@ -267,11 +267,11 @@ local definitions =
                     { name = 'value', bits = 32, signed = true },
                 },
             },
-            { name = 'ActIndex', bits = 16 },                   -- 0x18 - The message entity target index
-            { name = 'MesNum',   bits = 16 },                   -- 0x1A - The message number and flag
-            { name = 'Type',     bits = 8 },                    -- 0x1C - The message type
-            { name = 'Flag',     bits = 8 },                    -- 0x1D - The message flag
-            { name = 'String',   type = 'string', size = 32 },  -- 0x1E - The message string parameter
+            { name = 'ActIndex', bits = 16 },                  -- 0x18 - The message entity target index
+            { name = 'MesNum',   bits = 16 },                  -- 0x1A - The message number and flag
+            { name = 'Type',     bits = 8 },                   -- 0x1C - The message type
+            { name = 'Flag',     bits = 8 },                   -- 0x1D - The message flag
+            { name = 'String',   type = 'string', size = 32 }, -- 0x1E - The message string parameter
             {
                 name = 'MessageNumber',
                 expr = function(ctx)
@@ -503,9 +503,9 @@ local definitions =
         },
         [PacketId.GP_SERV_COMMAND_EVENTMES] =
         {
-            { name = 'UniqueNo', bits = 32 },  -- 0x04 - The message entities server id
-            { name = 'ActIndex', bits = 16 },  -- 0x08 - The message entities target index
-            { name = 'Number',   bits = 16 },  -- 0x0A - The message number
+            { name = 'UniqueNo', bits = 32 }, -- 0x04 - The message entities server id
+            { name = 'ActIndex', bits = 16 }, -- 0x08 - The message entities target index
+            { name = 'Number',   bits = 16 }, -- 0x0A - The message number
             {
                 name = 'MessageNumber',
                 expr = function(ctx)
@@ -521,13 +521,13 @@ local definitions =
         },
         [PacketId.GP_SERV_COMMAND_TALKNUMNAME] =
         {
-            { name = 'UniqueNo',  bits = 32 },                   -- 0x04 - The message entity server id
-            { name = 'ActIndex',  bits = 16 },                   -- 0x08 - The message entity target index
-            { name = 'MesNum',    bits = 16 },                   -- 0x0A - The message number
-            { name = 'Type',      bits = 8 },                    -- 0x0C - The message type
-            { name = 'padding00', bits = 8 },                    -- 0x0D - Padding; unused
-            { name = 'padding01', bits = 16 },                   -- 0x0E - Padding; unused
-            { name = 'sName',     type = 'string', size = 16 },  -- 0x10 - The message name
+            { name = 'UniqueNo',  bits = 32 },                  -- 0x04 - The message entity server id
+            { name = 'ActIndex',  bits = 16 },                  -- 0x08 - The message entity target index
+            { name = 'MesNum',    bits = 16 },                  -- 0x0A - The message number
+            { name = 'Type',      bits = 8 },                   -- 0x0C - The message type
+            { name = 'padding00', bits = 8 },                   -- 0x0D - Padding; unused
+            { name = 'padding01', bits = 16 },                  -- 0x0E - Padding; unused
+            { name = 'sName',     type = 'string', size = 16 }, -- 0x10 - The message name
             {
                 name = 'MessageNumber',
                 expr = function(ctx)
@@ -1193,21 +1193,26 @@ local definitions =
                                 conditional = true,
                                 layout =
                                 {
+                                    name = 'proc',
+                                    type = 'struct',
+                                    layout =
                                     {
-                                        name = 'proc_kind',
-                                        bits = 6,
-                                    },
-                                    {
-                                        name = 'proc_info',
-                                        bits = 4,
-                                    },
-                                    {
-                                        name = 'proc_value',
-                                        bits = 17,
-                                    },
-                                    {
-                                        name = 'proc_message',
-                                        bits = 10,
+                                        {
+                                            name = 'kind',
+                                            bits = 6,
+                                        },
+                                        {
+                                            name = 'info',
+                                            bits = 4,
+                                        },
+                                        {
+                                            name = 'value',
+                                            bits = 17,
+                                        },
+                                        {
+                                            name = 'message',
+                                            bits = 10,
+                                        },
                                     },
                                 },
                             },
@@ -1217,21 +1222,26 @@ local definitions =
                                 conditional = true,
                                 layout =
                                 {
+                                    name = 'react',
+                                    type = 'struct',
+                                    layout =
                                     {
-                                        name = 'react_kind',
-                                        bits = 6,
-                                    },
-                                    {
-                                        name = 'react_info',
-                                        bits = 4,
-                                    },
-                                    {
-                                        name = 'react_value',
-                                        bits = 14,
-                                    },
-                                    {
-                                        name = 'react_message',
-                                        bits = 10,
+                                        {
+                                            name = 'kind',
+                                            bits = 6,
+                                        },
+                                        {
+                                            name = 'info',
+                                            bits = 4,
+                                        },
+                                        {
+                                            name = 'value',
+                                            bits = 14,
+                                        },
+                                        {
+                                            name = 'message',
+                                            bits = 10,
+                                        },
                                     },
                                 },
                             },
@@ -1290,13 +1300,13 @@ local definitions =
         },
         [PacketId.GP_SERV_COMMAND_TALKNUMNAME] =
         {
-            { name = 'UniqueNo',  bits = 32 },                   -- 0x04 - The message entity server id
-            { name = 'ActIndex',  bits = 16 },                   -- 0x08 - The message entity target index
-            { name = 'MesNum',    bits = 16 },                   -- 0x0A - The message number
-            { name = 'Type',      bits = 8 },                    -- 0x0C - The message type
-            { name = 'padding00', bits = 8 },                    -- 0x0D - Padding; unused
-            { name = 'padding01', bits = 16 },                   -- 0x0E - Padding; unused
-            { name = 'sName',     type = 'string', size = 16 },  -- 0x10 - The message name
+            { name = 'UniqueNo',  bits = 32 },                  -- 0x04 - The message entity server id
+            { name = 'ActIndex',  bits = 16 },                  -- 0x08 - The message entity target index
+            { name = 'MesNum',    bits = 16 },                  -- 0x0A - The message number
+            { name = 'Type',      bits = 8 },                   -- 0x0C - The message type
+            { name = 'padding00', bits = 8 },                   -- 0x0D - Padding; unused
+            { name = 'padding01', bits = 16 },                  -- 0x0E - Padding; unused
+            { name = 'sName',     type = 'string', size = 16 }, -- 0x10 - The message name
             {
                 name = 'MessageNumber',
                 expr = function(ctx)
@@ -1386,7 +1396,8 @@ local definitions =
             {
                 name = 'SlotDescription',
                 expr = function(ctx)
-                    local slot_descriptions = {
+                    local slot_descriptions =
+                    {
                         [0] = 'Zone (Day)',
                         [1] = 'Zone (Night)',
                         [2] = 'Combat (Solo)',
@@ -1394,13 +1405,13 @@ local definitions =
                         [4] = 'Mount',
                         [5] = 'Dead',
                         [6] = 'Mog House',
-                        [7] = 'Fishing'
+                        [7] = 'Fishing',
                     }
-                    
+
                     if ctx.Slot and slot_descriptions[ctx.Slot] then
                         return slot_descriptions[ctx.Slot]
                     end
-                    
+
                     return 'Unknown Slot'
                 end,
             },
@@ -1415,7 +1426,7 @@ local definitions =
                     if ctx.volume and ctx.volume >= 0 and ctx.volume <= 127 then
                         return math.floor((ctx.volume / 127) * 100) .. '%'
                     end
-                    
+
                     return 'Invalid Volume'
                 end,
             },
@@ -1443,7 +1454,7 @@ local definitions =
             { name = 'EventPara', bits = 16 },                 -- 0x1A - The event parameter
             { name = 'ActIndex',  bits = 16 },                 -- 0x1C - The event target index
             { name = 'Mode',      bits = 8 },                  -- 0x1E - The packet mode (always 1)
-            { name = 'dir',       bits = 8, signed = true },   -- 0x1F - The local clients heading direction
+            { name = 'dir',       bits = 8,  signed = true },  -- 0x1F - The local clients heading direction
         },
         [PacketId.GP_CLI_COMMAND_PASSWARDS] =
         {

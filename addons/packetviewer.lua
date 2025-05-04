@@ -10,12 +10,12 @@ local addon =
     {
         incoming =
         {
-            [PacketId.MAGIC_ALL_PACKETS] = true, -- All packets
+            [PacketId.MAGIC_ALL_PACKETS] = true,
         },
 
         outgoing =
         {
-            [PacketId.MAGIC_ALL_PACKETS] = true, -- All packets
+            [PacketId.MAGIC_ALL_PACKETS] = true,
         }
     },
     settings   = {},

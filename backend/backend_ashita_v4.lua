@@ -17,7 +17,6 @@ local imgui                            = require('imgui')
 local settings                         = require('settings')
 local scaling                          = require('scaling')
 
-local WHITE                            = { 1.0, 1.0, 1.0, 1.0 }
 local CORAL                            = { 1.0, 0.65, 0.26, 1.0 }
 
 local gui                              = {}

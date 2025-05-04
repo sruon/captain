@@ -1,9 +1,9 @@
-local breader     = require('libs/packets/bitreader');
+local breader     = require('libs/packets/bitreader')
 local definitions = require('libs/packets/definitions')
 ---@type table
 local bit         = bit or require('bit')
 
-local parser      = {};
+local parser      = {}
 
 ---@param reader BitReader
 ---@param layout table  -- The layout to parse
@@ -12,7 +12,7 @@ local parser      = {};
 local function parse_layout(reader, layout, context)
     local result = {}
     for _, field in ipairs(layout) do
-        if field.bits and field.type ~= "float" then
+        if field.bits and field.type ~= 'float' and not field.conditional then
             local value = reader:read(field.bits)
             if field.signed then
                 local sign_bit = bit.band(value, bit.lshift(1, field.bits - 1))
@@ -22,18 +22,18 @@ local function parse_layout(reader, layout, context)
             end
 
             result[field.name] = value
-        elseif field.bits and field.type == "float" then
+        elseif field.bits and field.type == 'float' then
             local raw = reader:read(field.bits)
             result[field.name] = backend.convert_int_to_float(raw)
         elseif field.expr then
             result[field.name] = field.expr(result)
-        elseif field.type == "struct" then
+        elseif field.type == 'struct' then
             local sublayout = field.layout
-            if type(sublayout) == "function" then
+            if type(sublayout) == 'function' then
                 sublayout = sublayout(result)
             end
             result[field.name] = parse_layout(reader, sublayout, result)
-        elseif field.type == "array" then
+        elseif field.type == 'array' then
             local count = result[field.count] or context[field.count] or field.count
             result[field.name] = {}
             for _ = 1, count do
@@ -46,43 +46,42 @@ local function parse_layout(reader, layout, context)
                         end
                     end
 
-                    result[field.name][#result[field.name] + 1] = value
-                elseif #field.layout == 1 and field.layout[1].type == "string" then
+                    result[field.name][#result[field.name]+1] = value
+                elseif #field.layout == 1 and field.layout[1].type == 'string' then
                     -- Handle string arrays directly without nesting
                     local chars = {}
                     for _ = 1, field.layout[1].size do
-                        chars[#chars + 1] = string.char(reader:read(8))
+                        chars[#chars+1] = string.char(reader:read(8))
                     end
                     local str = table.concat(chars):gsub('%z.*$', '')
-                    result[field.name][#result[field.name] + 1] = str
+                    result[field.name][#result[field.name]+1] = str
                 else
                     -- Complex sub-struct
-                    result[field.name][#result[field.name] + 1] = parse_layout(reader, field.layout, result)
+                    local nested_result = parse_layout(reader, field.layout, result)
+                    result[field.name][#result[field.name]+1] = nested_result
                 end
             end
-        elseif field.type == "string" then
+        elseif field.type == 'string' then
             local chars = {}
             for _ = 1, field.size do
-                chars[#chars + 1] = string.char(reader:read(8))
+                chars[#chars+1] = string.char(reader:read(8))
             end
             result[field.name] = table.concat(chars):gsub('%z.*$', '')
-        elseif field.type == "raw" then
+        elseif field.type == 'raw' then
             local raw = {}
             for _ = 1, field.size do
-                raw[#raw + 1] = string.char(reader:read(8))
+                raw[#raw+1] = string.char(reader:read(8))
             end
             result[field.name] = table.concat(raw)
         elseif field.conditional then
+            -- Read the conditional bit flag
             local has_flag = reader:read(field.bits)
             result[field.name] = has_flag > 0
+
             if result[field.name] then
-                for _, subfield in ipairs(field.layout) do
-                    result[subfield.name] = reader:read(subfield.bits)
-                end
-            else
-                for _, subfield in ipairs(field.layout) do
-                    result[subfield.name] = 0
-                end
+                -- This is a nested struct format
+                local struct_name = field.layout.name
+                result[struct_name] = parse_layout(reader, field.layout.layout, result)
             end
         end
     end
