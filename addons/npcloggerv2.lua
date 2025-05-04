@@ -232,7 +232,12 @@ local function parseNpcUpdate(data)
 end
 
 local function parseWidescanUpdate(data)
+    ---@type GP_SERV_COMMAND_TRACKING_LIST?
     local packet = backend.parsePacket('incoming', data)
+    if not packet then
+        return
+    end
+
     local db = getCurrentDb()
     if not db then
         return

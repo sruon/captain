@@ -5,13 +5,10 @@ local bit         = bit or require('bit')
 
 local parser      = {};
 
----@class ParsedPacket
----@field header? { id: number, size: number, sync: number }
-
 ---@param reader BitReader
 ---@param layout table  -- The layout to parse
 ---@param context table -- The context for the layout
----@return ParsedPacket -- The parsed packet data
+---@return any -- The parsed packet data
 local function parse_layout(reader, layout, context)
     local result = {}
     for _, field in ipairs(layout) do
@@ -95,7 +92,7 @@ end
 
 ---@param dir string               -- 'outgoing' or 'incoming'
 ---@param packet string | number[] -- The raw packet data
----@return ParsedPacket?           -- The parsed packet data or nil if the packet is not recognized
+---@return any | nil               -- The parsed packet data or nil if the packet is not recognized
 parser.parse = function(dir, packet)
     local reader = breader:new()
     reader:set_data(packet)

@@ -1,0 +1,334 @@
+---@class ParsedPacket
+---@field header? { id: number, size: number, sync: number }
+
+---@class GP_SERV_COMMAND_MUSIC : ParsedPacket
+---@field Slot number
+---@field MusicNum number
+---@field SlotDescription any -- Computed
+
+---@class GP_SERV_COMMAND_MUSICVOLUME : ParsedPacket
+---@field time number
+---@field volume number
+---@field VolumePercentage any -- Computed
+
+---@class GP_SERV_COMMAND_PACKETCONTROL : ParsedPacket
+---@field PacketCnt number
+---@field padding00 number[] -- Fixed size 5
+
+---@class GP_SERV_COMMAND_SYSTEMMES : ParsedPacket
+---@field para number
+---@field para2 number
+---@field Number number
+---@field padding00 number
+
+---@class GP_SERV_COMMAND_EVENTUCOFF : ParsedPacket
+---@field Mode number
+---@field ModeType any -- Computed
+---@field EventId any -- Computed
+---@field ModeDescription any -- Computed
+
+---@class GP_SERV_COMMAND_ENTERZONE : ParsedPacket
+---@field EnterZoneTbl number[] -- Fixed size 48
+
+---@class GP_SERV_COMMAND_MESSAGE : ParsedPacket
+---@field UniqueNo number
+---@field ActIndex number
+---@field MesNo number
+---@field Attr number
+
+---@class GP_SERV_COMMAND_LOGIN : ParsedPacket
+---@field PosHead table -- Nested struct
+---@field ZoneNo number
+---@field ntTime number
+---@field ntTimeSec number
+---@field GameTime number
+---@field EventNo number
+---@field MapNumber number
+---@field GrapIDTbl number[] -- Fixed size 9
+---@field MusicNum number[] -- Fixed size 5
+---@field SubMapNumber number
+---@field EventNum number
+---@field EventPara number
+---@field EventMode number
+---@field WeatherNumber number
+---@field WeatherNumber2 number
+---@field WeatherTime number
+---@field WeatherTime2 number
+---@field WeatherOffsetTime number
+---@field ShipStart number
+---@field ShipEnd number
+---@field IsMonstrosity number
+---@field LoginState number
+---@field name string -- 16 bytes
+---@field certificate number[] -- Fixed size 2
+---@field unknown00 number
+---@field ZoneSubNo number
+---@field PlayTime number
+---@field DeadCounter number
+---@field MyroomSubMapNumber number
+---@field unknown01 number
+---@field MyroomMapNumber number
+---@field SendCount number
+---@field MyRoomExitBit number
+---@field MogZoneFlag number
+---@field Dancer any -- raw, 80 bytes
+---@field ConfData any -- raw, 12 bytes
+---@field Ex number
+
+---@class GP_SERV_COMMAND_LOGOUT : ParsedPacket
+---@field LogoutState number
+---@field Iwasaki number[] -- Fixed size 16
+---@field GP_SERV_LOGOUTSUB any -- Computed
+---@field cliErrCode number
+
+---@class GP_SERV_COMMAND_TRACKING_LIST : ParsedPacket
+---@field ActIndex number
+---@field Level number
+---@field Type number
+---@field unused number
+---@field x number
+---@field z number
+---@field sName string -- 16 bytes
+---@field DotColor any -- Computed
+---@field Hidden any -- Computed
+
+---@class GP_SERV_COMMAND_CHAR_PC : ParsedPacket
+---@field UniqueNo number
+---@field ActIndex number
+---@field SendFlg_num number
+---@field SendFlg any -- Computed
+---@field dir number
+---@field x number
+---@field z number
+---@field y number
+---@field Flags0_num number
+---@field Flags0 any -- Computed
+---@field Speed number
+---@field SpeedBase number
+---@field Hpp number
+---@field server_status number
+---@field Flags1_num number
+---@field Flags1 any -- Computed
+---@field Flags2_num number
+---@field Flags2 any -- Computed
+---@field Flags3_num number
+---@field Flags3 any -- Computed
+---@field BtTargetID number
+---@field CostumeId number
+---@field BallistaInfo number
+---@field Flags4_num number
+---@field Flags4 any -- Computed
+---@field CustomProperties number[] -- Fixed size 2
+---@field PetActIndex number
+---@field MonstrosityFlags number
+---@field MonstrosityNameId1 number
+---@field MonstrosityNameId2 number
+---@field Flags5_num number
+---@field Flags5 any -- Computed
+---@field ModelHitboxSize number
+---@field Flags6_num number
+---@field Flags6 any -- Computed
+---@field GrapIDTbl number[] -- Fixed size 9
+---@field name string -- 16 bytes
+
+---@class GP_SERV_COMMAND_CHAR_NPC : ParsedPacket
+---@field UniqueNo number
+---@field ActIndex number
+---@field SendFlg_num number
+---@field SendFlg any -- Computed
+---@field dir number
+---@field x number
+---@field z number
+---@field y number
+---@field Flags0_num number
+---@field Flags0 any -- Computed
+---@field Speed number
+---@field SpeedBase number
+---@field Hpp number
+---@field server_status number
+---@field Flags1_num number
+---@field Flags1 any -- Computed
+---@field Flags2_num number
+---@field Flags2 any -- Computed
+---@field Flags3_num number
+---@field Flags3 any -- Computed
+---@field SubAnimation any -- Computed
+---@field BtTargetID number
+---@field SubKind number
+---@field Status number
+---@field Data table -- Nested struct
+---@field NPCType any -- Computed
+
+---@class GP_SERV_COMMAND_BATTLE_MESSAGE : ParsedPacket
+---@field UniqueNoCas number
+---@field UniqueNoTar number
+---@field Data number
+---@field Data2 number
+---@field ActIndexCas number
+---@field ActIndexTar number
+---@field MessageNum number
+---@field Type number
+---@field padding00 number
+
+---@class GP_SERV_COMMAND_BATTLE2 : ParsedPacket
+---@field info_size number
+---@field m_uID number
+---@field trg_sum number
+---@field res_sum number
+---@field cmd_no number
+---@field ActionType any -- Computed
+---@field cmd_arg number
+---@field info number
+---@field target table[] -- Fixed size trg_sum
+
+---@class GP_SERV_COMMAND_GMCOMMAND : ParsedPacket
+---@field GMUniqueNo number
+
+---@class GP_SERV_COMMAND_GM : ParsedPacket
+
+---@class GP_SERV_COMMAND_EVENT : ParsedPacket
+---@field UniqueNo number
+---@field ActIndex number
+---@field EventNum number
+---@field EventPara number
+---@field Mode number
+---@field EventNum2 number
+---@field EventPara2 number
+
+---@class GP_SERV_COMMAND_EVENTSTR : ParsedPacket
+---@field UniqueNo number
+---@field ActIndex number
+---@field EventNum number
+---@field EventPara number
+---@field Mode number
+---@field String string[] -- Fixed size 4
+---@field Data number[] -- Fixed size 8
+
+---@class GP_SERV_COMMAND_EVENTNUM : ParsedPacket
+---@field UniqueNo number
+---@field num number[] -- Fixed size 8
+---@field ActIndex number
+---@field EventNum number
+---@field EventPara number
+---@field Mode number
+---@field EventNum2 number
+---@field EventPara2 number
+
+---@class GP_SERV_COMMAND_TALKNUMNAME : ParsedPacket
+---@field UniqueNo number
+---@field ActIndex number
+---@field MesNum number
+---@field Type number
+---@field padding00 number
+---@field padding01 number
+---@field sName string -- 16 bytes
+---@field MessageNumber any -- Computed
+---@field IgnoreValidation any -- Computed
+---@field TypeLookup any -- Computed
+
+---@class GP_SERV_COMMAND_TALKNUM : ParsedPacket
+---@field UniqueNo number
+---@field ActIndex number
+---@field MesNum number
+---@field Type number
+---@field padding00 number
+---@field padding01 number
+
+---@class GP_SERV_COMMAND_TALKNUMWORK : ParsedPacket
+---@field UniqueNo number
+---@field num number[] -- Fixed size 4
+---@field ActIndex number
+---@field MesNum number
+---@field Type number
+---@field Flag number
+---@field String string -- 32 bytes
+---@field MessageNumber any -- Computed
+---@field IgnoreValidation any -- Computed
+---@field TypeLookup any -- Computed
+---@field SpeakerName any -- Computed
+
+---@class GP_SERV_COMMAND_SCHEDULOR : ParsedPacket
+---@field UniqueNoCas number
+---@field UniqueNoTar number
+---@field id number
+---@field ActIndexCast number
+---@field ActIndexTar number
+---@field FourCCString any -- Computed
+
+---@class GP_SERV_COMMAND_MAPSCHEDULOR : ParsedPacket
+---@field UniqueNoCas number
+---@field UniqueNoTar number
+---@field id number
+---@field ActIndexCast number
+---@field ActIndexTar number
+---@field FourCCString any -- Computed
+
+---@class GP_SERV_COMMAND_MAGICSCHEDULOR : ParsedPacket
+---@field UniqueNoCas number
+---@field UniqueNoTar number
+---@field ActIndexCast number
+---@field ActIndexTar number
+---@field fileNum number
+---@field type number
+---@field padding00 number
+---@field TypeName any -- Computed
+
+---@class GP_SERV_COMMAND_EVENTMES : ParsedPacket
+---@field UniqueNo number
+---@field ActIndex number
+---@field Number number
+---@field MessageNumber any -- Computed
+---@field UseEntityName any -- Computed
+
+---@class GP_SERV_COMMAND_WPOS : ParsedPacket
+---@field x number
+---@field y number
+---@field z number
+---@field UniqueNo number
+---@field ActIndex number
+---@field Mode number
+---@field dir number
+---@field padding00 number
+
+---@class GP_SERV_COMMAND_PENDINGNUM : ParsedPacket
+---@field num number[] -- Fixed size 8
+
+---@class GP_SERV_COMMAND_TALKNUMWORK2 : ParsedPacket
+---@field UniqueNo number
+---@field ActIndex number
+---@field MesNum number
+---@field Type number
+---@field Flags number
+---@field padding00 number
+---@field Num1 number[] -- Fixed size 4
+---@field String1 string -- 32 bytes
+---@field String2 string -- 16 bytes
+---@field Num2 number[] -- Fixed size 8
+---@field SpeakerName any -- Computed
+
+---@class GP_CLI_COMMAND_PASSWARDS : ParsedPacket
+---@field UniqueNo number
+---@field ActIndex number
+---@field padding00 number
+---@field String string -- 16 bytes
+
+---@class GP_CLI_COMMAND_EVENTEND : ParsedPacket
+---@field UniqueNo number
+---@field EndPara number
+---@field ActIndex number
+---@field Mode number
+---@field EventNum number
+---@field EventPara number
+
+---@class GP_CLI_COMMAND_EVENTENDXZY : ParsedPacket
+---@field x number
+---@field y number
+---@field z number
+---@field UniqueNo number
+---@field EndPara number
+---@field EventNum number
+---@field EventPara number
+---@field ActIndex number
+---@field Mode number
+---@field dir number
+
