@@ -35,7 +35,7 @@ captain                 =
     isCapturing     = false,
     reloadSignal    = false,
     showConfig      = false,
-    settings        = backend.loadConfig('captain', require('data/defaults')),
+    settings        = backend.loadConfig('captain', require('data/settings_schema').get_defaults()),
     notificationMgr = nil,
 }
 

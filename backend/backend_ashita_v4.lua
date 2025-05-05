@@ -497,7 +497,7 @@ backend.notificationsRender            = function(notifications)
     local vp_size =
     {
         x = backend.get_resolution_width(),
-        y = backend.get_resolution_height()
+        y = backend.get_resolution_height(),
     }
 
     local NOTIFY_TOAST_FLAGS = bit.bor(
@@ -579,7 +579,10 @@ backend.notificationsRender            = function(notifications)
 
         -- Position notification
         imgui.SetNextWindowPos(
-            { vp_size.x - captain.settings.notifications.offset.x, vp_size.y - captain.settings.notifications.offset.y - height },
+            {
+                vp_size.x - captain.settings.notifications.offset.x,
+                vp_size.y - captain.settings.notifications.offset.y - height
+            },
             ImGuiCond_Always, { 1.0, 1.0 }
         )
 
@@ -704,78 +707,13 @@ backend.reload                         = function()
 end
 
 backend.configMenu                     = function()
-    -- TODO: Refactor in a generic fashion closer to the actual settings
+    -- If config is not being shown, return early
     if not captain.showConfig then
         return
     end
 
-    -- Load defaults for reset buttons
-    local defaults = require('data/defaults')
-
-    local configurableValues =
-    {
-        {
-            title = 'Notifications',
-            entries =
-            {
-                {
-                    title = 'Max',
-                    path = 'notifications.max_num',
-                    min = 3,
-                    max = 10,
-                    incr = 1,
-                },
-                {
-                    title = 'Auto-hide delay',
-                    path = 'notifications.hideDelay',
-                    min = 1,
-                    max = 10,
-                    incr = 1,
-                },
-                {
-                    title = 'Spacing',
-                    path = 'notifications.spacing',
-                    min = 0,
-                    max = 20,
-                    incr = 1,
-                },
-                {
-                    title = 'Offset X (from bottom right)',
-                    path = 'notifications.offset.x',
-                    min = 0,
-                    max = backend.get_resolution_width(),
-                    incr = 5,
-                },
-                {
-                    title = 'Offset Y (from bottom right)',
-                    path = 'notifications.offset.y',
-                    min = 0,
-                    max = backend.get_resolution_height(),
-                    incr = 5,
-                },
-                {
-                    title = 'Scale',
-                    path = 'notifications.scale',
-                    min = 0.1,
-                    max = 5,
-                    incr = 0.05,
-                },
-            },
-        },
-        {
-            title = 'TextBox',
-            entries =
-            {
-                {
-                    title = 'Scale',
-                    path = 'textBox.scale',
-                    min = 0.5,
-                    max = 5,
-                    incr = 0.1,
-                },
-            },
-        },
-    }
+    -- Load settings schema which contains both UI configuration and default values
+    local settings_schema = require('data/settings_schema')
 
     local isOpen = { true }
 
@@ -785,61 +723,68 @@ backend.configMenu                     = function()
         end
 
         if imgui.BeginTabBar('##captain_config_tabbar', ImGuiTabBarFlags_NoCloseWithMiddleMouseButton) then
-            for i, configCategory in ipairs(configurableValues) do
-                if imgui.BeginTabItem(configCategory.title) then
+            for _, category in ipairs(settings_schema.categories) do
+                if imgui.BeginTabItem(category.title) then
                     imgui.BeginGroup()
-                    for j, configEntry in ipairs(configCategory.entries) do
+
+                    -- Get all UI-configurable settings for this category
+                    local ui_settings = settings_schema:get_ui_settings(category.id)
+
+                    for _, setting in ipairs(ui_settings) do
+                        -- Process setting path to navigate the settings structure
                         local parts = {}
-                        for part in string.gmatch(configEntry.path, '[^%.]+') do
+                        for part in string.gmatch(setting.path, '[^%.]+') do
                             table.insert(parts, part)
                         end
 
-                        local settingRef = captain.settings
-                        for k = 1, #parts - 1 do
-                            settingRef = settingRef[parts[k]]
+                        -- Navigate to the setting in the current configuration
+                        local settingRef = captain.settings[category.id]
+                        for i = 1, #parts - 1 do
+                            settingRef = settingRef[parts[i]]
                         end
+                        local lastPart = parts[#parts]
 
-                        -- Get default value from defaults
-                        local defaultRef = defaults
-                        for k = 1, #parts do
-                            defaultRef = defaultRef[parts[k]]
-                        end
+                        -- Display the setting name
+                        imgui.TextColored(CORAL, setting.ui.title)
 
-                        imgui.TextColored(CORAL, string.format('%s', configEntry.title))
-
-                        local buffer = { settingRef[parts[#parts]] }
+                        -- Create buffer with current value
+                        local buffer = { settingRef[lastPart] }
                         local controlID = string.format('##captain_setting_%s_%s',
-                            configCategory.title:gsub(' ', '_'):lower(),
-                            configEntry.title:gsub(' ', '_'):lower())
+                            category.id:gsub(' ', '_'):lower(),
+                            setting.path:gsub(' ', '_'):gsub('%.', '_'):lower())
 
-                        local isInteger = configEntry.incr == math.floor(configEntry.incr) and configEntry.incr == 1
+                        -- Determine if it's an integer slider
+                        local isInteger = setting.ui.step and setting.ui.step == math.floor(setting.ui.step) and
+                        setting.ui.step == 1
                         local valueChanged = false
 
                         -- Use a relative width based on the window width
                         imgui.PushItemWidth(imgui.GetWindowWidth() * 0.8)
 
+                        -- Create appropriate slider based on type
                         if isInteger then
                             valueChanged = imgui.SliderInt(
                                 controlID,
                                 buffer,
-                                math.floor(configEntry.min),
-                                math.floor(configEntry.max),
+                                math.floor(setting.ui.min),
+                                math.floor(setting.ui.max),
                                 '%d',
                                 ImGuiSliderFlags_AlwaysClamp
                             )
                         else
+                            -- Format based on step size
                             local format = '%.1f'
-                            if configEntry.incr < 0.1 then
+                            if setting.ui.step < 0.1 then
                                 format = '%.2f'
-                            elseif configEntry.incr < 0.01 then
+                            elseif setting.ui.step < 0.01 then
                                 format = '%.3f'
                             end
 
                             valueChanged = imgui.SliderFloat(
                                 controlID,
                                 buffer,
-                                configEntry.min,
-                                configEntry.max,
+                                setting.ui.min,
+                                setting.ui.max,
                                 format,
                                 ImGuiSliderFlags_AlwaysClamp
                             )
@@ -847,26 +792,32 @@ backend.configMenu                     = function()
 
                         imgui.PopItemWidth()
 
+                        -- Apply changes if the value changed
                         if valueChanged then
-                            settingRef[parts[#parts]] = buffer[1]
+                            settingRef[lastPart] = buffer[1]
                             backend.saveConfig('captain')
                         end
 
                         -- Add reset button on the same line
                         imgui.SameLine()
                         local resetID = string.format('Reset##captain_reset_%s_%s',
-                            configCategory.title:gsub(' ', '_'):lower(),
-                            configEntry.title:gsub(' ', '_'):lower())
+                            category.id:gsub(' ', '_'):lower(),
+                            setting.path:gsub('[%.]', '_'):lower())
 
-                        if imgui.Button(resetID) and defaultRef ~= nil then
-                            settingRef[parts[#parts]] = defaultRef
+                        if imgui.Button(resetID) then
+                            -- Reset to default value
+                            settingRef[lastPart] = setting.default
                             backend.saveConfig('captain')
                         end
 
                         -- Show tooltip on hover
-                        if imgui.IsItemHovered() and defaultRef ~= nil then
+                        if imgui.IsItemHovered() then
                             imgui.BeginTooltip()
-                            imgui.Text(string.format('Reset to default: %s', tostring(defaultRef)))
+                            if setting.ui.description then
+                                imgui.Text(setting.ui.description)
+                                imgui.Separator()
+                            end
+                            imgui.Text(string.format('Default: %s', tostring(setting.default)))
                             imgui.EndTooltip()
                         end
                     end

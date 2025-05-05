@@ -104,4 +104,6 @@
 ---@field scale_font fun(height: number): number
 ---@field scale_width fun(width: number): number
 ---@field scale_height fun(height: number): number
+---@field get_resolution_width fun(): number
+---@field get_resolution_height fun(): number
 ---@field configMenu fun()
