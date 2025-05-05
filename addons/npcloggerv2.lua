@@ -304,9 +304,25 @@ addon.onPrerender = function()
         backend.schedule(function()
             backend.doWidescan()
         end, addon.settings.widescan.delay)
-        
+
         addon.coroutinesSetup = true
     end
+end
+
+addon.onConfigMenu = function()
+    return
+    {
+        {
+            key = 'widescan.delay',
+            title = 'Widescan Delay',
+            description = 'Time in seconds between widescan packets',
+            type = 'slider',
+            min = 5,
+            max = 60,
+            step = 5,
+            default = addon.defaultSettings.widescan.delay,
+        },
+    }
 end
 
 return addon

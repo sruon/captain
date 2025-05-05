@@ -8,6 +8,16 @@
 ---@field desc string
 ---@field keybind? KeybindParams
 
+---@class ConfigEntry
+---@field key string -- Hierarchical key path (e.g. 'widescan.delay')
+---@field title string -- Display name in the config menu
+---@field description string -- Description of the setting, shown in tooltip
+---@field type string -- Type of the setting (e.g. 'slider', 'checkbox')
+---@field min number -- Minimum value for slider
+---@field max number -- Maximum value for slider
+---@field step number -- Step value for slider
+---@field default number -- Default value for the setting
+
 ---@class AddonInterface
 ---@field name string                                      # Full addon name (e.g. 'TargetInfo')
 ---@field filters? PacketFilters                           # Declare which packets you want to receive
@@ -24,3 +34,4 @@
 ---@field onZoneChange? fun(zoneId: number)                # Zone change handler
 ---@field onCommand? fun(args: string[])                   # Command handler, i.e. /captain <lower_cased_addon_name> <args>
 ---@field onHelp? fun(): Command[]                         # Help handler, display addon specific commands
+---@field onConfigMenu? fun(): ConfigEntry[]               # Config menu handler, return a list of settings keys that should be configurable

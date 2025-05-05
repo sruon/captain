@@ -712,8 +712,140 @@ backend.configMenu                     = function()
         return
     end
 
-    -- Load settings schema which contains both UI configuration and default values
+    -- Load settings schema which contains both UI configuration and default values for captain
     local settings_schema = require('data/settings_schema')
+
+    -- Helper function to render settings UI for a given set of settings
+    local function renderSettings(settings_list, settingsRoot, getDefaultValue, saveConfigFunc)
+        for _, setting in ipairs(settings_list) do
+            -- Process setting path
+            local parts = {}
+            local path = setting.path or setting.key -- Support both formats
+            for part in string.gmatch(path, '[^%.]+') do
+                table.insert(parts, part)
+            end
+
+            -- Navigate to the setting in the configuration
+            local settingRef = settingsRoot
+            for i = 1, #parts - 1 do
+                if not settingRef[parts[i]] then
+                    settingRef[parts[i]] = {}
+                end
+                settingRef = settingRef[parts[i]]
+            end
+            local lastPart = parts[#parts]
+            
+            -- If the setting doesn't exist yet, initialize it with the default
+            if settingRef[lastPart] == nil then
+                local defaultValue = getDefaultValue(setting, parts)
+                if defaultValue ~= nil then
+                    settingRef[lastPart] = defaultValue
+                end
+            end
+            
+            -- Display the setting name
+            local title = setting.ui and setting.ui.title or setting.title
+            imgui.TextColored(CORAL, title)
+
+            -- Create buffer with current value
+            local buffer = { settingRef[lastPart] }
+            local controlID = string.format('##setting_%s', path:gsub(' ', '_'):gsub('%.', '_'):lower())
+
+            local valueChanged = false
+            
+            -- Use a relative width based on the window width
+            imgui.PushItemWidth(imgui.GetWindowWidth() * 0.8)
+            
+            -- Get UI properties
+            local ui = setting.ui or setting
+            local settingType = ui.type or "slider"
+            
+            -- Create appropriate control based on type
+            if settingType == "slider" then
+                -- Determine if it's an integer slider
+                local step = ui.step or 1
+                local isInteger = step and step == math.floor(step) and step == 1
+                local min = ui.min or 0
+                local max = ui.max or 100
+                
+                if isInteger then
+                    valueChanged = imgui.SliderInt(
+                        controlID,
+                        buffer,
+                        math.floor(min),
+                        math.floor(max),
+                        '%d',
+                        ImGuiSliderFlags_AlwaysClamp
+                    )
+                else
+                    -- Format based on step size
+                    local format = '%.1f'
+                    if step < 0.1 then
+                        format = '%.2f'
+                    elseif step < 0.01 then
+                        format = '%.3f'
+                    end
+                    
+                    valueChanged = imgui.SliderFloat(
+                        controlID,
+                        buffer,
+                        min,
+                        max,
+                        format,
+                        ImGuiSliderFlags_AlwaysClamp
+                    )
+                end
+            elseif settingType == "checkbox" then
+                valueChanged = imgui.Checkbox(
+                    controlID,
+                    buffer
+                )
+            elseif settingType == "text" then
+                valueChanged = imgui.InputText(
+                    controlID,
+                    buffer,
+                    256
+                )
+            end
+            
+            imgui.PopItemWidth()
+            
+            -- Apply changes if the value changed
+            if valueChanged then
+                settingRef[lastPart] = buffer[1]
+                saveConfigFunc()
+            end
+            
+            -- Add reset button on the same line
+            imgui.SameLine()
+            local resetID = string.format('Reset##reset_%s', path:gsub('[%.]', '_'):lower())
+            
+            if imgui.Button(resetID) then
+                -- Reset to default value
+                local defaultValue = getDefaultValue(setting, parts)
+                if defaultValue ~= nil then
+                    settingRef[lastPart] = defaultValue
+                    saveConfigFunc()
+                end
+            end
+            
+            -- Show tooltip on hover
+            if imgui.IsItemHovered() then
+                imgui.BeginTooltip()
+                local description = ui.description or setting.description
+                if description then
+                    imgui.Text(description)
+                    imgui.Separator()
+                end
+                
+                local defaultValue = getDefaultValue(setting, parts)
+                if defaultValue ~= nil then
+                    imgui.Text(string.format('Default: %s', tostring(defaultValue)))
+                end
+                imgui.EndTooltip()
+            end
+        end
+    end
 
     local isOpen = { true }
 
@@ -723,107 +855,72 @@ backend.configMenu                     = function()
         end
 
         if imgui.BeginTabBar('##captain_config_tabbar', ImGuiTabBarFlags_NoCloseWithMiddleMouseButton) then
+            -- Captain core settings
             for _, category in ipairs(settings_schema.categories) do
                 if imgui.BeginTabItem(category.title) then
                     imgui.BeginGroup()
-
+                    
                     -- Get all UI-configurable settings for this category
                     local ui_settings = settings_schema:get_ui_settings(category.id)
-
-                    for _, setting in ipairs(ui_settings) do
-                        -- Process setting path to navigate the settings structure
-                        local parts = {}
-                        for part in string.gmatch(setting.path, '[^%.]+') do
-                            table.insert(parts, part)
-                        end
-
-                        -- Navigate to the setting in the current configuration
-                        local settingRef = captain.settings[category.id]
-                        for i = 1, #parts - 1 do
-                            settingRef = settingRef[parts[i]]
-                        end
-                        local lastPart = parts[#parts]
-
-                        -- Display the setting name
-                        imgui.TextColored(CORAL, setting.ui.title)
-
-                        -- Create buffer with current value
-                        local buffer = { settingRef[lastPart] }
-                        local controlID = string.format('##captain_setting_%s_%s',
-                            category.id:gsub(' ', '_'):lower(),
-                            setting.path:gsub(' ', '_'):gsub('%.', '_'):lower())
-
-                        -- Determine if it's an integer slider
-                        local isInteger = setting.ui.step and setting.ui.step == math.floor(setting.ui.step) and
-                        setting.ui.step == 1
-                        local valueChanged = false
-
-                        -- Use a relative width based on the window width
-                        imgui.PushItemWidth(imgui.GetWindowWidth() * 0.8)
-
-                        -- Create appropriate slider based on type
-                        if isInteger then
-                            valueChanged = imgui.SliderInt(
-                                controlID,
-                                buffer,
-                                math.floor(setting.ui.min),
-                                math.floor(setting.ui.max),
-                                '%d',
-                                ImGuiSliderFlags_AlwaysClamp
-                            )
-                        else
-                            -- Format based on step size
-                            local format = '%.1f'
-                            if setting.ui.step < 0.1 then
-                                format = '%.2f'
-                            elseif setting.ui.step < 0.01 then
-                                format = '%.3f'
-                            end
-
-                            valueChanged = imgui.SliderFloat(
-                                controlID,
-                                buffer,
-                                setting.ui.min,
-                                setting.ui.max,
-                                format,
-                                ImGuiSliderFlags_AlwaysClamp
-                            )
-                        end
-
-                        imgui.PopItemWidth()
-
-                        -- Apply changes if the value changed
-                        if valueChanged then
-                            settingRef[lastPart] = buffer[1]
+                    
+                    -- Render captain settings
+                    renderSettings(
+                        ui_settings, 
+                        captain.settings[category.id],
+                        -- Function to get default value
+                        function(setting, _)
+                            return setting.default
+                        end,
+                        -- Function to save config
+                        function()
                             backend.saveConfig('captain')
                         end
-
-                        -- Add reset button on the same line
-                        imgui.SameLine()
-                        local resetID = string.format('Reset##captain_reset_%s_%s',
-                            category.id:gsub(' ', '_'):lower(),
-                            setting.path:gsub('[%.]', '_'):lower())
-
-                        if imgui.Button(resetID) then
-                            -- Reset to default value
-                            settingRef[lastPart] = setting.default
-                            backend.saveConfig('captain')
-                        end
-
-                        -- Show tooltip on hover
-                        if imgui.IsItemHovered() then
-                            imgui.BeginTooltip()
-                            if setting.ui.description then
-                                imgui.Text(setting.ui.description)
-                                imgui.Separator()
-                            end
-                            imgui.Text(string.format('Default: %s', tostring(setting.default)))
-                            imgui.EndTooltip()
-                        end
-                    end
+                    )
 
                     imgui.EndGroup()
                     imgui.EndTabItem()
+                end
+            end
+
+            -- Addon settings
+            for addonName, addon in pairs(captain.addons) do
+                -- Check if addon has a config menu
+                if type(addon.onConfigMenu) == 'function' then
+                    local addonConfig = addon.onConfigMenu()
+                    
+                    -- Skip if no config is returned
+                    if addonConfig and #addonConfig > 0 then
+                        -- Create a tab for this addon
+                        if imgui.BeginTabItem(addonName) then
+                            imgui.BeginGroup()
+                            
+                            -- Render addon settings
+                            renderSettings(
+                                addonConfig,
+                                addon.settings,
+                                -- Function to get default value from addon's defaultSettings
+                                function(_, parts)
+                                    local defaultRef = addon.defaultSettings
+                                    for _, part in ipairs(parts) do
+                                        if defaultRef and type(defaultRef) == "table" then
+                                            defaultRef = defaultRef[part]
+                                        else
+                                            defaultRef = nil
+                                            break
+                                        end
+                                    end
+                                    return defaultRef
+                                end,
+                                -- Function to save config
+                                function()
+                                    backend.saveConfig(addonName)
+                                end
+                            )
+                            
+                            imgui.EndGroup()
+                            imgui.EndTabItem()
+                        end
+                    end
                 end
             end
 

@@ -117,5 +117,23 @@ addon.onHelp = function()
     }
 end
 
+-- Optionally return a list of settings keys that should be configurable
+-- They will be added to the config menu under the addon name
+addon.onConfigMenu = function()
+    return
+    {
+        {
+            key = 'widescanDelay',
+            title = 'Widescan Delay',
+            description = 'Time in seconds between widescan packets',
+            type = 'slider',
+            min = 1,
+            max = 10,
+            step = 1,
+            default = addon.defaultSettings.widescanDelay,
+        },
+    }
+end
+
 -- Make sure to return the addon
 return addon
