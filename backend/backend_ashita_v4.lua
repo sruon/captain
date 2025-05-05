@@ -399,8 +399,27 @@ backend.get_mob_by_id                  = function(id)
     return targetEntityData
 end
 
+-- scheduling coroutines makes reloading impossible
+-- unless we're checking constantly for the reload signal
 backend.schedule                       = function(func, delay)
-    ashita.tasks.once(delay, func)
+    ashita.tasks.once(0, function()
+        while not captain.reloadSignal do
+            if delay <= 1 then
+                coroutine.sleep(delay)
+                func()
+                return
+            else
+                local slept = 0
+                while slept < delay and not captain.reloadSignal do
+                    coroutine.sleep(1)
+                    slept = slept + 1
+                end
+
+                func()
+                return
+            end
+        end
+    end)
 end
 
 -- sugar.loop does not support early exits
@@ -581,7 +600,7 @@ backend.notificationsRender            = function(notifications)
         imgui.SetNextWindowPos(
             {
                 vp_size.x - captain.settings.notifications.offset.x,
-                vp_size.y - captain.settings.notifications.offset.y - height
+                vp_size.y - captain.settings.notifications.offset.y - height,
             },
             ImGuiCond_Always, { 1.0, 1.0 }
         )
@@ -734,7 +753,7 @@ backend.configMenu                     = function()
                 settingRef = settingRef[parts[i]]
             end
             local lastPart = parts[#parts]
-            
+
             -- If the setting doesn't exist yet, initialize it with the default
             if settingRef[lastPart] == nil then
                 local defaultValue = getDefaultValue(setting, parts)
@@ -742,7 +761,7 @@ backend.configMenu                     = function()
                     settingRef[lastPart] = defaultValue
                 end
             end
-            
+
             -- Display the setting name
             local title = setting.ui and setting.ui.title or setting.title
             imgui.TextColored(CORAL, title)
@@ -752,22 +771,22 @@ backend.configMenu                     = function()
             local controlID = string.format('##setting_%s', path:gsub(' ', '_'):gsub('%.', '_'):lower())
 
             local valueChanged = false
-            
+
             -- Use a relative width based on the window width
             imgui.PushItemWidth(imgui.GetWindowWidth() * 0.8)
-            
+
             -- Get UI properties
             local ui = setting.ui or setting
-            local settingType = ui.type or "slider"
-            
+            local settingType = ui.type or 'slider'
+
             -- Create appropriate control based on type
-            if settingType == "slider" then
+            if settingType == 'slider' then
                 -- Determine if it's an integer slider
                 local step = ui.step or 1
                 local isInteger = step and step == math.floor(step) and step == 1
                 local min = ui.min or 0
                 local max = ui.max or 100
-                
+
                 if isInteger then
                     valueChanged = imgui.SliderInt(
                         controlID,
@@ -785,7 +804,7 @@ backend.configMenu                     = function()
                     elseif step < 0.01 then
                         format = '%.3f'
                     end
-                    
+
                     valueChanged = imgui.SliderFloat(
                         controlID,
                         buffer,
@@ -795,31 +814,31 @@ backend.configMenu                     = function()
                         ImGuiSliderFlags_AlwaysClamp
                     )
                 end
-            elseif settingType == "checkbox" then
+            elseif settingType == 'checkbox' then
                 valueChanged = imgui.Checkbox(
                     controlID,
                     buffer
                 )
-            elseif settingType == "text" then
+            elseif settingType == 'text' then
                 valueChanged = imgui.InputText(
                     controlID,
                     buffer,
                     256
                 )
             end
-            
+
             imgui.PopItemWidth()
-            
+
             -- Apply changes if the value changed
             if valueChanged then
                 settingRef[lastPart] = buffer[1]
                 saveConfigFunc()
             end
-            
+
             -- Add reset button on the same line
             imgui.SameLine()
             local resetID = string.format('Reset##reset_%s', path:gsub('[%.]', '_'):lower())
-            
+
             if imgui.Button(resetID) then
                 -- Reset to default value
                 local defaultValue = getDefaultValue(setting, parts)
@@ -828,7 +847,7 @@ backend.configMenu                     = function()
                     saveConfigFunc()
                 end
             end
-            
+
             -- Show tooltip on hover
             if imgui.IsItemHovered() then
                 imgui.BeginTooltip()
@@ -837,7 +856,7 @@ backend.configMenu                     = function()
                     imgui.Text(description)
                     imgui.Separator()
                 end
-                
+
                 local defaultValue = getDefaultValue(setting, parts)
                 if defaultValue ~= nil then
                     imgui.Text(string.format('Default: %s', tostring(defaultValue)))
@@ -859,13 +878,13 @@ backend.configMenu                     = function()
             for _, category in ipairs(settings_schema.categories) do
                 if imgui.BeginTabItem(category.title) then
                     imgui.BeginGroup()
-                    
+
                     -- Get all UI-configurable settings for this category
                     local ui_settings = settings_schema:get_ui_settings(category.id)
-                    
+
                     -- Render captain settings
                     renderSettings(
-                        ui_settings, 
+                        ui_settings,
                         captain.settings[category.id],
                         -- Function to get default value
                         function(setting, _)
@@ -887,13 +906,13 @@ backend.configMenu                     = function()
                 -- Check if addon has a config menu
                 if type(addon.onConfigMenu) == 'function' then
                     local addonConfig = addon.onConfigMenu()
-                    
+
                     -- Skip if no config is returned
                     if addonConfig and #addonConfig > 0 then
                         -- Create a tab for this addon
                         if imgui.BeginTabItem(addonName) then
                             imgui.BeginGroup()
-                            
+
                             -- Render addon settings
                             renderSettings(
                                 addonConfig,
@@ -902,7 +921,7 @@ backend.configMenu                     = function()
                                 function(_, parts)
                                     local defaultRef = addon.defaultSettings
                                     for _, part in ipairs(parts) do
-                                        if defaultRef and type(defaultRef) == "table" then
+                                        if defaultRef and type(defaultRef) == 'table' then
                                             defaultRef = defaultRef[part]
                                         else
                                             defaultRef = nil
@@ -916,7 +935,7 @@ backend.configMenu                     = function()
                                     backend.saveConfig(addonName)
                                 end
                             )
-                            
+
                             imgui.EndGroup()
                             imgui.EndTabItem()
                         end

@@ -187,7 +187,6 @@
 ---@field GP_CLI_COMMAND_ITEM_TRANSFER integer
 ---@field GP_CLI_COMMAND_ITEM_USE integer
 ---@field GP_CLI_COMMAND_ITEM_MAKE integer
----@field GP_CLI_COMAMND_ITEM_LIST integer
 ---@field GP_CLI_COMMAND_ITEM_STACK integer
 ---@field GP_CLI_COMMAND_BLACK_LIST integer
 ---@field GP_CLI_COMMAND_BLACK_EDIT integer
@@ -220,7 +219,6 @@
 ---@field GP_CLI_COMMAND_GROUP_LIST_REQ integer
 ---@field GP_CLI_COMMAND_GROUP_CHANGE2 integer
 ---@field GP_CLI_COMMAND_GROUP_CHECKID integer
----@field GP_CLI_COMMAND_SHOP_REQ integer
 ---@field GP_CLI_COMMAND_SHOP_BUY integer
 ---@field GP_CLI_COMMAND_SHOP_SELL_REQ integer
 ---@field GP_CLI_COMMAND_SHOP_SELL_SET integer
@@ -322,6 +320,8 @@
 -- ---@field GP_SERV_COMMAND_CHAR_DEL integer
 -- ---@field GP_SERV_COMMAND_TELL integer
 -- ---@field GP_SERV_COMMAND_TALK integer
+-- ---@field GP_CLI_COMMAND_SHOP_REQ integer
+-- ---@field GP_CLI_COMMAND_ITEM_LIST integer
 
 ---@type PacketId
 PacketId =
@@ -334,11 +334,8 @@ PacketId =
     GP_SERV_COMMAND_LOGOUT              = 0x00B,
     GP_SERV_COMMAND_CHAR_PC             = 0x00D,
     GP_SERV_COMMAND_CHAR_NPC            = 0x00E,
-    --GP_SERV_COMMAND_CHAR_DEL            = 0x011, -- deprecated
     GP_SERV_COMMAND_GM                  = 0x012,
     GP_SERV_COMMAND_GMCOMMAND           = 0x013,
-    --GP_SERV_COMMAND_TELL                = 0x014, -- deprecated
-    --GP_SERV_COMMAND_TALK                = 0x016, -- deprecated
     GP_SERV_COMMAND_CHAT_STD            = 0x017,
     GP_SERV_COMMAND_ITEM_MAX            = 0x01C,
     GP_SERV_COMMAND_ITEM_SAME           = 0x01D,
@@ -507,11 +504,11 @@ PacketId =
     GP_CLI_COMMAND_GMCOMMAND            = 0x01F,
     GP_CLI_COMMAND_ITEM_DUMP            = 0x028,
     GP_CLI_COMMAND_ITEM_MOVE            = 0x029,
-    GP_CLI_COMMAND_ITEM_ATTR            = 0x02A,
+    GP_CLI_COMMAND_ITEM_ATTR            = 0x02A, -- deprecated
     GP_CLI_COMMAND_ITEM_TRADE_REQ       = 0x032,
     GP_CLI_COMMAND_ITEM_TRADE_RES       = 0x033,
     GP_CLI_COMMAND_ITEM_TRADE_LIST      = 0x034,
-    GP_CLI_COMMAND_ITEM_PRESENT         = 0x035,
+    GP_CLI_COMMAND_ITEM_PRESENT         = 0x035, -- deprecated
     GP_CLI_COMMAND_ITEM_TRANSFER        = 0x036,
     GP_CLI_COMMAND_ITEM_USE             = 0x037,
     GP_CLI_COMMAND_ITEM_MAKE            = 0x038,
@@ -548,7 +545,8 @@ PacketId =
     GP_CLI_COMMAND_GROUP_LIST_REQ       = 0x076,
     GP_CLI_COMMAND_GROUP_CHANGE2        = 0x077,
     GP_CLI_COMMAND_GROUP_CHECKID        = 0x078,
-    GP_CLI_COMMAND_SHOP_REQ             = 0x082,
+    GP_CLI_COMMAND_COMMAND              = 0x07D,
+    GP_CLI_COMMAND_SETEMBLEM            = 0x081,
     GP_CLI_COMMAND_SHOP_BUY             = 0x083,
     GP_CLI_COMMAND_SHOP_SELL_REQ        = 0x084,
     GP_CLI_COMMAND_SHOP_SELL_SET        = 0x085,
@@ -611,7 +609,6 @@ PacketId =
     GP_CLI_COMMAND_BAZAAR_OPEN          = 0x109,
     GP_CLI_COMMAND_BAZAAR_ITEMSET       = 0x10A,
     GP_CLI_COMMAND_BAZAAR_CLOSE         = 0x10B,
-
     GP_CLI_COMMAND_UNKNOWN_0011         = 0x011,
     GP_CLI_COMMAND_UNKNOWN_001C         = 0x01C,
     GP_CLI_COMMAND_UNKNOWN_002B         = 0x02B,
