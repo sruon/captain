@@ -25,6 +25,7 @@ end
 ---@type Ashitav4Backend|WindowerBackend
 backend                 = require('backend/backend')
 utils                   = require('utils')
+stats                   = require('stats')
 ---@type table<number, ColorData>
 colors                  = require('libs/colors/colors')
 local notifications     = require('libs/notifications')
