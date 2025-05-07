@@ -19,10 +19,6 @@ local addon =
     settings        = {},
     defaultSettings =
     {
-        widescan =
-        {
-            delay = 20,
-        },
         database =
         {
             max_history    = 10,
@@ -120,8 +116,8 @@ local function parseNpcUpdate(data)
     if packet.SendFlg.Position then
         npc.dir       = packet.dir
         npc.x         = packet.x
-        npc.y         = packet.z -- Backwards compatibility, this should be y!
-        npc.z         = packet.y -- Backwards compatibility, this should be z!
+        npc.y         = packet.z -- Backward compatibility, this should be y!
+        npc.z         = packet.y -- Backward compatibility, this should be z!
         npc.Flags0    = packet.Flags0
         npc.Flags1    = packet.Flags1
         npc.Speed     = packet.Speed
@@ -233,11 +229,6 @@ local function parseNpcUpdate(data)
 end
 
 local function parseWidescanUpdate(data)
-    -- Reschedule another WS packet
-    backend.schedule(function()
-        backend.doWidescan()
-    end, addon.settings.widescan.delay)
-
     ---@type GP_SERV_COMMAND_TRACKING_LIST?
     local packet = backend.parsePacket('incoming', data)
     if not packet then
@@ -300,29 +291,10 @@ addon.onPrerender = function()
             end
         end, 60)
 
-        -- Just schedule once, the handler will reschedule
-        backend.schedule(function()
-            backend.doWidescan()
-        end, addon.settings.widescan.delay)
-
         addon.coroutinesSetup = true
     end
 end
 
-addon.onConfigMenu = function()
-    return
-    {
-        {
-            key = 'widescan.delay',
-            title = 'Widescan Delay',
-            description = 'Time in seconds between widescan packets',
-            type = 'slider',
-            min = 5,
-            max = 60,
-            step = 5,
-            default = addon.defaultSettings.widescan.delay,
-        },
-    }
-end
+
 
 return addon
