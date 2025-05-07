@@ -233,11 +233,6 @@ local function parseNpcUpdate(data)
 end
 
 local function parseWidescanUpdate(data)
-    -- Reschedule another WS packet
-    backend.schedule(function()
-        backend.doWidescan()
-    end, addon.settings.widescan.delay)
-
     ---@type GP_SERV_COMMAND_TRACKING_LIST?
     local packet = backend.parsePacket('incoming', data)
     if not packet then
@@ -301,7 +296,7 @@ addon.onPrerender = function()
         end, 60)
 
         -- Just schedule once, the handler will reschedule
-        backend.schedule(function()
+        backend.forever(function()
             backend.doWidescan()
         end, addon.settings.widescan.delay)
 
