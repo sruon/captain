@@ -353,7 +353,7 @@
 ---@field ShopItemOffsetIndex number
 ---@field Flags number
 ---@field padding00 number
----@field ShopItemTbl table[] -- Fixed size function: 000001BB6D9A20E0
+---@field ShopItemTbl table[] -- Fixed size function: 0000028853C4FDC0
 
 ---@class GP_SERV_COMMAND_SHOP_SELL : ParsedPacket
 ---@field Price number
@@ -549,6 +549,9 @@
 ---@field sName string -- 16 bytes
 ---@field DotColor any -- Computed
 ---@field Hidden any -- Computed
+
+---@class GP_SERV_COMMAND_TRACKING_STATE : ParsedPacket
+---@field State number
 
 ---@class GP_SERV_COMMAND_GROUP_ATTR : ParsedPacket
 ---@field UniqueNo number

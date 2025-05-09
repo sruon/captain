@@ -7,6 +7,15 @@ local TrackingListTbl_Type =
     ENEMY    = 2,
 }
 
+GP_TRACKING_STATE =
+{
+    GP_TRACKING_STATE_NONE       = 0x00,
+    GP_TRACKING_STATE_LIST_START = 0x01,
+    GP_TRACKING_STATE_LIST_END   = 0x02,
+    GP_TRACKING_STATE_ERR_ETC    = 0x0A,
+    GP_TRACKING_STATE_END        = 0x03,
+}
+
 -- Definitions _must_ match structures defined in the XiPackets documents
 -- Definitions start from the 5th byte of the packet, as the first 4 bytes are reserved for the header.
 -- There cannot be any gap in between fields as the parser will read a continuous stream of bits. This does not support arbitrary offsets.
@@ -776,8 +785,8 @@ local definitions =
             {
                 name = 'Flags5',
                 expr = function(ctx)
-                    local flags         = {}
-                    local n             = ctx.Flags5_num
+                    local flags          = {}
+                    local n              = ctx.Flags5_num
 
                     flags.GeoIndiElement = bit.band(bit.rshift(n, 0), 0x0F) -- 0x42.0-0x42.3 (bits 0-3, 4 bits)
                     flags.GeoIndiSize    = bit.band(bit.rshift(n, 4), 0x03) -- 0x42.4-0x42.5 (bits 4-5, 2 bits)
@@ -1299,6 +1308,10 @@ local definitions =
                 end,
             },
         },
+        [PacketId.GP_SERV_COMMAND_TRACKING_STATE] =
+        {
+            { name = 'State', bits = 32 }, -- 0x04
+        },
         [PacketId.GP_SERV_COMMAND_CHAR_PC] =
         {
             { name = 'UniqueNo', bits = 32 }, -- 0x04-0x07
@@ -1511,8 +1524,8 @@ local definitions =
             {
                 name = 'Flags5',
                 expr = function(ctx)
-                    local flags         = {}
-                    local n             = ctx.Flags5_num
+                    local flags          = {}
+                    local n              = ctx.Flags5_num
 
                     flags.GeoIndiElement = bit.band(bit.rshift(n, 0), 0x0F) -- 0x42.0-0x42.3 (bits 0-3, 4 bits)
                     flags.GeoIndiSize    = bit.band(bit.rshift(n, 4), 0x03) -- 0x42.4-0x42.5 (bits 4-5, 2 bits)
