@@ -3,7 +3,6 @@
 -- Frankly its annoying to test but !getstats 1 a mob and see if it lines up.
 -- Ensure you test: skillchains, procs, reacts (counter, retaliation, etc).
 -- TODO: This code can be reused for the following:
--- - Calculating DA/TA rates
 -- - Calculating proc rates on weapons / items
 ---@class HpTrackAddon : AddonInterface
 local addon =

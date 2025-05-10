@@ -53,10 +53,10 @@ end
 
 backend.register_event_incoming_packet = function(func)
     local adaptor = function(e)
-        -- id, data, size
-        func(e.id, e.data, e.size)
-        return false
+        e.blocked = func(e.id, e.data, e.size, e.injected)
+        return e.blocked
     end
+
     ashita.events.register('packet_in', 'packet_in_cb', adaptor)
 end
 
@@ -399,6 +399,15 @@ backend.get_mob_by_id                  = function(id)
     return targetEntityData
 end
 
+--credits: Thorny
+backend.is_mob                         = function(index)
+    if (index >= 0x400) then
+        return false
+    end
+
+    return (bit.band(AshitaCore:GetMemoryManager():GetEntity():GetSpawnFlags(index), 0x10) ~= 0)
+end
+
 -- scheduling coroutines makes reloading impossible
 -- unless we're checking constantly for the reload signal
 backend.schedule                       = function(func, delay)
@@ -452,6 +461,30 @@ end
 backend.doWidescan                     = function()
     backend.injectPacket(PacketId.GP_CLI_COMMAND_TRACKING_LIST,
         { PacketId.GP_CLI_COMMAND_TRACKING_LIST, 0x04, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00 })
+end
+
+backend.doCheck                        = function(targetIndex)
+    local mob = backend.get_mob_by_index(targetIndex)
+    if mob == nil or mob.serverId == 0 then
+        return
+    end
+
+    backend.injectPacket(PacketId.GP_CLI_COMMAND_EQUIP_INSPECT,
+        {
+            PacketId.GP_CLI_COMMAND_EQUIP_INSPECT,
+            0x10, -- size
+            0x00, -- sync
+            0x00, -- sync
+            bit.band(mob.serverId, 0xFF),
+            bit.band(bit.rshift(mob.serverId, 8), 0xFF),
+            bit.band(bit.rshift(mob.serverId, 16), 0xFF),
+            bit.band(bit.rshift(mob.serverId, 24), 0xFF),
+            bit.band(targetIndex, 0xFF),
+            bit.band(bit.rshift(targetIndex, 8), 0xFF),
+            bit.band(bit.rshift(targetIndex, 16), 0xFF),
+            bit.band(bit.rshift(targetIndex, 24), 0xFF),
+            0x00, -- kind
+        })
 end
 
 --------------------------------

@@ -60,8 +60,8 @@
 ---@field register_event_load fun(func: fun())
 ---@field register_event_unload fun(func: fun())
 ---@field register_command fun(func: fun(args: string[]))
----@field register_event_incoming_packet fun(func: fun(id: number, data: number[], size: number))
----@field register_event_outgoing_packet fun(func: fun(id: number, data: number[], size: number))
+---@field register_event_incoming_packet fun(func: fun(id: number, data: number[], size: number) : boolean)
+---@field register_event_outgoing_packet fun(func: fun(id: number, data: number[], size: number) : boolean)
 ---@field register_on_zone_change fun(func: fun(zone: number))
 ---@field register_event_incoming_text fun(func: fun(mode: number, text: string))
 ---@field register_event_prerender fun(func: fun())
@@ -87,8 +87,10 @@
 ---@field get_item_name fun(id: number): string
 ---@field get_mob_by_index fun(index: number): Entity?
 ---@field get_mob_by_id fun(id: number): Entity?
+---@field is_mob fun(index: number): boolean
 ---@field schedule fun(func: fun(), delay: number)
 ---@field doWidescan fun()
+---@field doCheck fun(index: number)
 ---@field injectPacket fun(id: number, content: number[])
 ---@field registerKeyBind fun(params: KeybindParams, command: string)
 ---@field deregisterKeyBind fun(params: KeybindParams)
