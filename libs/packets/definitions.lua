@@ -2523,6 +2523,7 @@ local definitions =
                     { name = 'ID',   bits = 32 },                  -- The blacklisted character server id
                     { name = 'Name', type = 'string', size = 16 }, -- The blacklisted character name
                 },
+
             },
             { name = 'Mode',      bits = 8 },               -- 0x18 - The packets mode (0 = Add, 1 = Delete)
             { name = 'padding00', type = 'raw', size = 3 }, -- 0x19-0x1B - Padding; unused
@@ -2775,6 +2776,21 @@ local definitions =
     },
     outgoing =
     {
+        [PacketId.GP_CLI_COMMAND_POS] =
+        {
+            { name = 'x',          bits = 32, type = 'float' }, -- 0x04 - The local clients X position
+            { name = 'z',          bits = 32, type = 'float' }, -- 0x08 - The local clients Z position
+            { name = 'y',          bits = 32, type = 'float' }, -- 0x0C - The local clients Y position
+            { name = 'MovTime',    bits = 16 },                 -- 0x10 - The client movement time
+            { name = 'MoveFlame',  bits = 16 },                 -- 0x12 - The client movement frame
+            { name = 'dir',        bits = 8,  signed = true },  -- 0x14 - The client heading direction
+            { name = 'TargetMode', bits = 1 },                  -- 0x15.0 - Target mode flag
+            { name = 'RunMode',    bits = 1 },                  -- 0x15.1 - Run mode flag
+            { name = 'GroundMode', bits = 1 },                  -- 0x15.2 - Ground mode flag
+            { name = 'unused',     bits = 5 },                  -- 0x15.3-0x15.7 - Unused bits
+            { name = 'facetarget', bits = 16 },                 -- 0x16 - The client face target
+            { name = 'TimeNow',    bits = 32 },                 -- 0x18 - The client timestamp
+        },
         [PacketId.GP_CLI_COMMAND_EVENTEND] =
         {
             { name = 'UniqueNo',  bits = 32 }, -- 0x04

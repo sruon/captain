@@ -114,10 +114,8 @@ function files.create_path(f)
         newpath = string.gsub(newpath, '/', '\\')
         newpath = string.gsub(newpath, '/', '//')
 
-        -- Check using backend, create using os
         if not backend.dir_exists(newpath) then
-            -- TODO: Get a return code from this to check failure
-            os.execute('mkdir '.. newpath)
+            backend.create_dir(newpath)
         end
     end
 

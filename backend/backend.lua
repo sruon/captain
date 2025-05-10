@@ -24,11 +24,14 @@ end
 local files                = require('backend/files')
 local packets              = require('libs/packets/parser')
 local database             = require('libs/database')
-
+local csv                  = require('libs/csv')
 --------------------------------
 -- Handles opening, or creating, a file object. Returns it.
 --------------------------------
 backend.fileOpen           = function(path)
+    -- Replace spaces with underscores in the path
+    path = path:gsub("%s+", "_")
+    
     local file =
     {
         path = backend.script_path() .. path,
@@ -109,6 +112,12 @@ backend.databaseOpen       = function(path, opts)
     local db = database.new(file, opts)
     db:load()
     return db
+end
+
+backend.csvOpen = function(path, columns)
+    local file = backend.fileOpen(path)
+    local csvFile = csv.new(file, columns)
+    return csvFile
 end
 
 --------------------------------

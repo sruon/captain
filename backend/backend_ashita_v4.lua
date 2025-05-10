@@ -53,7 +53,7 @@ end
 
 backend.register_event_incoming_packet = function(func)
     local adaptor = function(e)
-        e.blocked = func(e.id, e.data, e.size, e.injected)
+        e.blocked = func(e.id, e.data, e.size)
         return e.blocked
     end
 
@@ -62,9 +62,8 @@ end
 
 backend.register_event_outgoing_packet = function(func)
     local adaptor = function(e)
-        -- id, data, size
-        func(e.id, e.data, e.size)
-        return false
+        e.blocked = func(e.id, e.data, e.size)
+        return e.blocked
     end
     ashita.events.register('packet_out', 'packet_out_cb', adaptor)
 end
@@ -119,7 +118,7 @@ backend.register_event_incoming_text   = function(func)
 end
 
 backend.register_event_prerender       = function(func)
-    local customFont = backend.fontGet('Consolas', backend.scale_font(captain.settings.box.text.size))
+    local customFont = backend.fontGet('Consolas', backend.scale_font(captain.settings.notifications.text.size))
 
     local adaptor = function()
         imgui.PushFont(customFont)
@@ -406,6 +405,14 @@ backend.is_mob                         = function(index)
     end
 
     return (bit.band(AshitaCore:GetMemoryManager():GetEntity():GetSpawnFlags(index), 0x10) ~= 0)
+end
+
+backend.is_npc                         = function(index)
+    if (index >= 0x400) then
+        return false
+    end
+
+    return (bit.band(AshitaCore:GetMemoryManager():GetEntity():GetSpawnFlags(index), 0x2) ~= 0)
 end
 
 -- scheduling coroutines makes reloading impossible

@@ -353,7 +353,7 @@
 ---@field ShopItemOffsetIndex number
 ---@field Flags number
 ---@field padding00 number
----@field ShopItemTbl table[] -- Fixed size function: 0000028853C4FDC0
+---@field ShopItemTbl table[] -- Fixed size function: 000001E6C2479200
 
 ---@class GP_SERV_COMMAND_SHOP_SELL : ParsedPacket
 ---@field Price number
@@ -613,43 +613,6 @@
 ---@field State number
 ---@field sName string -- 16 bytes
 
----@class GP_CLI_COMMAND_ITEM_DUMP : ParsedPacket
----@field ItemNum number
----@field Category number
----@field ItemIndex number
-
----@class GP_CLI_COMMAND_BLACK_EDIT : ParsedPacket
----@field Data table -- Nested struct
----@field Mode number
----@field padding00 any -- raw, 3 bytes
-
----@class GP_CLI_COMMAND_BLACK_LIST : ParsedPacket
----@field unknown00 number
----@field unknown01 number
----@field unknown02 number
----@field unknown03 number
----@field unknown04 number
----@field unknown05 number
----@field padding00 any -- raw, 3 bytes
-
----@class GP_CLI_COMMAND_PASSWARDS : ParsedPacket
----@field UniqueNo number
----@field ActIndex number
----@field padding00 number
----@field String string -- 16 bytes
-
----@class GP_CLI_COMMAND_EQUIP_SET : ParsedPacket
----@field PropertyItemIndex number
----@field EquipKind number
----@field Category number
-
----@class GP_CLI_COMMAND_GUILD_SELLLIST : ParsedPacket
-
----@class GP_CLI_COMMAND_GUILD_SELL : ParsedPacket
----@field ItemNo number
----@field PropertyItemIndex number
----@field ItemNum number
-
 ---@class GP_CLI_COMMAND_SHOP_BUY : ParsedPacket
 ---@field ItemNum number
 ---@field ShopNo number
@@ -666,22 +629,6 @@
 ---@class GP_CLI_COMMAND_SHOP_SELL_SET : ParsedPacket
 ---@field SellFlag number
 
----@class GP_CLI_COMMAND_ITEM_MOVE : ParsedPacket
----@field ItemNum number
----@field Category1 number
----@field Category2 number
----@field ItemIndex1 number
----@field ItemIndex2 number
-
----@class GP_CLI_COMMAND_ITEM_ATTR : ParsedPacket
----@field Category number
----@field ItemIndex number
-
----@class GP_CLI_COMMAND_ITEM_TRADE_REQ : ParsedPacket
----@field UniqueNo number
----@field ActIndex number
----@field padding00 number
-
 ---@class GP_CLI_COMMAND_BAZAAR_LIST : ParsedPacket
 ---@field UniqueNo number
 ---@field ActIndex number
@@ -691,13 +638,6 @@
 ---@field BazaarItemIndex number
 ---@field padding00 any -- raw, 3 bytes
 ---@field BuyNum number
-
----@class GP_CLI_COMMAND_GUILD_BUY : ParsedPacket
----@field ItemNo number
----@field PropertyItemIndex number
----@field ItemNum number
-
----@class GP_CLI_COMMAND_GUILD_BUYLIST : ParsedPacket
 
 ---@class GP_CLI_COMMAND_BAZAAR_OPEN : ParsedPacket
 
@@ -709,54 +649,24 @@
 ---@class GP_CLI_COMMAND_BAZAAR_CLOSE : ParsedPacket
 ---@field AllListClearFlg number
 
----@class GP_CLI_COMMAND_ITEM_TRADE_RES : ParsedPacket
----@field Kind number
----@field TradeCounter number
-
----@class GP_CLI_COMMAND_ITEM_TRADE_LIST : ParsedPacket
----@field ItemNum number
----@field ItemNo number
----@field ItemIndex number
----@field TradeIndex number
-
----@class GP_CLI_COMMAND_ITEM_STACK : ParsedPacket
----@field Category number
-
----@class GP_CLI_COMMAND_ITEM_TRANSFER : ParsedPacket
----@field UniqueNo number
----@field ItemNumTbl table[] -- Fixed size 10
----@field PropertyItemIndexTbl table[] -- Fixed size 10
----@field ActIndex number
----@field ItemNum number
----@field padding00 any -- raw, 3 bytes
-
----@class GP_CLI_COMMAND_ITEM_USE : ParsedPacket
----@field UniqueNo number
----@field ItemNum number
----@field ActIndex number
+---@class GP_CLI_COMMAND_EQUIP_SET : ParsedPacket
 ---@field PropertyItemIndex number
----@field padding00 number
+---@field EquipKind number
 ---@field Category number
 
----@class GP_CLI_COMMAND_ITEM_MAKE : ParsedPacket
----@field ItemNum number
----@field ItemNo number
----@field padding00 number
-
----@class GP_CLI_COMMAND_CHAT_STD : ParsedPacket
----@field Kind number
----@field unknown00 number
----@field Str any -- raw, computed bytes
----@field MessageType any -- Computed
-
----@class GP_CLI_COMMAND_CHAT_NAME : ParsedPacket
----@field ChanNo number
----@field padding00 number
----@field padding01 number
----@field sName string -- 16 bytes
-
----@class GP_CLI_COMMAND_REQLOGOUTINFO : ParsedPacket
----@field Mode number
+---@class GP_CLI_COMMAND_POS : ParsedPacket
+---@field x number
+---@field z number
+---@field y number
+---@field MovTime number
+---@field MoveFlame number
+---@field dir number
+---@field TargetMode number
+---@field RunMode number
+---@field GroundMode number
+---@field unused number
+---@field facetarget number
+---@field TimeNow number
 
 ---@class GP_CLI_COMMAND_EVENTEND : ParsedPacket
 ---@field UniqueNo number
@@ -778,6 +688,110 @@
 ---@field Mode number
 ---@field dir number
 
+---@class GP_CLI_COMMAND_PASSWARDS : ParsedPacket
+---@field UniqueNo number
+---@field ActIndex number
+---@field padding00 number
+---@field String string -- 16 bytes
+
+---@class GP_CLI_COMMAND_ITEM_DUMP : ParsedPacket
+---@field ItemNum number
+---@field Category number
+---@field ItemIndex number
+
+---@class GP_CLI_COMMAND_ITEM_MOVE : ParsedPacket
+---@field ItemNum number
+---@field Category1 number
+---@field Category2 number
+---@field ItemIndex1 number
+---@field ItemIndex2 number
+
+---@class GP_CLI_COMMAND_ITEM_ATTR : ParsedPacket
+---@field Category number
+---@field ItemIndex number
+
+---@class GP_CLI_COMMAND_GUILD_BUY : ParsedPacket
+---@field ItemNo number
+---@field PropertyItemIndex number
+---@field ItemNum number
+
+---@class GP_CLI_COMMAND_GUILD_BUYLIST : ParsedPacket
+
 ---@class GP_CLI_COMMAND_REQSUBMAPNUM : ParsedPacket
 ---@field MapNum number
+
+---@class GP_CLI_COMMAND_REQLOGOUTINFO : ParsedPacket
+---@field Mode number
+
+---@class GP_CLI_COMMAND_ITEM_TRADE_REQ : ParsedPacket
+---@field UniqueNo number
+---@field ActIndex number
+---@field padding00 number
+
+---@class GP_CLI_COMMAND_ITEM_TRADE_RES : ParsedPacket
+---@field Kind number
+---@field TradeCounter number
+
+---@class GP_CLI_COMMAND_ITEM_TRADE_LIST : ParsedPacket
+---@field ItemNum number
+---@field ItemNo number
+---@field ItemIndex number
+---@field TradeIndex number
+
+---@class GP_CLI_COMMAND_ITEM_TRANSFER : ParsedPacket
+---@field UniqueNo number
+---@field ItemNumTbl table[] -- Fixed size 10
+---@field PropertyItemIndexTbl table[] -- Fixed size 10
+---@field ActIndex number
+---@field ItemNum number
+---@field padding00 any -- raw, 3 bytes
+
+---@class GP_CLI_COMMAND_CHAT_STD : ParsedPacket
+---@field Kind number
+---@field unknown00 number
+---@field Str any -- raw, computed bytes
+---@field MessageType any -- Computed
+
+---@class GP_CLI_COMMAND_CHAT_NAME : ParsedPacket
+---@field ChanNo number
+---@field padding00 number
+---@field padding01 number
+---@field sName string -- 16 bytes
+
+---@class GP_CLI_COMMAND_ITEM_USE : ParsedPacket
+---@field UniqueNo number
+---@field ItemNum number
+---@field ActIndex number
+---@field PropertyItemIndex number
+---@field padding00 number
+---@field Category number
+
+---@class GP_CLI_COMMAND_ITEM_STACK : ParsedPacket
+---@field Category number
+
+---@class GP_CLI_COMMAND_ITEM_MAKE : ParsedPacket
+---@field ItemNum number
+---@field ItemNo number
+---@field padding00 number
+
+---@class GP_CLI_COMMAND_BLACK_LIST : ParsedPacket
+---@field unknown00 number
+---@field unknown01 number
+---@field unknown02 number
+---@field unknown03 number
+---@field unknown04 number
+---@field unknown05 number
+---@field padding00 any -- raw, 3 bytes
+
+---@class GP_CLI_COMMAND_BLACK_EDIT : ParsedPacket
+---@field Data table -- Nested struct
+---@field Mode number
+---@field padding00 any -- raw, 3 bytes
+
+---@class GP_CLI_COMMAND_GUILD_SELLLIST : ParsedPacket
+
+---@class GP_CLI_COMMAND_GUILD_SELL : ParsedPacket
+---@field ItemNo number
+---@field PropertyItemIndex number
+---@field ItemNum number
 

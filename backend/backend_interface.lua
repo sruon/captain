@@ -53,6 +53,7 @@
 ---@field fileWrite fun(file: File)
 ---@field fileClear fun(file: File)
 ---@field databaseOpen fun(path: string, opts?: { [string]: any }): Database
+---@field csvOpen fun(path: string, opts?: { [string]: any }): CSV
 ---@field notificationCreate fun(emitter: string,title: string, notificationData: { [string]: any }, freeze: boolean)
 ---@field parsePacket fun(dir: string, packet: string): any | nil -- Parses a raw packet and returns the parsed data
 
@@ -88,6 +89,7 @@
 ---@field get_mob_by_index fun(index: number): Entity?
 ---@field get_mob_by_id fun(id: number): Entity?
 ---@field is_mob fun(index: number): boolean
+---@field is_npc fun(index: number): boolean
 ---@field schedule fun(func: fun(), delay: number)
 ---@field doWidescan fun()
 ---@field doCheck fun(index: number)
