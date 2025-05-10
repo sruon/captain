@@ -314,17 +314,22 @@ end)
 
 -- Notify addons of incoming packets, if their filters accept it
 backend.register_event_incoming_packet(function(id, data, size)
+    local shouldBlock = false
     for addonName, addon in pairs(captain.addons) do
         if
           (addon.filters and addon.filters.incoming and addon.filters.incoming[id]) or
           (addon.filters and addon.filters.incoming and addon.filters.incoming[0x255])
         then
             if type(addon.onIncomingPacket) == 'function' then
-                -- addon.onIncomingPacket(id, data, size)
-                safe_call(addonName .. '.onIncomingPacket', addon.onIncomingPacket, id, data, size)
+                _, result = safe_call(addonName .. '.onIncomingPacket', addon.onIncomingPacket, id, data, size)
+                if result == true then
+                    shouldBlock = true
+                end
             end
         end
     end
+
+    return shouldBlock
 end)
 
 -- Notify addons of outgoing packets, if their filters accept it
