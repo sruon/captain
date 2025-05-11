@@ -47,6 +47,29 @@ local definitions =
 {
     incoming =
     {
+        [PacketId.GP_SERV_COMMAND_SCENARIOITEM] =
+        {
+            {
+                name = 'GetItemFlag', -- offset: 0x05-0x44 The clients obtained key item bit data.
+                type = 'array',
+                count = 16,
+                layout =
+                {
+                    { name = 'value', bits = 32 },
+                },
+            },
+            {
+                name = 'LookItemFlag', -- offset: 0x45-0x84 The clients viewed key item bit data.
+                type = 'array',
+                count = 16,
+                layout =
+                {
+                    { name = 'value', bits = 32 },
+                },
+            },
+            { name = 'TableIndex', bits = 16 }, -- offset: 0x85-0x86 The key item table index this data will populate.
+            { name = 'padding00',  bits = 16 }, -- offset: 0x87-0x88 Padding; unused.
+        },
         [PacketId.GP_SERV_COMMAND_PACKETCONTROL] =
         {
             { name = 'PacketCnt', bits = 32 }, -- 0x04

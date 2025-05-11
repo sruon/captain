@@ -353,7 +353,7 @@
 ---@field ShopItemOffsetIndex number
 ---@field Flags number
 ---@field padding00 number
----@field ShopItemTbl table[] -- Fixed size function: 000001E6C2479200
+---@field ShopItemTbl table[] -- Fixed size function: 00000164E6906070
 
 ---@class GP_SERV_COMMAND_SHOP_SELL : ParsedPacket
 ---@field Price number
@@ -438,6 +438,12 @@
 ---@field para number
 ---@field para2 number
 ---@field Number number
+---@field padding00 number
+
+---@class GP_SERV_COMMAND_SCENARIOITEM : ParsedPacket
+---@field GetItemFlag number[] -- Fixed size 16
+---@field LookItemFlag number[] -- Fixed size 16
+---@field TableIndex number
 ---@field padding00 number
 
 ---@class GP_SERV_COMMAND_WPOS : ParsedPacket

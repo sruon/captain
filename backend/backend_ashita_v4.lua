@@ -340,6 +340,11 @@ backend.get_spell_name                 = function(id)
     return (s and s.Name[1]) or 'Unknown Spell'
 end
 
+backend.get_key_item_name                  = function(id)
+    local s = AshitaCore:GetResourceManager():GetString('keyitems.names', id)
+    return s or 'Unknown Key Item'
+end
+
 backend.get_item_name                  = function(id)
     local s = AshitaCore:GetResourceManager():GetItemById(id)
     return (s and s.Name[1]) or 'Unknown Item'
