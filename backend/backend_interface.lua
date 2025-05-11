@@ -86,6 +86,7 @@
 ---@field get_weapon_skill_name fun(id: number): string
 ---@field get_spell_name fun(id: number): string
 ---@field get_item_name fun(id: number): string
+---@field get_key_item_name fun(id: number): string
 ---@field get_mob_by_index fun(index: number): Entity?
 ---@field get_mob_by_id fun(id: number): Entity?
 ---@field is_mob fun(index: number): boolean

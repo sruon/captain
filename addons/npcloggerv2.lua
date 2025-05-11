@@ -38,6 +38,10 @@ local addon =
                 'Flags0.MovTime',
                 'Hpp',
                 'legacy.flag',
+                --- These are set when the NPC is moving
+                'Flags1.CliPosInitFlag',
+                'Flags1.Gender',
+                'Flags1.GraphSize',
             },
         },
     },
