@@ -84,7 +84,6 @@ local function checkKeyItemChanges(keyItemIds, tableIndex)
         end
     end
 
-    -- Update stored state
     addon.keyItemMap[tableIndex] = currentMap
 
     -- Mark this table as initialized

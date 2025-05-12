@@ -2,6 +2,11 @@
 
 A suite of packet capture and analysis tools for FFXI targeting Windower v4, and Ashita v4.
 
+`captain` sends packets when not normally possible, or at a rate greater than the game client is capable of. 
+
+This is detectable and may cause your account to be sanctioned, up to a permanent ban.
+
+By using `captain` you acknowledge you are aware of the risks.
 
 ## Goal
 

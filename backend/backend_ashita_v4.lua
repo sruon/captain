@@ -809,91 +809,126 @@ backend.configMenu                     = function()
 
             -- Display the setting name
             local title = setting.ui and setting.ui.title or setting.title
-            imgui.TextColored(CORAL, title)
-
-            -- Create buffer with current value
-            local buffer = { settingRef[lastPart] }
-            local controlID = string.format('##setting_%s', path:gsub(' ', '_'):gsub('%.', '_'):lower())
-
-            local valueChanged = false
-
-            -- Use a relative width based on the window width
-            imgui.PushItemWidth(imgui.GetWindowWidth() * 0.8)
-
+            
             -- Get UI properties
             local ui = setting.ui or setting
             local settingType = ui.type or 'slider'
-
-            -- Create appropriate control based on type
-            if settingType == 'slider' then
-                -- Determine if it's an integer slider
-                local step = ui.step or 1
-                local isInteger = step and step == math.floor(step) and step == 1
-                local min = ui.min or 0
-                local max = ui.max or 100
-
-                if isInteger then
-                    valueChanged = imgui.SliderInt(
-                        controlID,
-                        buffer,
-                        math.floor(min),
-                        math.floor(max),
-                        '%d',
-                        ImGuiSliderFlags_AlwaysClamp
-                    )
-                else
-                    -- Format based on step size
-                    local format = '%.1f'
-                    if step < 0.1 then
-                        format = '%.2f'
-                    elseif step < 0.01 then
-                        format = '%.3f'
-                    end
-
-                    valueChanged = imgui.SliderFloat(
-                        controlID,
-                        buffer,
-                        min,
-                        max,
-                        format,
-                        ImGuiSliderFlags_AlwaysClamp
-                    )
-                end
-            elseif settingType == 'checkbox' then
-                valueChanged = imgui.Checkbox(
-                    controlID,
-                    buffer
-                )
-            elseif settingType == 'text' then
-                valueChanged = imgui.InputText(
-                    controlID,
-                    buffer,
-                    256
-                )
-            end
-
-            imgui.PopItemWidth()
-
-            -- Apply changes if the value changed
-            if valueChanged then
-                settingRef[lastPart] = buffer[1]
-                saveConfigFunc()
-            end
-
-            -- Add reset button on the same line
-            imgui.SameLine()
-            local resetID = string.format('Reset##reset_%s', path:gsub('[%.]', '_'):lower())
-
-            if imgui.Button(resetID) then
-                -- Reset to default value
-                local defaultValue = getDefaultValue(setting, parts)
-                if defaultValue ~= nil then
-                    settingRef[lastPart] = defaultValue
+            
+            -- For checkboxes, put the title on the same line as the control
+            if settingType == 'checkbox' then
+                -- For checkboxes, show colored title first, then the checkbox on same line
+                imgui.TextColored(CORAL, title)
+                imgui.SameLine()
+                
+                -- Create checkbox without title text
+                local buffer = { settingRef[lastPart] }
+                local controlID = string.format('##setting_%s', path:gsub(' ', '_'):gsub('%.', '_'):lower())
+                
+                -- Create checkbox without title
+                local valueChanged = imgui.Checkbox(controlID, buffer)
+                
+                -- Apply changes if the value changed
+                if valueChanged then
+                    settingRef[lastPart] = buffer[1]
                     saveConfigFunc()
                 end
+                
+                -- Add reset button on the same line
+                imgui.SameLine()
+                local resetID = string.format('Reset##reset_%s', path:gsub('[%.]', '_'):lower())
+                
+                if imgui.Button(resetID) then
+                    -- Reset to default value
+                    local defaultValue = getDefaultValue(setting, parts)
+                    if defaultValue ~= nil then
+                        settingRef[lastPart] = defaultValue
+                        saveConfigFunc()
+                    end
+                end
+            else
+                -- For non-checkbox controls, display title first
+                imgui.TextColored(CORAL, title)
+                
+                -- Create buffer with current value
+                local buffer = { settingRef[lastPart] }
+                local controlID = string.format('##setting_%s', path:gsub(' ', '_'):gsub('%.', '_'):lower())
+                
+                local valueChanged = false
+                
+                -- Use a relative width based on the window width
+                imgui.PushItemWidth(imgui.GetWindowWidth() * 0.8)
+                
+                -- Create appropriate control based on type
+                if settingType == 'slider' then
+                    -- Determine if it's an integer slider
+                    local step = ui.step or 1
+                    local isInteger = step and step == math.floor(step) and step == 1
+                    local min = ui.min or 0
+                    local max = ui.max or 100
+                    
+                    if isInteger then
+                        valueChanged = imgui.SliderInt(
+                            controlID,
+                            buffer,
+                            math.floor(min),
+                            math.floor(max),
+                            '%d',
+                            ImGuiSliderFlags_AlwaysClamp
+                        )
+                    else
+                        -- Format based on step size
+                        local format = '%.1f'
+                        if step < 0.1 then
+                            format = '%.2f'
+                        elseif step < 0.01 then
+                            format = '%.3f'
+                        end
+                        
+                        valueChanged = imgui.SliderFloat(
+                            controlID,
+                            buffer,
+                            min,
+                            max,
+                            format,
+                            ImGuiSliderFlags_AlwaysClamp
+                        )
+                    end
+                elseif settingType == 'text' then
+                    valueChanged = imgui.InputText(
+                        controlID,
+                        buffer,
+                        256
+                    )
+                elseif settingType == 'number' then
+                    valueChanged = imgui.InputInt(
+                        controlID,
+                        buffer
+                    )
+                end
+                
+                imgui.PopItemWidth()
+                
+                -- Apply changes if the value changed
+                if valueChanged then
+                    settingRef[lastPart] = buffer[1]
+                    saveConfigFunc()
+                end
+                
+                -- Add reset button on the same line
+                imgui.SameLine()
+                local resetID = string.format('Reset##reset_%s', path:gsub('[%.]', '_'):lower())
+                
+                if imgui.Button(resetID) then
+                    -- Reset to default value
+                    local defaultValue = getDefaultValue(setting, parts)
+                    if defaultValue ~= nil then
+                        settingRef[lastPart] = defaultValue
+                        saveConfigFunc()
+                    end
+                end
             end
-
-            -- Show tooltip on hover
+            
+            -- Show tooltip on hover (for both checkbox and non-checkbox)
             if imgui.IsItemHovered() then
                 imgui.BeginTooltip()
                 local description = ui.description or setting.description
@@ -901,7 +936,7 @@ backend.configMenu                     = function()
                     imgui.Text(description)
                     imgui.Separator()
                 end
-
+                
                 local defaultValue = getDefaultValue(setting, parts)
                 if defaultValue ~= nil then
                     imgui.Text(string.format('Default: %s', tostring(defaultValue)))

@@ -81,10 +81,6 @@ addon.onPrerender = function()
     end
 end
 
-addon.onInitialize = function()
-    backend.msg('AutoWidescan', 'This addon sends widescan packets even when client does not allow it.')
-end
-
 addon.onConfigMenu = function()
     return
     {
