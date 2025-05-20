@@ -30,7 +30,7 @@ local csv                  = require('libs/csv')
 --------------------------------
 backend.fileOpen           = function(path)
     -- Replace spaces with underscores in the path
-    path = path:gsub("%s+", "_")
+    path = path:gsub("%s+", "_"):gsub(":", "_")
     
     local file =
     {
