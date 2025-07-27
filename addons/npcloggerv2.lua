@@ -299,6 +299,4 @@ addon.onPrerender = function()
     end
 end
 
-
-
 return addon
