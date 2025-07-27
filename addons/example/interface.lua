@@ -31,7 +31,8 @@
 ---@field onIncomingPacket? fun(id: number, data: string, size: number)  # Raw incoming packet handler
 ---@field onOutgoingPacket? fun(id: number, data: string, size: number)  # Raw outgoing packet handler
 ---@field onIncomingText? fun(mode:string, text: string)   # Chatlog text handler
----@field onZoneChange? fun(zoneId: number)                # Zone change handler
+---@field onZoneChange? fun(zoneId: number)                # Zone change handler - the client may not be ready, i.e. player name
+---@field onClientReady? fun(zoneId: number)               # Zone change handler but waits for client to emit GAMEOK
 ---@field onCommand? fun(args: string[])                   # Command handler, i.e. /captain <lower_cased_addon_name> <args>
 ---@field onHelp? fun(): Command[]                         # Help handler, display addon specific commands
 ---@field onConfigMenu? fun(): ConfigEntry[]               # Config menu handler, return a list of settings keys that should be configurable

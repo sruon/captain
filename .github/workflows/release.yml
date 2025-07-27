@@ -1,0 +1,43 @@
+name: Release
+
+on:
+  push:
+    branches: [ master ]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - uses: googleapis/release-please-action@v4
+      id: release
+      with:
+        release-type: simple
+
+    - name: Make release zipball
+      run: |
+        # Create captain directory structure
+        mkdir -p release/captain
+        
+        # Copy all repo content to captain folder (excluding .git and .github)
+        rsync -av --exclude='.git' --exclude='.github' --exclude='captures' ./ release/captain/
+        
+        # Create the zip file
+        cd release
+        zip -r ../captain.zip captain/
+        cd ..
+        
+        # Verify zip contents
+        echo "Zip file contents:"
+        unzip -l captain.zip | head -20
+
+    - name: Upload Release Artifact
+      run: gh release upload ${{ steps.release.outputs.tag_name }} captain.zip

@@ -1,9 +1,24 @@
 ---@diagnostic disable: deprecated
 
 local backend  = require('backend/backend')
-local serpent  = require("libs/serpent")
+local serpent  = require("deps/serpent")
 
 local utils    = {}
+
+-- Deep copy function for tables
+utils.deepcopy = function(orig)
+    local copy
+    if type(orig) == 'table' then
+        copy = {}
+        for orig_key, orig_value in next, orig, nil do
+            copy[utils.deepcopy(orig_key)] = utils.deepcopy(orig_value)
+        end
+        setmetatable(copy, utils.deepcopy(getmetatable(orig)))
+    else -- number, string, boolean, etc
+        copy = orig
+    end
+    return copy
+end
 
 -- Create a file name based on the current date and time
 local date     = os.date('*t')
@@ -184,6 +199,29 @@ utils.deepCopy        = function(original)
     end
 
     return copy
+end
+
+utils.getProcessInfo = function()
+    local ffi = require('ffi')
+    
+    ffi.cdef[[
+        int GetModuleFileNameA(void* hModule, char* lpFilename, int nSize);
+        void* GetActiveWindow();
+        int GetWindowTextA(void* hWnd, char* lpString, int nMaxCount);
+    ]]
+    
+    -- Get process path
+    local buffer = ffi.new("char[260]") -- MAX_PATH
+    ffi.C.GetModuleFileNameA(nil, buffer, 260)
+    local process_path = ffi.string(buffer)
+    
+    -- Get active window title
+    local hwnd = ffi.C.GetActiveWindow()
+    local window_buffer = ffi.new("char[256]")
+    ffi.C.GetWindowTextA(hwnd, window_buffer, 256)
+    local window_name = ffi.string(window_buffer)
+    
+    return process_path, window_name
 end
 
 return utils
