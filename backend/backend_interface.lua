@@ -103,7 +103,6 @@
 ---@field deregisterKeyBind fun(params: KeybindParams)
 ---@field loadConfig fun(name: string, defaults: table): table
 ---@field saveConfig fun(name: string)
----@field notificationDestroy? fun(notification: Notification)
 ---@field notificationsRender fun(notifications: Notification[]): number
 ---@field reloadSignal boolean
 ---@field reload fun()
