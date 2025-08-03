@@ -1,32 +1,65 @@
 # 👨‍✈️ captain
 
-A suite of packet capture and analysis tools for FFXI targeting Windower v4, and Ashita v4.
+A suite of packet capture and analysis tools for FFXI targeting Ashita v4.
 
-`captain` sends packets when not normally possible, or at a rate greater than the game client is capable of. 
+## A note about account safety
+`captain` sends packets when not normally possible, or at a rate greater than the game client is capable of.
 
 This is detectable and may cause your account to be sanctioned, up to a permanent ban.
 
 By using `captain` you acknowledge you are aware of the risks.
 
+Certain actions are known to be relatively safe and are enabled by default (such as Auto Wide Scan), others are explicitly opt-in.
+
 ## Goal
 
-Windower and Ashita are both great, but they offer different APIs for inspecting and interacting with FFXI.
+While the original `captain` attempted to bridge the gap between Windower and Ashita, it is not a stated goal of this fork as maintaining, creating addons and testing while accounting for the quirks of several launchers is not feasible at this time.
 
-- `captain` - The logic for capturing and analyzing packets.
-- `backend` - A "cross-platform" set of functions that can be used in both Windower and Ashita.
+The key objective is to provide a high-quality suite of tools for analyzing FFXI entities, events, packets and other with the primary target being `LandSandBoat` development.
 
-### Ashita v4
+## Project philosophy
 
-![Ashita v4 screenshot](_images/ashitav4.png)
+### Event-driven
+`captain` works off an event-driven model, where `captain` takes care of setting up the appropriate hooks with Ashita and vends events to each addon implementing the related methods.
 
-### Windower v4
+### Batteries included
+`captain` provides capabilities for common tasks such as storing data or performing statistical analysis, reducing the need to implement it for each addon.
 
-![Windower v4 screenshot](_images/windowerv4.png)
+Several known well-maintained dependencies are included or implicitly relied on.
+
+When evaluating options for new dependencies, keep this list order in mind:
+
+- Ashita included libraries
+- Lua-only libraries
+- DLLs with FFI wrappers
+
+Compiled Lua libraries are unfortunately very hard to compile and integrate given everything needs to target Windows 32 bits.
+
+### Fat framework, light addons
+Addons are intended to be lightweight to maximize maintainability, aiming for 300-400 LOCs at most.
+
+Several capture scenario will require their own addons as one-offs and that's fine. We would rather deal with 50 small addons than 3 unmaintainable God-Addons.
+
+### XiPackets as the source of truth
+Every packet definition and data storage nomenclature is aligned on `XiPackets`.
+
+This is the only accepted source of truth for packets related informations.
+
+### LandSandBoat is the primary target
+`captain` development is made with LandSandBoat in mind. The framework can be used for other types of data collection and analysis but it will never be a primary objective.
+
+## Differences with the existing Windower suite
+`captain` was heavily inspired by the existing Windower suite, however it differs in the following ways:
+- Commonly re-used patterns (notifications, databases...) are part of the framework instead of being tightly coupled to the addons
+- Nomenclatures were reworked to align with XiPackets as much as possible
+- Optional features not deemed essential have been dropped
+- Several addons known to be incorrect were fixed.
+- Data collection has been aligned on SQLite for structured data and CSV for data points.
 
 ## Features
 ### Addons
 
-Several addons ported from the original capture addon are available:
+#### Ported from Windower suite
 - `actionview`   - Logs Mob TP moves, spells, and other actions. Displays notifications.
 - `caplog`       - Logs chatlog messages to a file.
 - `eventview`    - Logs NPC events, cutscenes, and other events. Displays notifications.
@@ -36,26 +69,27 @@ Several addons ported from the original capture addon are available:
 - `playerinfo`   - Displays basic information about player in a floating text box.
 - `targetinfo`   - Displays basic information about current target in a floating text box.
 
-### Other
-- A library to parse packets
-- Structured data saving with history
+#### New additions
+- `kitrack`      - Displays and logs obtained/lost Key Items, including the position of occurence.
+- `attackdelay`  - Captures delay between attack rounds and displays on death. Includes reverse calculation from TP gains on hits.
+- `pathlog`      - Logs player and NPC movements, with customizable leg detection.
+- `packetbridge` - Re-emits received/sent packets to an arbitrary UDP endpoint.
+- `weathertrack` - Logs weather changes in a database.
+- `obs`          - Automates the management of OBS and saves recordings in the capture folder.
+
+### Standard library
+- UI configuration
+- Packets parser
+- SQLite3 structured data storage with diff tracking
+- CSV data points logging
+- Async HTTP(S) and WebSocket clients
 - Notifications display
 - Textbox display
-- Simple interface to create addons
+- Statistical functions
 
 ## Instructions
 
-### Windower
-
-- Download and place in `<Windower folder>/addons`
-- Either:
-  - Add to `scripts/init.txt` to auto-load when you log in
-  - Load on demand with `//lua load captain`
-- Unload with `//lua unload captain`
-
-### Ashita
-
-- Download and place in `<Ashita folder>/addons`
+- Download the [latest release](https://github.com/sruon/captain/releases) `captain.zip` and place in `<Ashita folder>/addons`
 - Either:
   - Add to `scripts/Default.txt` to auto-load when you log in
   - Load on demand with `/addon load captain`
@@ -63,29 +97,15 @@ Several addons ported from the original capture addon are available:
 
 ### General
 
-- `/cap hide` to stop showing the GUI elements
-- `/cap show`  to show the GUI elements
+- `/cap` to show the configuration menu
 - `/cap start` (`CTRL + ALT + C`) to begin a capture
 - `/cap stop` (`CTRL + ALT + V`) to end a capture
 - `/cap toggle` (`CTRL + X`) to toggle recording
 - `/cap split` to roll over to a new capture
 - `/cap reload` (`CTRL + Z`) to reload captain
-- `SHIFT + DRAG` to drag text boxes around
-
-### Differences with Windower capture
-- Data is stored in a slightly different format
-- Uses XiPacket field names where applicable. Certain legacy fields have been kept.
-- Lot less customization options
-- The existing addons commands (customization) were not ported. Customization happens through config files.
-- No concept of PASSIVE/OFF mode. The backend is either capturing or it's not.
-- Not all infos that were available in the text box were ported over. Moon phase etc.
-- PlayerInfo displays current ZoneServer IP/port. It is also logged in the capture folders.
 
 ### TODO
 - Witness protection
-- Retail testing
-- Compare with Windower capture addon
-- Rewrite HPTrack
 - EventView zone events
 
 ### Development
@@ -105,6 +125,18 @@ symbolic link created for C:\ffxi\Windower\addons\captain <<===>> C:\ffxi\captai
 - [Windower](https://www.windower.net/)
 - [Ashita](https://ashitaxi.com/)
 - `Packeteer` by atom0s
-- `XiPackets` by atom0s
+- [XiPackets](https://github.com/atom0s/XiPackets) by atom0s
 - `capture` by ibm2431
 - `PacketViewer` by Arcon
+- [pathlog](https://github.com/Dukilles/pathlog) by Duke
+- [weatherwatch](https://github.com/cocosolos/WeatherWatch) by cocosolos
+- [VieweD](https://github.com/ZeromusXYZ/VieweD) by ZeromusXYZ
+- The FFXI Captures community
+- [LandSandBoat](https://github.com/LandSandBoat/server) and its numerous contributors
+
+## Powered by
+- [SQLite](https://www.sqlite.org)
+- [copas](https://lunarmodules.github.io/copas/) (MIT)
+- [lua-websockets](https://github.com/lipp/lua-websockets) (MIT)
+- [serpent](https://github.com/pkulchenko/serpent) (MIT)
+- [json.lua](https://github.com/rxi/json.lua) (MIT)
