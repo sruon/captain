@@ -66,19 +66,27 @@ local addon =
     {
         global =
         {
-            zone = {},
-            category =
-            {
-
-            },
+            zone = nil,
+            actions = nil, -- Single actions database instead of 15 category databases
         },
         capture =
         {
             zone = nil,
-            category =
-            {
-            },
+            actions = nil, -- Single actions database instead of 15 category databases
         },
+    },
+
+    -- Action schema based on actual data structure
+    schema          =
+    {
+        ActionType = 'Physical',  -- Action type string
+        category = 1,             -- Category number (cmd_no)
+        actor = 12345,            -- Actor ID (m_uID)
+        id = 123,                 -- Action/ability ID
+        message = 1,              -- Message ID from target result
+        animation = 456,          -- Animation ID (sub_kind)
+        name = 'Example Ability', -- Resolved action name
+        actor_name = 'Actor Name', -- Resolved actor name
     },
     files           =
     {
@@ -223,13 +231,17 @@ local function parseAction(action)
     return result, str_info
 end
 
--- Inserts an action into a category DB
+-- Inserts an action into the actions DB
 ---------------------------------------------------------------------
 local function addActionToCategory(db, result)
-    local category_db = db.category[result.category]
+    if not db.actions then
+        return false
+    end
 
-    local mt = getmetatable(category_db)
-    local r = category_db:add_or_update(result.id, result)
+    -- Use category + id as unique key
+    local unique_key = string.format('%d_%d', result.category, result.id)
+    local mt = getmetatable(db.actions)
+    local r = db.actions:add_or_update(unique_key, result)
 
     return r == mt.RESULT_NEW
 end
@@ -238,15 +250,21 @@ end
 ---------------------------------------------------------------------
 local function addActionToMobList(db, result)
     local zone_db = db.zone
+    if not zone_db then
+        return false
+    end
 
     local mob_key = string.format('%08d-%03d', result.actor, result.id)
     zone_db:add_or_update(mob_key, result)
 
-    local cat_db = db.category[result.category]
-    local mt = getmetatable(cat_db)
-    local r = cat_db:add_or_update(mob_key, result)
+    -- Also add to the single actions database
+    if db.actions then
+        local mt = getmetatable(db.actions)
+        local r = db.actions:add_or_update(mob_key, result)
+        return r == mt.RESULT_NEW
+    end
 
-    return r == mt.RESULT_NEW
+    return false
 end
 
 local function recordAction(result, str_info)
@@ -255,7 +273,7 @@ local function recordAction(result, str_info)
     local simple_string = buildSimpleString(str_info)
     addon.files.simple:append(simple_string .. '\n\n')
 
-    if addon.databases.capture.zone then
+    if addon.captureDir then
         new_mob_ability = addActionToMobList(addon.databases.capture, result)
         addon.files.capture.simple:append(simple_string .. '\n\n')
     end
@@ -301,41 +319,30 @@ local function checkAction(data)
             if result and (result.message ~= 84) then
                 recordAction(result, str_info)
 
-                -- Create notification with the new API
                 createActionNotification(result)
-
-                -- Notification already creates a chatlog string
-                -- backend.msg('AView', buildChatlogString(str_info))
             end
         end
     end
 end
 
--- Prepares master databases for all action categories
---------------------------------------------------
-local function prepareCategoryDatabases()
-    for i = 1, 15 do
-        local path = string.format('%s/category/%s.lua', addon.rootDir, addon.category[tostring(i)])
-        addon.databases.global.category[i] = backend.databaseOpen(path, addon.settings.database)
-
-        -- Prepare category databases for a capture
-        if captain.isCapturing then
-            local capture_path = string.format('%s/category/%s.lua', addon.captureDir,
-                addon.category[tostring(i)])
-            addon.databases.capture.category[i] = backend.databaseOpen(capture_path, addon.settings.database)
-        end
-    end
-end
 
 -- Loads a zone database into memory
 --------------------------------------------------
 local function prepareZoneDatabase(zone)
-    local path = string.format('%s/zone/%s.lua', addon.rootDir, backend.zone_name(zone))
-    addon.databases.global.zone = backend.databaseOpen(path, addon.settings.database)
+    local path = string.format('%s/zone/%s.db', addon.rootDir, backend.zone_name(zone))
+    addon.databases.global.zone = backend.databaseOpen(path,
+    {
+        schema = addon.schema,
+        max_history = addon.settings.database and addon.settings.database.max_history,
+    })
 
     if captain.isCapturing then
-        local capture_path = string.format('%s/zone/%s.lua', addon.captureDir, backend.zone_name(zone))
-        addon.databases.capture.zone = backend.databaseOpen(capture_path, addon.settings.database)
+        local capture_path = string.format('%s/zone/%s.db', addon.captureDir, backend.zone_name(zone))
+        addon.databases.capture.zone = backend.databaseOpen(capture_path,
+        {
+            schema = addon.schema,
+            max_history = addon.settings.database and addon.settings.database.max_history,
+        })
     end
 end
 
@@ -405,11 +412,18 @@ local function initialize(rootDir)
     addon.files.capture = {}
     addon.files.simple = backend.fileOpen(addon.rootDir .. backend.player_name() .. '/logs/simple.log')
 
-    prepareCategoryDatabases()
+    -- Create single actions database instead of 15 category databases
+    local actions_path = string.format('%s/actions.db', addon.rootDir)
+    addon.databases.global.actions = backend.databaseOpen(actions_path,
+    {
+        schema = addon.schema,
+        max_history = addon.settings.database and addon.settings.database.max_history,
+    })
+
     setupZone(backend.zone())
 end
 
-addon.onZoneChange = setupZone
+addon.onClientReady = setupZone
 
 addon.onIncomingPacket = function(id, data)
     checkAction(data)
@@ -418,49 +432,30 @@ end
 addon.onCaptureStart = function(captureDir)
     addon.captureDir = captureDir
 
-    prepareCategoryDatabases()
+    -- Create single actions database for capture instead of 15 category databases
+    local capture_actions_path = string.format('%s/actions.db', captureDir)
+    addon.databases.capture.actions = backend.databaseOpen(capture_actions_path,
+    {
+        schema = addon.schema,
+        max_history = addon.settings.database and addon.settings.database.max_history,
+    })
+
     setupZone(backend.zone())
 end
 
 addon.onCaptureStop = function()
     addon.captureDir = nil
 
-    for _, db in ipairs(addon.databases.capture.category) do
-        db:close()
+    if addon.databases.capture.actions then
+        addon.databases.capture.actions:close()
+        addon.databases.capture.actions = nil
     end
-    addon.databases.capture.category = {}
-    addon.databases.capture.zone:close()
-    addon.databases.capture.zone = nil
+    if addon.databases.capture.zone then
+        addon.databases.capture.zone:close()
+        addon.databases.capture.zone = nil
+    end
 end
 
 addon.onInitialize = initialize
-
-addon.onPrerender = function()
-    if not addon.coroutinesSetup then
-        backend.forever(function()
-            local dbUpdated = {}
-            table.insert(dbUpdated, addon.databases.global.zone:save())
-            for _, db in ipairs(addon.databases.global.category) do
-                table.insert(dbUpdated, db:save())
-            end
-
-            if addon.databases.capture.zone ~= nil then
-                table.insert(dbUpdated, addon.databases.capture.zone:save())
-                for _, db in ipairs(addon.databases.capture.category) do
-                    table.insert(dbUpdated, db:save())
-                end
-            end
-
-            for _, res in ipairs(dbUpdated) do
-                if res == true then
-                    backend.msg('AView', 'Databases saved!')
-                    return
-                end
-            end
-        end, 10)
-
-        addon.coroutinesSetup = true
-    end
-end
 
 return addon

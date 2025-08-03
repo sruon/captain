@@ -25,7 +25,7 @@ local addon =
         widescan =
         {
             enabled = true,
-            delay   = 30,
+            delay   = 60,
         },
     },
     coroutinesSetup  = false,

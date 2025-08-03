@@ -64,8 +64,10 @@
 ---@field register_event_incoming_packet fun(func: fun(id: number, data: number[], size: number) : boolean)
 ---@field register_event_outgoing_packet fun(func: fun(id: number, data: number[], size: number) : boolean)
 ---@field register_on_zone_change fun(func: fun(zone: number))
+---@field register_on_client_ready fun(func: fun(zone: number))
 ---@field register_event_incoming_text fun(func: fun(mode: number, text: string))
 ---@field register_event_prerender fun(func: fun())
+---@field is_retail fun(): boolean
 ---@field dir_exists fun(path: string): boolean
 ---@field file_exists fun(path: string): boolean
 ---@field list_files fun(path: string): string[]
@@ -99,16 +101,12 @@
 ---@field deregisterKeyBind fun(params: KeybindParams)
 ---@field loadConfig fun(name: string, defaults: table): table
 ---@field saveConfig fun(name: string)
----@field fontGet fun(fontName: string, fontSize: number): Font
 ---@field notificationDestroy? fun(notification: Notification)
 ---@field notificationsRender fun(notifications: Notification[]): number
 ---@field reloadSignal boolean
 ---@field reload fun()
 ---@field forever fun(func: fun(), delay: number, ...: any)
 ---@field convert_int_to_float fun(raw: number): number
----@field scale_font fun(height: number): number
----@field scale_width fun(width: number): number
----@field scale_height fun(height: number): number
 ---@field get_resolution_width fun(): number
 ---@field get_resolution_height fun(): number
 ---@field configMenu fun()

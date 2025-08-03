@@ -33,6 +33,12 @@ local addon =
     {
         global  = nil,
         capture = nil,
+    },
+    
+    -- Player info schema based on server data structure
+    schema = {
+        ip = "127.0.0.1",    -- Server IP address
+        port = 54001         -- Server port number
     }
 }
 
@@ -47,12 +53,10 @@ addon.onIncomingPacket = function(id, data)
         addon.server.port = zoneOutPacket.GP_SERV_LOGOUTSUB.port
         if addon.databases.global then
             addon.databases.global:add_or_update('ZoneServer', addon.server)
-            addon.databases.global:save()
         end
 
         if addon.databases.capture then
             addon.databases.capture:add_or_update('ZoneServer', addon.server)
-            addon.databases.capture:save()
         end
     end
 end
@@ -96,13 +100,18 @@ addon.onCaptureStop = function()
 end
 
 addon.onCaptureStart = function(captureDir)
-    addon.databases.capture = backend.databaseOpen(string.format('%s/%s.lua', captureDir, backend.player_name()))
+    addon.databases.capture = backend.databaseOpen(string.format('%s/%s.db', captureDir, backend.player_name()), {
+        schema = addon.schema,
+        max_history = addon.settings.database and addon.settings.database.max_history
+    })
 end
 
 addon.onInitialize = function(rootDir)
     addon.playerInfo = backend.textBox('playerinfo')
-    addon.databases.global = backend.databaseOpen(string.format('%s/databases/%s.lua', rootDir, backend.player_name()),
-        addon.settings.database)
+    addon.databases.global = backend.databaseOpen(string.format('%s/databases/%s.db', rootDir, backend.player_name()), {
+        schema = addon.schema,
+        max_history = addon.settings.database and addon.settings.database.max_history
+    })
 end
 
 return addon

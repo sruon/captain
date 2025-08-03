@@ -1,3 +1,5 @@
 captures/*
 data/*
 .idea/
+*.local.json
+deps/*

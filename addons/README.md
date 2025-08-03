@@ -307,9 +307,9 @@ addon.onZoneChange = function(zoneId)
 end
 
 addon.onInitialize = function(rootDir)
-    addon.database = backend.databaseOpen(string.format('%s/databases/zone_changes.lua', rootDir))
+    addon.database = backend.databaseOpen(string.format('%s/databases/zone_changes.db', rootDir))
     -- Certain parameters can be passed to change the default behavior
-    addon.database = backend.databaseOpen(string.format('%s/databases/zone_changes.lua', rootDir), {
+    addon.database = backend.databaseOpen(string.format('%s/databases/zone_changes.db', rootDir), {
         ignore_updates = { 'time' },  -- Fields to ignore when checking for changes
         max_history = 10,             -- Maximum number of history entries to keep for each row
         sort_keys = { 'player_name' } -- Changes the order of fields when saving to file

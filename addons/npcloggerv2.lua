@@ -59,12 +59,58 @@ local addon =
     },
     rootDir         = nil,
     captureDir      = nil,
+
+    -- NPC schema based on actual packet structure
+    schema          =
+    {
+        UniqueNo = 12345,
+        ActIndex = 123,
+        SubKind = 1,
+        dir = 1.5,
+        x = 100.5,
+        y = 200.0,
+        z = 300.5,
+        Flags0 = 0,
+        Flags1 = 0,
+        Speed = 40,
+        SpeedBase = 40,
+        Hpp = 100,
+        server_status = 0,
+        Flags2 = 0,
+        Flags3 = 0,
+        SubAnimation = 0,
+        GrapIdTbl = { 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+        model_id = 123,
+        Name = 'Example NPC',
+        DoorId = 0,
+        Time = 0,
+        EndTime = 0,
+        legacy =
+        {
+            flag = 0,
+            speed = 40,
+            speedsub = 40,
+            status = 0,
+            animation = 0,
+            animationsub = 0,
+            flags = 0,
+            name_prefix = 0,
+            namevis = 0,
+            look = '0000000000000000000000000000000000000'
+        },
+        ws = { Level = 50, sName = 'Example Monster', Type = 1 },
+    },
 }
 
 addon.onCaptureStart = function(captureDir)
     addon.captureDir = captureDir
+
     addon.databases.capture = backend.databaseOpen(
-        string.format('%s/databases/%s.lua', captureDir, backend.zone_name()), addon.settings.database)
+        string.format('%s/databases/%s.db', captureDir, backend.zone_name()),
+        {
+            schema = addon.schema,
+            max_history = addon.settings.database and addon.settings.database.max_history,
+        })
 end
 
 addon.onCaptureStop = function()
@@ -75,20 +121,26 @@ addon.onCaptureStop = function()
     end
 end
 
-addon.onZoneChange = function(zoneId)
+addon.onClientReady = function(zoneId)
     if addon.databases.global then
         addon.databases.global:close()
     end
 
     addon.databases.global = backend.databaseOpen(
-        string.format('%s/databases/%s/%s.lua', addon.rootDir, backend.player_name(), backend.zone_name(zoneId)),
-        addon.settings.database)
+        string.format('%s/%s/%s.db', addon.rootDir, backend.player_name(), backend.zone_name(zoneId)),
+        {
+            schema = addon.schema,
+            max_history = addon.settings.database and addon.settings.database.max_history,
+        })
 
     if addon.databases.capture then
         addon.databases.capture:close()
         addon.databases.capture = backend.databaseOpen(
-            string.format('%s/databases/%s.lua', addon.captureDir, backend.zone_name(zoneId)),
-            addon.settings.database)
+            string.format('%s/%s.db', addon.captureDir, backend.zone_name(zoneId)),
+            {
+                schema = addon.schema,
+                max_history = addon.settings.database and addon.settings.database.max_history,
+            })
     end
 end
 
@@ -276,17 +328,21 @@ end
 
 addon.onInitialize = function(rootDir)
     addon.rootDir = rootDir
+
     addon.databases.global = backend.databaseOpen(
-        string.format('%s/databases/%s/%s.lua', rootDir, backend.player_name(), backend.zone_name()),
-        addon.settings.database)
+        string.format('%s/databases/%s/%s.db', rootDir, backend.player_name(), backend.zone_name()),
+        {
+            schema = addon.schema,
+            max_history = addon.settings.database and addon.settings.database.max_history,
+        })
 end
 
 addon.onPrerender = function()
     if not addon.coroutinesSetup then
         backend.forever(function()
             local db = getCurrentDb()
-            if db:save() then
-                local report = string.format('Database saved. %d NPCs (%d new, %d updates, %d WS updates)', db:count(),
+            if db and (#addon.notifications.npcCreated > 0 or #addon.notifications.npcUpdated > 0 or #addon.notifications.wsUpdated > 0) then
+                local report = string.format('Database updated. %d NPCs (%d new, %d updates, %d WS updates)', db:count(),
                     #addon.notifications.npcCreated, #addon.notifications.npcUpdated, #addon.notifications.wsUpdated)
                 backend.msg('NPCLogger', report)
                 addon.notifications.npcCreated = {}
@@ -298,7 +354,5 @@ addon.onPrerender = function()
         addon.coroutinesSetup = true
     end
 end
-
-
 
 return addon
