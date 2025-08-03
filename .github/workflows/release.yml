@@ -26,6 +26,7 @@ jobs:
       id: release
       with:
         release-type: simple
+        manifest-file: .github/.release-please-manifest.json
         token: ${{ secrets.GITHUB_TOKEN }}
 
   build-sqlite:
@@ -99,35 +100,23 @@ jobs:
 
     - name: Fetch dependencies
       run: |
-        # Create deps directory
         mkdir -p deps
         
-        # Fetch serpent.lua
         curl -o deps/serpent.lua https://raw.githubusercontent.com/pkulchenko/serpent/refs/heads/master/src/serpent.lua
-        
-        # Fetch json.lua
         curl -o deps/json.lua https://raw.githubusercontent.com/rxi/json.lua/refs/heads/master/json.lua
-        
-        # Fetch copas 4.8.0
+        curl -o deps/binaryheap.lua https://raw.githubusercontent.com/Tieske/binaryheap.lua/refs/heads/master/src/binaryheap.lua
+        curl -o deps/coxpcall.lua https://raw.githubusercontent.com/keplerproject/coxpcall/refs/heads/master/src/coxpcall.lua
+
         curl -L -o copas.zip https://github.com/lunarmodules/copas/archive/refs/tags/4.8.0.zip
         unzip copas.zip
         cp -r copas-4.8.0/src/* deps/
         rm -rf copas.zip copas-4.8.0
         
-        # Fetch lua-websockets v2.2
         curl -L -o lua-websockets.zip https://github.com/lipp/lua-websockets/archive/refs/tags/v2.2.zip
         unzip lua-websockets.zip
         cp -r lua-websockets-2.2/src/* deps/
         rm -rf lua-websockets.zip lua-websockets-2.2
         
-        # Fetch copas dependencies
-        # binaryheap
-        curl -o deps/binaryheap.lua https://raw.githubusercontent.com/Tieske/binaryheap.lua/refs/heads/master/src/binaryheap.lua
-        
-        # coxpcall
-        curl -o deps/coxpcall.lua https://raw.githubusercontent.com/keplerproject/coxpcall/refs/heads/master/src/coxpcall.lua
-        
-        # timerwheel (extract from zip)
         curl -L -o timerwheel.zip https://github.com/Tieske/timerwheel.lua/archive/refs/tags/1.0.2.zip
         unzip timerwheel.zip
         cp timerwheel.lua-1.0.2/src/timerwheel/init.lua deps/timerwheel.lua
@@ -135,10 +124,8 @@ jobs:
 
     - name: Make release zipball
       run: |
-        # Create captain directory structure
         mkdir -p release/captain
         
-        # Copy all repo content to captain folder (excluding dev/build files)
         rsync -av \
           --exclude='.git' \
           --exclude='.github' \
@@ -149,12 +136,10 @@ jobs:
           --exclude='_images' \
           ./ release/captain/
         
-        # Create the zip file
         cd release
         zip -r ../captain.zip captain/
         cd ..
         
-        # Verify zip contents
         echo "Zip file contents:"
         unzip -l captain.zip | head -20
 
@@ -162,7 +147,6 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
-        # Upload to the release created by release-please
         gh release upload ${{ needs.check-release.outputs.tag_name }} captain.zip --clobber
         
         echo "Uploaded captain.zip to release ${{ needs.check-release.outputs.tag_name }}"
