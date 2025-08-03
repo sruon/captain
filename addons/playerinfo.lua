@@ -39,7 +39,7 @@ local addon            =
     schema          =
     {
         ip   = '127.0.0.1', -- Server IP address
-        port = 54001,     -- Server port number
+        port = 54001,       -- Server port number
     },
 }
 
@@ -102,19 +102,19 @@ end
 
 addon.onCaptureStart   = function(captureDir)
     addon.databases.capture = backend.databaseOpen(string.format('%s/%s.db', captureDir, backend.player_name()),
-    {
-        schema      = addon.schema,
-        max_history = addon.settings.database and addon.settings.database.max_history,
-    })
+        {
+            schema      = addon.schema,
+            max_history = addon.settings.database and addon.settings.database.max_history,
+        })
 end
 
 addon.onInitialize     = function(rootDir)
     addon.playerInfo       = backend.textBox('playerinfo')
     addon.databases.global = backend.databaseOpen(string.format('%s/databases/%s.db', rootDir, backend.player_name()),
-    {
-        schema      = addon.schema,
-        max_history = addon.settings.database and addon.settings.database.max_history,
-    })
+        {
+            schema      = addon.schema,
+            max_history = addon.settings.database and addon.settings.database.max_history,
+        })
 end
 
 return addon

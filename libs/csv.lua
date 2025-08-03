@@ -5,7 +5,7 @@
 ---@field columns string[] Table of column names
 ---@field entries table[] Array of entries to be written
 ---@field file File The file object to write to
-local CSV = {}
+local CSV   = {}
 CSV.__index = CSV
 
 ---Create a new CSV writer
@@ -13,10 +13,10 @@ CSV.__index = CSV
 ---@param columns string[] Table of column names
 ---@return CSV instance
 function CSV.new(file, columns)
-    local self = setmetatable({}, CSV)
+    local self   = setmetatable({}, CSV)
     self.columns = columns
     self.entries = {}
-    self.file = file
+    self.file    = file
 
     self:write_headers()
 
@@ -46,14 +46,14 @@ function CSV:add_entry(entry, decimal_places)
 
     decimal_places = decimal_places or 3
 
-    local row = {}
+    local row      = {}
     for _, col in ipairs(self.columns) do
         local value = entry[col] or ''
 
         -- Round numerical values
         if type(value) == 'number' then
             local mult = 10 ^ decimal_places
-            value = math.floor(value * mult + 0.5) / mult
+            value      = math.floor(value * mult + 0.5) / mult
         end
 
         -- Escape quotes and wrap fields with commas in quotes

@@ -1,12 +1,12 @@
 -- Stats utility functions for captain
 
-local stats = {}
+local stats        = {}
 
 ---Calculate percentile from a sorted array
 ---@param sorted_array number[] -- The already sorted array of values
 ---@param p            number   -- The percentile to calculate (0-100)
 ---@return             number   -- The value at the specified percentile
-stats.percentile = function(sorted_array, p)
+stats.percentile   = function(sorted_array, p)
     if #sorted_array == 0 then
         return 0
     end
@@ -20,7 +20,7 @@ end
 ---@param roundingPrecision number?   -- Optional rounding precision to group similar values
 ---@return                  number?   -- The most frequently occurring value, or nil if values is empty
 ---@return                  number?   -- The number of times the most common value appears
-stats.mode = function(values, roundingPrecision)
+stats.mode         = function(values, roundingPrecision)
     if not values or #values == 0 then
         return nil
     end
@@ -39,12 +39,12 @@ stats.mode = function(values, roundingPrecision)
 
     -- Find the most common value
     local mostCommonValue = nil
-    local highestCount = 0
+    local highestCount    = 0
 
     for value, count in pairs(counts) do
         if count > highestCount then
             mostCommonValue = value
-            highestCount = count
+            highestCount    = count
         end
     end
 
@@ -58,21 +58,21 @@ end
 ---@return             table     -- Table of {key = percentage} pairs
 stats.distribution = function(values, minThreshold, filter)
     local result = {}
-    local total = 0
-    
+    local total  = 0
+
     -- Calculate total
     for _, count in pairs(values) do
         total = total + count
     end
-    
+
     if total == 0 then
         return result
     end
-    
+
     -- Calculate percentages
     for key, count in pairs(values) do
         local percentage = (count / total) * 100
-        
+
         -- Apply min threshold if provided
         if not minThreshold or percentage >= minThreshold then
             -- Apply filter if provided
@@ -81,7 +81,7 @@ stats.distribution = function(values, minThreshold, filter)
             end
         end
     end
-    
+
     return result
 end
 
@@ -89,14 +89,14 @@ end
 ---@param values number[] -- Array of values
 ---@param mean   number   -- The mean/average of the values
 ---@return       number   -- The standard deviation
-stats.stddev = function(values, mean)
+stats.stddev       = function(values, mean)
     if #values <= 1 then
         return 0
     end
 
     local sum_sq_diff = 0
     for _, value in ipairs(values) do
-        local diff = value - mean
+        local diff  = value - mean
         sum_sq_diff = sum_sq_diff + (diff * diff)
     end
 
@@ -106,7 +106,7 @@ end
 ---Calculate the median value
 ---@param sorted_values number[] -- The already sorted array of values
 ---@return             number   -- The median value
-stats.median = function(sorted_values)
+stats.median       = function(sorted_values)
     if #sorted_values == 0 then
         return 0
     end
@@ -122,16 +122,16 @@ end
 ---Calculate comprehensive statistics from an array of values
 ---@param values number[] -- Array of values to analyze
 ---@return      table    -- A table containing min, max, percentiles, average, median and standard deviation
-stats.calculate = function(values)
+stats.calculate    = function(values)
     if #values == 0 then
         return
         {
-            min = 0,
-            max = 0,
-            p90 = 0,
-            p95 = 0,
-            p99 = 0,
-            avg = 0,
+            min    = 0,
+            max    = 0,
+            p90    = 0,
+            p95    = 0,
+            p99    = 0,
+            avg    = 0,
             median = 0,
             stddev = 0,
         }
@@ -153,12 +153,12 @@ stats.calculate = function(values)
 
     return
     {
-        min = sorted[1],
-        max = sorted[#sorted],
-        p90 = stats.percentile(sorted, 90),
-        p95 = stats.percentile(sorted, 95),
-        p99 = stats.percentile(sorted, 99),
-        avg = mean,
+        min    = sorted[1],
+        max    = sorted[#sorted],
+        p90    = stats.percentile(sorted, 90),
+        p95    = stats.percentile(sorted, 95),
+        p99    = stats.percentile(sorted, 99),
+        avg    = mean,
         median = stats.median(sorted),
         stddev = stats.stddev(values, mean),
     }

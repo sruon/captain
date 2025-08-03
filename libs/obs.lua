@@ -1,6 +1,6 @@
 local copas_clients = require('copas_clients')
-local json = require('json')
-local sha = require('ffi.sha')
+local json          = require('json')
+local sha           = require('ffi.sha')
 
 ---@class OBS
 ---@field client table WebSocket client instance
@@ -11,8 +11,8 @@ local sha = require('ffi.sha')
 ---@field message_id number Counter for request IDs
 ---@field timeout number Socket timeout in seconds
 ---@field max_retries number Maximum retries for recoverable errors
-local OBS = {}
-OBS.__index = OBS
+local OBS           = {}
+OBS.__index         = OBS
 
 ---Creates a new OBS WebSocket client
 ---@param host string Hostname or IP address of OBS WebSocket server
@@ -44,7 +44,7 @@ function OBS:connect()
     if not client then return nil, 'Connection error: ' .. (err or 'unknown error') end
 
     if client.socket then client.socket:settimeout(self.timeout) end
-    self.client = client
+    self.client             = client
 
     local success, auth_err = self:authenticate()
     if not success then
@@ -70,9 +70,9 @@ function OBS:authenticate()
     local identify =
     {
         op = 1,
-        d =
+        d  =
         {
-            rpcVersion = 1,
+            rpcVersion         = 1,
             eventSubscriptions = 0,
         },
     }
@@ -80,14 +80,14 @@ function OBS:authenticate()
     if parse_err.d and parse_err.d.authentication then
         if self.password == '' then return nil, 'Authentication required but no password provided' end
 
-        local concat = self.password .. parse_err.d.authentication.salt
-        local hash_bytes = sha.bin_to_base64(sha.hex_to_bin(sha.sha256(concat)))
-        local combined = hash_bytes .. parse_err.d.authentication.challenge
-        local auth_response = sha.bin_to_base64(sha.hex_to_bin(sha.sha256(combined)))
+        local concat              = self.password .. parse_err.d.authentication.salt
+        local hash_bytes          = sha.bin_to_base64(sha.hex_to_bin(sha.sha256(concat)))
+        local combined            = hash_bytes .. parse_err.d.authentication.challenge
+        local auth_response       = sha.bin_to_base64(sha.hex_to_bin(sha.sha256(combined)))
         identify.d.authentication = auth_response
     end
 
-    local json_str = json.encode(identify)
+    local json_str     = json.encode(identify)
 
     local success, err = self.client:send(json_str)
     if not success then return nil, 'Failed to send Identify: ' .. (err or 'Connection lost') end
@@ -114,19 +114,19 @@ function OBS:send_request(request_name, request_data)
 
     if not self.authenticated then return nil, 'Not authenticated' end
 
-    local request =
+    local request      =
     {
         op = 6,
-        d =
+        d  =
         {
             requestType = request_name,
-            requestId = tostring(self.message_id),
+            requestId   = tostring(self.message_id),
             requestData = request_data or {},
         },
     }
-    self.message_id = self.message_id + 1
+    self.message_id    = self.message_id + 1
 
-    local json_str = json.encode(request)
+    local json_str     = json.encode(request)
 
     local success, err = self.client:send(json_str)
     if not success then
@@ -150,7 +150,7 @@ function OBS:send_request(request_name, request_data)
                 return nil, 'Failed to reconnect after server closed connection: ' .. (connect_err or 'unknown error')
             end
 
-            json_str = json.encode(request)
+            json_str     = json.encode(request)
             success, err = self.client:send(json_str)
             if not success then
                 self:close()
@@ -172,7 +172,7 @@ function OBS:send_request(request_name, request_data)
     if not success or not response or response.op ~= 7 then return nil, 'Invalid response' end
 
     if response.d and response.d.requestStatus and response.d.requestStatus.result == false then
-        local code = response.d.requestStatus.code or 'unknown'
+        local code    = response.d.requestStatus.code or 'unknown'
         local message = response.d.requestStatus.comment or 'No error message provided'
         return nil, 'Request failed: ' .. message .. ' (code ' .. code .. ')'
     end
@@ -184,7 +184,7 @@ end
 function OBS:close()
     if self.client then
         self.client:close()
-        self.client = nil
+        self.client        = nil
         self.authenticated = false
     end
 end
@@ -255,8 +255,8 @@ function OBS:SetProfileParameter(cat, name, value)
     return self:send_request('SetProfileParameter',
         {
             parameterCategory = cat,
-            parameterName = name,
-            parameterValue = value,
+            parameterName     = name,
+            parameterValue    = value,
         })
 end
 
@@ -266,11 +266,12 @@ end
 ---@param overlay boolean|nil Whether to overlay on existing settings (default: true)
 ---@return table|nil response, string|nil error_message
 function OBS:SetInputSettings(input_name, settings, overlay)
-    return self:send_request('SetInputSettings', {
-        inputName = input_name,
-        inputSettings = settings,
-        overlay = overlay ~= false -- Default to true
-    })
+    return self:send_request('SetInputSettings',
+        {
+            inputName     = input_name,
+            inputSettings = settings,
+            overlay       = overlay ~= false, -- Default to true
+        })
 end
 
 return OBS

@@ -1,13 +1,13 @@
 -- Run from captain root directory
 -- TODO: Nested structs
 -- TODO: PVLV definitions
-local definitions = require('packets.definitions')
+local definitions     = require('packets.definitions')
 
 local lls_definitions = ''
 
 local function processPacketLayout(packetId, packetLayout, direction)
     lls_definitions = lls_definitions ..
-    string.format('---@class %s : ParsedPacket\n', PacketIdToName[direction][packetId])
+      string.format('---@class %s : ParsedPacket\n', PacketIdToName[direction][packetId])
     for _, field in ipairs(packetLayout) do
         if field.bits then
             lls_definitions = lls_definitions .. string.format('---@field %s number\n', field.name)
@@ -72,7 +72,7 @@ local function main()
     end
 
     local filePath = debug.getinfo(1, 'S').source:sub(2)
-    local fileDir = filePath:match('(.*/)')
+    local fileDir  = filePath:match('(.*/)')
 
     if not fileDir then
         fileDir = filePath:match('(.*\\)') or ''

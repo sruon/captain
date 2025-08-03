@@ -18,11 +18,11 @@ end
 
 local parse_layout
 
-local type_handlers = {}
+local type_handlers       = {}
 
-type_handlers.numeric = function(reader, field, result, context, header, data)
+type_handlers.numeric     = function(reader, field, result, context, header, data)
     if field.type == 'float' then
-        local raw = reader:read(field.bits)
+        local raw          = reader:read(field.bits)
         result[field.name] = backend.convert_int_to_float(raw)
     else
         result[field.name] = read_value(reader, field.bits, field.signed)
@@ -30,12 +30,12 @@ type_handlers.numeric = function(reader, field, result, context, header, data)
 end
 
 -- Handler for computed expression fields
-type_handlers.expr = function(reader, field, result, context, header, data)
+type_handlers.expr        = function(reader, field, result, context, header, data)
     result[field.name] = field.expr(result, data, header)
 end
 
 -- Handler for struct types
-type_handlers.struct = function(reader, field, result, context, header, data)
+type_handlers.struct      = function(reader, field, result, context, header, data)
     local sublayout = field.layout
     if type(sublayout) == 'function' then
         sublayout = sublayout(result, data, header)
@@ -44,7 +44,7 @@ type_handlers.struct = function(reader, field, result, context, header, data)
 end
 
 -- Handler for array types
-type_handlers.array = function(reader, field, result, context, header, data)
+type_handlers.array       = function(reader, field, result, context, header, data)
     -- Determine the count
     local count
     if type(field.count) == 'function' then
@@ -58,7 +58,7 @@ type_handlers.array = function(reader, field, result, context, header, data)
     for i = 1, count do
         -- Simple array of primitive values
         if #field.layout == 1 and field.layout[1].bits and not field.layout[1].type then
-            local value = read_value(reader, field.layout[1].bits, field.layout[1].signed)
+            local value           = read_value(reader, field.layout[1].bits, field.layout[1].signed)
             result[field.name][i] = value
             -- Array of strings
         elseif #field.layout == 1 and field.layout[1].type == 'string' then
@@ -66,7 +66,7 @@ type_handlers.array = function(reader, field, result, context, header, data)
             for _ = 1, field.layout[1].size do
                 chars[#chars+1] = string.char(reader:read(8))
             end
-            local str = table.concat(chars):gsub('%z.*$', '')
+            local str             = table.concat(chars):gsub('%z.*$', '')
             result[field.name][i] = str
             -- Array of complex types (could be nested arrays, structs, etc.)
         else
@@ -77,18 +77,18 @@ type_handlers.array = function(reader, field, result, context, header, data)
                 element_context[k] = v
             end
             -- Add array index to context
-            element_context._index = i
+            element_context._index  = i
             -- Add parent result to context
             element_context._parent = result
 
             -- Parse this array element
-            local nested_result = parse_layout(reader, field.layout, element_context, header, data)
-            result[field.name][i] = nested_result
+            local nested_result     = parse_layout(reader, field.layout, element_context, header, data)
+            result[field.name][i]   = nested_result
         end
     end
 end
 
-type_handlers.string = function(reader, field, result, context, header, data)
+type_handlers.string      = function(reader, field, result, context, header, data)
     local chars = {}
     for _ = 1, field.size do
         chars[#chars+1] = string.char(reader:read(8))
@@ -96,7 +96,7 @@ type_handlers.string = function(reader, field, result, context, header, data)
     result[field.name] = table.concat(chars):gsub('%z.*$', '')
 end
 
-type_handlers.raw = function(reader, field, result, context, header, data)
+type_handlers.raw         = function(reader, field, result, context, header, data)
     local raw = {}
     for _ = 1, field.size do
         raw[#raw+1] = string.char(reader:read(8))
@@ -106,11 +106,11 @@ end
 
 -- Handler for conditional types
 type_handlers.conditional = function(reader, field, result, context, header, data)
-    local has_flag = reader:read(field.bits)
+    local has_flag     = reader:read(field.bits)
     result[field.name] = has_flag > 0
 
     if result[field.name] then
-        local struct_name = field.layout.name
+        local struct_name         = field.layout.name
         -- Create a new context for conditional fields
         local conditional_context = {}
         for k, v in pairs(context) do
@@ -118,7 +118,7 @@ type_handlers.conditional = function(reader, field, result, context, header, dat
         end
         conditional_context._parent = result
 
-        result[struct_name] = parse_layout(reader, field.layout.layout, conditional_context, header, data)
+        result[struct_name]         = parse_layout(reader, field.layout.layout, conditional_context, header, data)
     end
 end
 
@@ -129,7 +129,7 @@ end
 ---@param header table  -- The packet header
 ---@param data table    -- The raw packet data
 ---@return any -- The parsed packet data
-parse_layout = function(reader, layout, context, header, data)
+parse_layout              = function(reader, layout, context, header, data)
     local result = {}
 
     -- Store a reference to parent context if needed
@@ -168,7 +168,7 @@ end
 ---@param dir string               -- 'outgoing' or 'incoming'
 ---@param packet string | number[] -- The raw packet data
 ---@return any | nil               -- The parsed packet data or nil if the packet is not recognized
-parser.parse = function(dir, packet)
+parser.parse              = function(dir, packet)
     local reader = breader:new()
     reader:set_data(packet)
     local header =
@@ -182,7 +182,7 @@ parser.parse = function(dir, packet)
         return nil
     end
 
-    local newPacket = parse_layout(reader, definitions[dir][header.id], {}, header, packet)
+    local newPacket  = parse_layout(reader, definitions[dir][header.id], {}, header, packet)
     newPacket.header = header
 
     return newPacket

@@ -1,7 +1,7 @@
 ---@diagnostic disable: deprecated
 
 local backend  = require('backend/backend')
-local serpent  = require("serpent")
+local serpent  = require('serpent')
 
 local utils    = {}
 
@@ -36,11 +36,11 @@ utils.hexdump  = function(str, align, indent)
     -- Loop the data string in steps..
     for x = 1, #str, align do
         local data = str:sub(x, x + 15)
-        ret = ret .. string.rep(' ', indent)
-        ret = ret .. data:gsub('.', function(c) return string.format('%02X ', string.byte(c)) end)
-        ret = ret .. string.rep(' ', 3 * (16 - #data))
-        ret = ret .. ' ' .. data:gsub('%c', '.')
-        ret = ret .. '\n'
+        ret        = ret .. string.rep(' ', indent)
+        ret        = ret .. data:gsub('.', function(c) return string.format('%02X ', string.byte(c)) end)
+        ret        = ret .. string.rep(' ', 3 * (16 - #data))
+        ret        = ret .. ' ' .. data:gsub('%c', '.')
+        ret        = ret .. '\n'
     end
 
     -- Fix percents from breaking string.format..
@@ -53,9 +53,9 @@ end
 do
     -- Precompute hex string tables for lookups, instead of constant computation.
     local top_row = '        |  0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F      | 0123456789ABCDEF\n    ' ..
-        string.rep('-', (16 + 1) * 3 + 2) .. '  ' .. string.rep('-', 16 + 6) .. '\n'
+      string.rep('-', (16 + 1) * 3 + 2) .. '  ' .. string.rep('-', 16 + 6) .. '\n'
 
-    local chars = {}
+    local chars   = {}
     for i = 0x00, 0xFF do
         if i >= 0x20 and i < 0x7F then
             chars[i] = string.char(i)
@@ -63,13 +63,13 @@ do
             chars[i] = '.'
         end
     end
-    chars[0x5C] = '\\\\'
-    chars[0x25] = '%%'
+    chars[0x5C]        = '\\\\'
+    chars[0x25]        = '%%'
 
     local line_replace = {}
     for i = 0x01, 0x10 do
         line_replace[i] = '    %%%%3X |' ..
-            string.rep(' %.2X', i) .. string.rep(' --', 0x10 - i) .. '  %%%%3X | ' .. '%%s\n'
+          string.rep(' %.2X', i) .. string.rep(' --', 0x10 - i) .. '  %%%%3X | ' .. '%%s\n'
     end
     local short_replace = {}
     for i = 0x01, 0x10 do
@@ -78,13 +78,14 @@ do
 
     -- Receives a byte string and returns a table-formatted string with 16 columns.
     string.hexformat_file = function(str, size, byte_colors)
-        local length = size
+        local length    = size
         local str_table = {}
-        local from = 1
-        local to = 16
+        local from      = 1
+        local to        = 16
         for i = 0, math.floor((length - 1) / 0x10) do
             local partial_str = { str:byte(from, to) }
-            local char_table = {
+            local char_table  =
+            {
                 [0x01] = chars[partial_str[0x01]],
                 [0x02] = chars[partial_str[0x02]],
                 [0x03] = chars[partial_str[0x03]],
@@ -102,13 +103,13 @@ do
                 [0x0F] = chars[partial_str[0x0F]],
                 [0x10] = chars[partial_str[0x10]],
             }
-            local bytes = math.min(length - from + 1, 16)
-            str_table[i + 1] = line_replace[bytes]
-                :format(unpack(partial_str))
-                :format(short_replace[bytes]:format(unpack(char_table)))
-                :format(i, i)
-            from = to + 1
-            to = to + 0x10
+            local bytes       = math.min(length - from + 1, 16)
+            str_table[i + 1]  = line_replace[bytes]
+              :format(unpack(partial_str))
+              :format(short_replace[bytes]:format(unpack(char_table)))
+              :format(i, i)
+            from              = to + 1
+            to                = to + 0x10
         end
         return string.format('%s%s', top_row, table.concat(str_table))
     end
@@ -120,7 +121,7 @@ function math.round(num, prec)
     return math.floor(num * mult + 0.5) / mult
 end
 
-utils.round = math.round
+utils.round                 = math.round
 
 utils.headingToByteRotation = function(oldHeading)
     local newHeading = oldHeading
@@ -131,28 +132,28 @@ utils.headingToByteRotation = function(oldHeading)
 end
 
 function string.fromhex(str)
-    if str == nil then return "" end
+    if str == nil then return '' end
     return (str:gsub('..', function(cc)
         return string.char(tonumber(cc, 16))
     end))
 end
 
 function string.tohex(str)
-    if str == nil then return "" end
+    if str == nil then return '' end
     return (str:gsub('.', function(c)
         return string.format('%02X ', string.byte(c))
     end))
 end
 
-utils.getTableKeys    = function(tab)
+utils.getTableKeys              = function(tab)
     local keyset = {}
     for k, v in pairs(tab) do
-        keyset[#keyset + 1] = k
+        keyset[#keyset+1] = k
     end
     return keyset
 end
 
-utils.dump            = function(o, print)
+utils.dump                      = function(o, print)
     local d = serpent.block(o, { comment = false, sortkeys = true })
 
     if print then
@@ -162,7 +163,7 @@ utils.dump            = function(o, print)
     return d
 end
 
-utils.keyBindToString = function(keyBind)
+utils.keyBindToString           = function(keyBind)
     local res = ''
     if keyBind.ctrl then
         res = res .. 'Ctrl+'
@@ -182,7 +183,7 @@ utils.keyBindToString = function(keyBind)
     return res
 end
 
-utils.deepCopy        = function(original)
+utils.deepCopy                  = function(original)
     local copy
 
     if type(original) == 'table' then
@@ -201,26 +202,26 @@ utils.deepCopy        = function(original)
     return copy
 end
 
-utils.getProcessInfo = function()
+utils.getProcessInfo            = function()
     local ffi = require('ffi')
-    
-    ffi.cdef[[
+
+    ffi.cdef [[
         int GetModuleFileNameA(void* hModule, char* lpFilename, int nSize);
         void* GetActiveWindow();
         int GetWindowTextA(void* hWnd, char* lpString, int nMaxCount);
     ]]
-    
+
     -- Get process path
-    local buffer = ffi.new("char[260]") -- MAX_PATH
+    local buffer = ffi.new('char[260]') -- MAX_PATH
     ffi.C.GetModuleFileNameA(nil, buffer, 260)
-    local process_path = ffi.string(buffer)
-    
+    local process_path  = ffi.string(buffer)
+
     -- Get active window title
-    local hwnd = ffi.C.GetActiveWindow()
-    local window_buffer = ffi.new("char[256]")
+    local hwnd          = ffi.C.GetActiveWindow()
+    local window_buffer = ffi.new('char[256]')
     ffi.C.GetWindowTextA(hwnd, window_buffer, 256)
     local window_name = ffi.string(window_buffer)
-    
+
     return process_path, window_name
 end
 
@@ -228,19 +229,19 @@ end
 -- Wraps a function call and warns if execution takes longer than threshold
 -- Returns: all function results..., elapsed_time
 utils.withPerformanceMonitoring = function(name, func, threshold)
-    threshold = threshold or 0.10 -- Default 100ms
+    threshold        = threshold or 0.10 -- Default 100ms
     local start_time = os.clock()
-    local result = table.pack(func())
-    local elapsed = os.clock() - start_time
-    
+    local result     = table.pack(func())
+    local elapsed    = os.clock() - start_time
+
     if elapsed > threshold then
         backend.warnMsg('captain', string.format('%s took %.3fs', name, elapsed))
     end
-    
+
     -- Add elapsed time to the end of results
     result[result.n + 1] = elapsed
-    result.n = result.n + 1
-    
+    result.n             = result.n + 1
+
     return table.unpack(result, 1, result.n)
 end
 

@@ -2,7 +2,7 @@
 -- Requires the Websocket server to be enabled in OBS.
 -- Requires OBS profile and scene to be configured correctly.
 -- Splitting per zone requires Setting > Output > Output Mode: Advanced > Recording > Automatic File Splitting: Only split manually
-local obs = require('obs')
+local obs   = require('obs')
 local utils = require('utils')
 
 ---@class OBSAddon : AddonInterface
@@ -117,18 +117,18 @@ addon.onCaptureStart = function(captureDir)
 
     if success and addon.settings.source ~= '' then
         local process_path, window_name = utils.getProcessInfo()
-        local exe_name = process_path:match('([^\\]+)$') or process_path
-        local window_string = backend.player_name() .. ':FFXiClass:' .. exe_name
+        local exe_name                  = process_path:match('([^\\]+)$') or process_path
+        local window_string             = backend.player_name() .. ':FFXiClass:' .. exe_name
 
-        local response, err = addon.client:SetInputSettings(addon.settings.source,
+        local response, err             = addon.client:SetInputSettings(addon.settings.source,
             {
-                capture_mode = 'window',
-                capture_cursor = true,
+                capture_mode       = 'window',
+                capture_cursor     = true,
                 allow_transparency = false,
-                hook_rate = 0,
-                limit_framerate = false,
-                priority = 'title',
-                window = window_string,
+                hook_rate          = 0,
+                limit_framerate    = false,
+                priority           = 'title',
+                window             = window_string,
             })
 
         if response then
@@ -164,11 +164,11 @@ addon.onCaptureStart = function(captureDir)
     end
 end
 
-addon.onCaptureStop = function()
+addon.onCaptureStop  = function()
     StopRecord()
 end
 
-addon.onZoneChange = function(_)
+addon.onZoneChange   = function(_)
     if not addon.settings.enabled or not addon.settings.splitPerZone or not addon.recording then return end
 
     if not isConnected() then return end
@@ -181,7 +181,7 @@ addon.onZoneChange = function(_)
     end
 end
 
-addon.onConfigMenu = function()
+addon.onConfigMenu   = function()
     return
     {
         {

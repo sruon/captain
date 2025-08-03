@@ -3,7 +3,7 @@
 
 -- Add deps path with highest priority for require()
 if addon and addon.path then
-    package.path = addon.path .. '/deps/?.lua;' ..
+    package.path  = addon.path .. '/deps/?.lua;' ..
       addon.path .. '/deps/?/init.lua;' ..
       addon.path .. '/libs/?.lua;' ..
       addon.path .. '/libs/?/init.lua;' ..
@@ -59,30 +59,30 @@ local commandsMap       =
 {
     { cmd = '',       desc = 'Open configuration menu' },
     {
-        cmd = 'start',
-        desc = 'Start capturing',
+        cmd     = 'start',
+        desc    = 'Start capturing',
         keybind =
         {
-            key = 'c',
+            key  = 'c',
             down = true,
             ctrl = true,
-            alt = true,
+            alt  = true,
         },
     },
     {
-        cmd = 'stop',
-        desc = 'Stop capturing',
+        cmd     = 'stop',
+        desc    = 'Stop capturing',
         keybind =
         {
-            key = 'v',
+            key  = 'v',
             down = true,
             ctrl = true,
-            alt = true,
+            alt  = true,
         },
     },
-    { cmd = 'toggle', desc = 'Start/stop capturing',                 keybind = { key = 'x', down = true, ctrl = true } },
-    { cmd = 'split',  desc = 'Stop and start a new capture',         keybind = nil },
-    { cmd = 'reload', desc = 'Reload captain',                       keybind = { key = 'z', down = true, ctrl = true } },
+    { cmd = 'toggle', desc = 'Start/stop capturing',         keybind = { key = 'x', down = true, ctrl = true } },
+    { cmd = 'split',  desc = 'Stop and start a new capture', keybind = nil },
+    { cmd = 'reload', desc = 'Reload captain',               keybind = { key = 'z', down = true, ctrl = true } },
 }
 
 ---@param name string
@@ -92,7 +92,7 @@ local commandsMap       =
 local function safe_call(name, func, ...)
     ---@diagnostic disable-next-line: deprecated
     local unpack = unpack or table.unpack
-    local args = table.pack(...)
+    local args   = table.pack(...)
     local function handler(err)
         return debug.traceback(string.format('[%s] %s', name, tostring(err)), 2)
     end
@@ -115,10 +115,10 @@ local function StartCapture()
         return
     end
 
-    local date = os.date('*t')
+    local date       = os.date('*t')
     local foldername = string.format('%d-%d-%d_%d_%d', date['year'], date['month'], date['day'], date['hour'],
         date['min'])
-    local charname = backend.player_name()
+    local charname   = backend.player_name()
     if charname then
         local baseDir = string.format('captures/%s/%s/', foldername, charname)
 
@@ -192,7 +192,7 @@ end
 -- Hooks
 backend.register_event_load(function()
     local load_start_time = os.clock()
-    local addon_timings = {}
+    local addon_timings   = {}
     -- Register captain keybinds
     for _, entry in pairs(commandsMap) do
         if entry.keybind then
@@ -209,33 +209,33 @@ backend.register_event_load(function()
         local normalizedFileName = fileName:gsub('\\', '/')
 
         -- addons/actionview.lua
-        local rootAddon = normalizedFileName:match('^([^/]+)%.lua$')
+        local rootAddon          = normalizedFileName:match('^([^/]+)%.lua$')
         if rootAddon then
-            addonName = rootAddon
+            addonName  = rootAddon
             modulePath = string.format('addons/%s', rootAddon)
         else
             -- addons/actionview/actionview.lua
             local dirName, dirFile = normalizedFileName:match('^([^/]+)/([^/]+)%.lua$')
             if dirName and dirName == dirFile then
-                addonName = dirName
+                addonName  = dirName
                 modulePath = string.format('addons/%s/%s', dirName, dirFile)
             end
         end
 
         if addonName then
-            local requirePath = modulePath:gsub('[/\\]', '.')
-            
+            local requirePath                     = modulePath:gsub('[/\\]', '.')
+
             local success, addon, require_elapsed = utils.withPerformanceMonitoring(addonName .. ' require', function()
                 return pcall(require, requirePath)
             end, 0.01)
 
             if success and addon and type(addon) == 'table' then
-                local parsedAddonName = addon.name or addonName
+                local parsedAddonName           = addon.name or addonName
                 captain.addons[parsedAddonName] = addon
                 table.insert(addon_timings, { name = parsedAddonName, time = require_elapsed, phase = 'load' })
             else
                 backend.errMsg('captain',
-                    'Failed to load ' ..  addonName .. ':\n ' .. addon)
+                    'Failed to load ' .. addonName .. ':\n ' .. addon)
             end
         end
     end
@@ -289,8 +289,8 @@ backend.register_event_load(function()
     local total_time = os.clock() - load_start_time
 
     -- Sort by time descending
-    table.sort(addon_timings, function(a, b) 
-        return (a.time or 0) > (b.time or 0) 
+    table.sort(addon_timings, function(a, b)
+        return (a.time or 0) > (b.time or 0)
     end)
 
     local slow_ops = {}

@@ -1,5 +1,4 @@
 -- Sends zone change notifications to a webhook
-
 ---@class WebhookTestAddon : AddonInterface
 local addon         =
 {
@@ -7,7 +6,7 @@ local addon         =
     settings        = {},
     defaultSettings =
     {
-        webhook_url = 'https://eo5wt8q3y961isv.m.pipedream.net', -- Test endpoint
+        webhook_url = 'https://eo5wt8q3y961isv.m.pipedream.net',
         enabled     = true,
     },
 }
@@ -34,30 +33,23 @@ local function sendZoneNotification(zone_id, zone_name)
     backend.msg('webhook', string.format('Sending webhook for zone: %s', zone_name))
 
     copas_clients.webhook(addon.settings.webhook_url, data,
-    {
-        timeout    = 10,
-        on_success = function(response, headers)
-            backend.msg('webhook', string.format('Webhook SUCCESS for %s: status=%s', zone_name, tostring(response)))
-        end,
-        on_error   = function(error_msg)
-            backend.msg('webhook', string.format('Webhook FAILED for %s: %s', zone_name, error_msg))
-        end,
-    })
+        {
+            timeout    = 10,
+            on_success = function(response, headers)
+                backend.msg('webhook', string.format('Webhook SUCCESS for %s: status=%s', zone_name, tostring(response)))
+            end,
+            on_error   = function(error_msg)
+                backend.msg('webhook', string.format('Webhook FAILED for %s: %s', zone_name, error_msg))
+            end,
+        })
 end
 
--- Initialize
-addon.onInitialize = function(rootDir)
-    backend.msg('webhook', 'WebhookTest addon loaded. Webhook URL: ' .. addon.settings.webhook_url)
-end
-
--- Zone change handler
 addon.onZoneChange = function(zone_id)
     local zone_name = backend.zone_name(zone_id)
     backend.msg('webhook', string.format('Zone changed to: %s (%d)', zone_name, zone_id))
     sendZoneNotification(zone_id, zone_name)
 end
 
--- Config menu
 addon.onConfigMenu = function()
     return
     {

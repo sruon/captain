@@ -25,30 +25,30 @@ local csv                  = require('csv')
 --------------------------------
 backend.fileOpen           = function(path)
     -- Replace spaces with underscores in the path
-    path = path:gsub('%s+', '_'):gsub(':', '_'):gsub('%?', 'qm'):gsub("'", '_'):gsub('"', '_')
+    path        = path:gsub('%s+', '_'):gsub(':', '_'):gsub('%?', 'qm'):gsub("'", '_'):gsub('"', '_')
 
-    local file =
+    local file  =
     {
-        path = path,  -- Store relative path
+        path      = path, -- Store relative path
         full_path = backend.script_path() .. path,
-        locked = false,
+        locked    = false,
         scheduled = false,
-        buffer = '',
+        buffer    = '',
     }
 
     file.append = function(self, text)
         backend.fileAppend(self, text)
     end
 
-    file.flush = function(self)
+    file.flush  = function(self)
         backend.fileWrite(self)
     end
 
-    file.clear = function(self)
+    file.clear  = function(self)
         backend.fileClear(self)
     end
 
-    file.read = function(self)
+    file.read   = function(self)
         return backend.fileRead(self)
     end
 
@@ -74,18 +74,18 @@ end
 -- Writes to a file and empties the buffer
 --------------------------------
 backend.fileWrite          = function(file)
-    file.locked = true
+    file.locked    = true
     local to_write = file.buffer
-    file.buffer = ''
+    file.buffer    = ''
     file.scheduled = false
-    
+
     if to_write and to_write ~= '' then
         local success = backend.append_file(file.path, to_write)
         if not success then
             print('[backend] Failed to write to file: ' .. file.path)
         end
     end
-    
+
     file.locked = false
 end
 
@@ -109,19 +109,19 @@ backend.fileClear          = function(file)
     if not success then
         print('[backend] Failed to clear file: ' .. file.path)
     end
-    file.buffer = ''
+    file.buffer    = ''
     file.scheduled = false
 end
 
 backend.databaseOpen       = function(path, opts)
     -- For database, we need the full path, not relative
     local full_path = backend.script_path() .. path
-    local db = database.new({ path = full_path }, opts)
+    local db        = database.new({ path = full_path }, opts)
     return db
 end
 
 backend.csvOpen            = function(path, columns)
-    local file = backend.fileOpen(path)
+    local file    = backend.fileOpen(path)
     local csvFile = csv.new(file, columns)
     return csvFile
 end
@@ -154,7 +154,7 @@ backend.notificationCreate = function(emitter, title, dataFields, frozen)
     captain.notificationMgr:create(
         {
             title = title,
-            data = dataFields, -- Array of key-value pairs
+            data  = dataFields, -- Array of key-value pairs
         }, frozen or false)
 end
 
