@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.2.1](https://github.com/sruon/captain/compare/v1.2.0...v1.2.1) (2025-08-03)
+
+
+### Bug Fixes
+
+* auto-update captain.lua ver ([14eca47](https://github.com/sruon/captain/commit/14eca47e55d44de5146d5d169a10c13572300efe))
+* print table content in chat notifications ([0e76046](https://github.com/sruon/captain/commit/0e76046dab04216176777fb8b6ff57dc27a18426))
+* update semver ([2ff0e46](https://github.com/sruon/captain/commit/2ff0e466ab29529354a28d842223f715dc1ae4be))
+* use right semver format ([c98889d](https://github.com/sruon/captain/commit/c98889d59adde5d2d7f03eaf0e0cc789d94b4aa6))
+
 ## [1.2.0](https://github.com/sruon/captain/compare/v1.1.0...v1.2.0) (2025-08-03)
 
 
