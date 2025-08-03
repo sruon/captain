@@ -9,7 +9,7 @@ local backend
 local isAshitav4 = ashita ~= nil and ashita.events ~= nil
 
 if isAshitav4 ~= nil then
-    backend = require('backend/backend_ashita_v4')
+    backend = require('backend.backend_ashita_v4')
 else
     print('Captain: COULD NOT FIND RELEVANT BACKEND!')
 end
@@ -17,9 +17,9 @@ end
 --------------------------------
 -- Add additional _platform agnostic_ functions to supplement backends
 --------------------------------
-local packets              = require('libs/packets/parser')
-local database             = require('libs/ffi/sqlite3')
-local csv                  = require('libs/csv')
+local packets              = require('packets.parser')
+local database             = require('ffi.sqlite3')
+local csv                  = require('csv')
 --------------------------------
 -- Handles opening, or creating, a file object. Returns it.
 --------------------------------

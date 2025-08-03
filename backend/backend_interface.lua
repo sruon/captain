@@ -75,6 +75,8 @@
 ---@field textBox fun(id: string) : TextBox
 ---@field script_path fun(): string
 ---@field msg fun(header: string, message: string)
+---@field warnMsg fun(header: string, message: string)
+---@field errMsg fun(header: string, message: string)
 ---@field player_name fun(): string
 ---@field zone fun(): number
 ---@field zone_name fun(zone: number?): string

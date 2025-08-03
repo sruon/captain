@@ -1,7 +1,7 @@
 -- Run from captain root directory
 -- TODO: Nested structs
 -- TODO: PVLV definitions
-local definitions = require('libs/packets/definitions')
+local definitions = require('packets.definitions')
 
 local lls_definitions = ''
 

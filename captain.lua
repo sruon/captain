@@ -5,19 +5,16 @@
 if addon and addon.path then
     package.path = addon.path .. '/deps/?.lua;' ..
       addon.path .. '/deps/?/init.lua;' ..
-      addon.path .. '/deps/share/lua/5.1/?.lua;' ..
-      addon.path .. '/deps/share/lua/5.1/?/init.lua;' ..
+      addon.path .. '/libs/?.lua;' ..
+      addon.path .. '/libs/?/init.lua;' ..
       package.path
     package.cpath = addon.path .. '/deps/?.dll;' ..
-      addon.path .. '/deps/?/?.dll;' ..
-      addon.path .. '/deps/lib/lua/5.1/?.dll;' ..
-      addon.path .. '/deps/lib/lua/5.1/?/?.dll;' ..
       package.cpath
 end
 
 -- Addon info
 local name     = 'captain'
-local author   = 'zach2good'
+local author   = 'zach2good, sruon'
 local version  = '0.1' -- x-release-please-version
 local commands = { 'captain', 'cap' }
 
@@ -37,12 +34,13 @@ end
 
 -- Globals
 ---@type Ashitav4Backend
-backend                 = require('backend/backend')
+backend                 = require('backend.backend')
 utils                   = require('utils')
 stats                   = require('stats')
 ---@type table<number, ColorData>
-colors                  = require('libs/colors/colors')
-local notifications     = require('libs/notifications')
+colors                  = require('colors')
+local notifications     = require('notifications')
+local database          = require('ffi.sqlite3')
 
 captain                 =
 {
@@ -59,7 +57,7 @@ captain.notificationMgr = notifications.new(captain.settings.notifications or {}
 ---@type Command[]
 local commandsMap       =
 {
-    { cmd = '',       desc = 'Open configuration menu (Ashita only)' },
+    { cmd = '',       desc = 'Open configuration menu' },
     {
         cmd = 'start',
         desc = 'Start capturing',
@@ -104,7 +102,7 @@ local function safe_call(name, func, ...)
     end, handler)
 
     if not ok then
-        backend.msg('captain', result)
+        backend.errMsg('captain', result)
     end
 
     return ok, result
@@ -113,7 +111,7 @@ end
 -- Notify addons of a capture starting
 local function StartCapture()
     if captain.isCapturing then
-        backend.msg('captain', 'already capturing')
+        backend.msg('captain', 'Already capturing')
         return
     end
 
@@ -124,21 +122,18 @@ local function StartCapture()
     if charname then
         local baseDir = string.format('captures/%s/%s/', foldername, charname)
 
-        backend.msg('captain', 'starting capture at ' .. baseDir)
+        backend.msg('captain', 'Starting capture at ' .. baseDir)
         captain.isCapturing = true
         for addonName, addon in pairs(captain.addons) do
             if type(addon.onCaptureStart) == 'function' then
-                local start_time = os.clock()
-                safe_call(addonName .. '.onCaptureStart', addon.onCaptureStart,
-                    string.format('%s%s/', baseDir, addonName))
-                local elapsed = os.clock() - start_time
-                if elapsed > 0.1 then -- Log anything taking >100ms
-                    backend.msg('captain', string.format('%s onCaptureStart took %.3fs', addonName, elapsed))
-                end
+                utils.withPerformanceMonitoring(addonName .. '.onCaptureStart', function()
+                    return safe_call(addonName .. '.onCaptureStart', addon.onCaptureStart,
+                        string.format('%s%s/', baseDir, addonName))
+                end)
             end
         end
     else
-        backend.msg('captain', 'charname was nil, aborting capture')
+        backend.errMsg('captain', 'charname was nil, aborting capture')
     end
 end
 
@@ -148,16 +143,13 @@ local function StopCapture()
         return
     end
 
-    backend.msg('captain', 'stopping capture')
+    backend.msg('captain', 'Stopping capture')
 
     for addonName, addon in pairs(captain.addons) do
         if type(addon.onCaptureStop) == 'function' then
-            local start_time = os.clock()
-            safe_call(addonName .. '.onCaptureStop', addon.onCaptureStop)
-            local elapsed = os.clock() - start_time
-            if elapsed > 0.1 then
-                backend.msg('captain', string.format('%s onCaptureStop took %.3fs', addonName, elapsed))
-            end
+            utils.withPerformanceMonitoring(addonName .. '.onCaptureStop', function()
+                return safe_call(addonName .. '.onCaptureStop', addon.onCaptureStop)
+            end)
         end
     end
 
@@ -231,33 +223,38 @@ backend.register_event_load(function()
         end
 
         if addonName then
-            local addon_require_start = os.clock()
             local requirePath = modulePath:gsub('[/\\]', '.')
             
-            local success, addon = pcall(require, requirePath)
-            local require_elapsed = os.clock() - addon_require_start
+            local success, addon, require_elapsed = utils.withPerformanceMonitoring(addonName .. ' require', function()
+                return pcall(require, requirePath)
+            end, 0.01)
 
-            if not success then
-                backend.msg('captain', string.format('Failed to load addon %s', addonName))
-            elseif addon and type(addon) == 'table' then
+            if success and addon and type(addon) == 'table' then
                 local parsedAddonName = addon.name or addonName
                 captain.addons[parsedAddonName] = addon
                 table.insert(addon_timings, { name = parsedAddonName, time = require_elapsed, phase = 'load' })
             else
-                backend.msg('captain',
-                    colors[ColorEnum.Purple].chatColorCode ..
-                    'Failed to load addon: ' .. colors[ColorEnum.Seafoam].chatColorCode .. addonName)
+                backend.errMsg('captain',
+                    'Failed to load ' ..  addonName .. ':\n ' .. addon)
             end
         end
     end
 
-    backend.msg('captain',
-        colors[ColorEnum.Purple].chatColorCode ..
-        'Enabled addons: ' ..
-        colors[ColorEnum.Seafoam].chatColorCode .. table.concat(utils.getTableKeys(captain.addons), ', '))
+    local addon_names = utils.getTableKeys(captain.addons)
+    if #addon_names > 0 then
+        backend.msg('captain', colors[ColorEnum.Purple].chatColorCode .. 'Enabled addons:')
+        for i = 1, #addon_names, 6 do
+            local chunk = {}
+            for j = i, math.min(i + 5, #addon_names) do
+                table.insert(chunk, addon_names[j])
+            end
+            backend.msg('captain', '  ' .. colors[ColorEnum.Seafoam].chatColorCode .. table.concat(chunk, ', '))
+        end
+    else
+        backend.msg('captain', colors[ColorEnum.Purple].chatColorCode .. 'No addons enabled')
+    end
 
     -- Force close any stale SQLite connections from previous crashes
-    local database = require('libs/ffi/sqlite3')
     database.force_close_all_connections()
 
     for addonName, subAddon in pairs(captain.addons) do
@@ -268,6 +265,9 @@ backend.register_event_load(function()
             local start_time = os.clock()
             safe_call(addonName .. '.onInitialize', subAddon.onInitialize, string.format('captures/%s/', addonName))
             local elapsed = os.clock() - start_time
+            if elapsed > 0.1 then
+                backend.warnMsg('captain', string.format('%s onInitialize took %.3fs', addonName, elapsed))
+            end
             table.insert(addon_timings, { name = addonName, time = elapsed, phase = 'init' })
         end
 
@@ -289,13 +289,15 @@ backend.register_event_load(function()
     local total_time = os.clock() - load_start_time
 
     -- Sort by time descending
-    table.sort(addon_timings, function(a, b) return a.time > b.time end)
+    table.sort(addon_timings, function(a, b) 
+        return (a.time or 0) > (b.time or 0) 
+    end)
 
     local slow_ops = {}
     for i = 1, math.min(3, #addon_timings) do
-        if addon_timings[i].time > 0.01 then -- Only show if >10ms
+        if (addon_timings[i].time or 0) > 0.01 then -- Only show if >10ms
             table.insert(slow_ops, string.format('%s %s (%.3fs)',
-                addon_timings[i].name, addon_timings[i].phase, addon_timings[i].time))
+                addon_timings[i].name, addon_timings[i].phase, addon_timings[i].time or 0))
         end
     end
 
@@ -303,7 +305,7 @@ backend.register_event_load(function()
     if #slow_ops > 0 then
         msg = msg .. ' - Slowest: ' .. table.concat(slow_ops, ', ')
     end
-    backend.msg('captain', msg)
+    backend.warnMsg('captain', msg)
 end)
 
 -- Unload event, removes keybinds
@@ -322,12 +324,9 @@ backend.register_event_unload(function()
     for addonName, addon in pairs(captain.addons) do
         -- Notify addons of unload
         if type(addon.onUnload) == 'function' then
-            local start_time = os.clock()
-            safe_call(addonName .. '.onUnload', addon.onUnload)
-            local elapsed = os.clock() - start_time
-            if elapsed > 0.1 then
-                backend.msg('captain', string.format('%s onUnload took %.3fs', addonName, elapsed))
-            end
+            utils.withPerformanceMonitoring(addonName .. '.onUnload', function()
+                return safe_call(addonName .. '.onUnload', addon.onUnload)
+            end)
         end
 
         if type(addon.onHelp) == 'function' then
@@ -343,7 +342,6 @@ backend.register_event_unload(function()
     end
 
     -- Close all open SQLite databases
-    local database = require('libs/ffi/sqlite3')
     database.close_all()
 end)
 
@@ -357,13 +355,10 @@ backend.register_command(function(args)
     for addonName, addon in pairs(captain.addons) do
         if args[1] == addonName:lower() then
             if type(addon.onCommand) == 'function' then
-                local start_time = os.clock()
-                local commandArgs = table.pack(table.unpack(args, 2))
-                safe_call(addonName .. '.onCommand', addon.onCommand, commandArgs)
-                local elapsed = os.clock() - start_time
-                if elapsed > 0.1 then
-                    backend.msg('captain', string.format('%s onCommand took %.3fs', addonName, elapsed))
-                end
+                utils.withPerformanceMonitoring(addonName .. '.onCommand', function()
+                    local commandArgs = table.pack(table.unpack(args, 2))
+                    return safe_call(addonName .. '.onCommand', addon.onCommand, commandArgs)
+                end)
             end
         end
     end
@@ -397,12 +392,9 @@ backend.register_event_incoming_packet(function(id, data, size)
           (addon.filters and addon.filters.incoming and addon.filters.incoming[0x255])
         then
             if type(addon.onIncomingPacket) == 'function' then
-                local start_time = os.clock()
-                _, result = safe_call(addonName .. '.onIncomingPacket', addon.onIncomingPacket, id, data, size)
-                local elapsed = os.clock() - start_time
-                if elapsed > 0.1 then
-                    backend.msg('captain', string.format('%s onIncomingPacket took %.3fs', addonName, elapsed))
-                end
+                local ok, result = utils.withPerformanceMonitoring(addonName .. '.onIncomingPacket', function()
+                    return safe_call(addonName .. '.onIncomingPacket', addon.onIncomingPacket, id, data, size)
+                end)
                 if result == true then
                     shouldBlock = true
                 end
@@ -422,12 +414,9 @@ backend.register_event_outgoing_packet(function(id, data, size)
           (addon.filters and addon.filters.outgoing and addon.filters.outgoing[0x255])
         then
             if type(addon.onOutgoingPacket) == 'function' then
-                local start_time = os.clock()
-                _, result = safe_call(addonName .. '.onOutgoingPacket', addon.onOutgoingPacket, id, data, size)
-                local elapsed = os.clock() - start_time
-                if elapsed > 0.1 then
-                    backend.msg('captain', string.format('%s onOutgoingPacket took %.3fs', addonName, elapsed))
-                end
+                local ok, result = utils.withPerformanceMonitoring(addonName .. '.onOutgoingPacket', function()
+                    return safe_call(addonName .. '.onOutgoingPacket', addon.onOutgoingPacket, id, data, size)
+                end)
                 if result == true then
                     shouldBlock = true
                 end
@@ -442,12 +431,9 @@ end)
 backend.register_event_incoming_text(function(mode, text)
     for addonName, addon in pairs(captain.addons) do
         if type(addon.onIncomingText) == 'function' then
-            local start_time = os.clock()
-            safe_call(addonName .. '.onIncomingText', addon.onIncomingText, mode, text)
-            local elapsed = os.clock() - start_time
-            if elapsed > 0.1 then
-                backend.msg('captain', string.format('%s onIncomingText took %.3fs', addonName, elapsed))
-            end
+            utils.withPerformanceMonitoring(addonName .. '.onIncomingText', function()
+                return safe_call(addonName .. '.onIncomingText', addon.onIncomingText, mode, text)
+            end)
         end
     end
 end)
@@ -456,12 +442,9 @@ end)
 backend.register_on_zone_change(function(zoneId)
     for addonName, addon in pairs(captain.addons) do
         if type(addon.onZoneChange) == 'function' then
-            local start_time = os.clock()
-            safe_call(addonName .. '.onZoneChange', addon.onZoneChange, zoneId)
-            local elapsed = os.clock() - start_time
-            if elapsed > 0.1 then
-                backend.msg('captain', string.format('%s onZoneChange took %.3fs', addonName, elapsed))
-            end
+            utils.withPerformanceMonitoring(addonName .. '.onZoneChange', function()
+                return safe_call(addonName .. '.onZoneChange', addon.onZoneChange, zoneId)
+            end)
         end
     end
 end)
@@ -469,12 +452,9 @@ end)
 backend.register_on_client_ready(function(zoneId)
     for addonName, addon in pairs(captain.addons) do
         if type(addon.onClientReady) == 'function' then
-            local start_time = os.clock()
-            safe_call(addonName .. '.onClientReady', addon.onClientReady, zoneId)
-            local elapsed = os.clock() - start_time
-            if elapsed > 0.1 then
-                backend.msg('captain', string.format('%s onClientReady took %.3fs', addonName, elapsed))
-            end
+            utils.withPerformanceMonitoring(addonName .. '.onClientReady', function()
+                return safe_call(addonName .. '.onClientReady', addon.onClientReady, zoneId)
+            end)
         end
     end
 end)
@@ -492,12 +472,9 @@ backend.register_event_prerender(function()
     -- Notify addons of render event
     for addonName, addon in pairs(captain.addons) do
         if type(addon.onPrerender) == 'function' then
-            local start_time = os.clock()
-            safe_call(addonName .. '.onPrerender', addon.onPrerender)
-            local elapsed = os.clock() - start_time
-            if elapsed > 0.1 then
-                backend.msg('captain', string.format('%s onPrerender took %.3fs', addonName, elapsed))
-            end
+            utils.withPerformanceMonitoring(addonName .. '.onPrerender', function()
+                return safe_call(addonName .. '.onPrerender', addon.onPrerender)
+            end)
         end
     end
 end)

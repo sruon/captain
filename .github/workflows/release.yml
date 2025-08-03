@@ -10,9 +10,11 @@ permissions:
   pull-requests: write
 
 jobs:
-  release:
-    runs-on: windows-latest
-    
+  check-release:
+    runs-on: ubuntu-latest
+    outputs:
+      release_created: ${{ steps.release.outputs.release_created }}
+      tag_name: ${{ steps.release.outputs.tag_name }}
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -20,14 +22,21 @@ jobs:
         fetch-depth: 0
         token: ${{ secrets.GITHUB_TOKEN }}
 
-    # - uses: googleapis/release-please-action@v4
-    #   id: release
-    #   with:
-    #     release-type: simple
-    #     token: ${{ secrets.GITHUB_TOKEN }}
+    - uses: googleapis/release-please-action@v4
+      id: release
+      with:
+        release-type: simple
+        token: ${{ secrets.GITHUB_TOKEN }}
+
+  build-sqlite:
+    runs-on: windows-latest
+    needs: check-release
+    if: ${{ needs.check-release.outputs.release_created }}
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
 
     - name: Build SQLite3 DLL (32-bit)
-      # if: ${{ steps.release.outputs.release_created }}
       uses: msys2/setup-msys2@v2
       with:
         msystem: MINGW32
@@ -37,9 +46,9 @@ jobs:
           mingw-w64-i686-sqlite3
           mingw-w64-i686-pkg-config
           make
+          unzip
     
     - name: Compile SQLite3 DLL
-      # if: ${{ steps.release.outputs.release_created }}
       shell: msys2 {0}
       run: |
         # Create deps directory
@@ -51,11 +60,12 @@ jobs:
         cd sqlite-amalgamation-3460100
         
         # Build fully static 32-bit SQLite3 DLL for Windows
-        i686-w64-mingw32-gcc -shared -o ../deps/sqlite3.dll \
+        gcc -m32 -shared -o ../deps/sqlite3.dll \
           sqlite3.c \
           -DSQLITE_ENABLE_FTS5 \
           -DSQLITE_ENABLE_JSON1 \
           -DSQLITE_ENABLE_RTREE \
+          -DSQLITE_API=__declspec\(dllexport\) \
           -static-libgcc \
           -Wl,--out-implib,../deps/libsqlite3.dll.a \
           -Wl,--no-undefined
@@ -63,8 +73,31 @@ jobs:
         cd ..
         rm -rf sqlite3.zip sqlite-amalgamation-3460100
 
+    - name: Upload SQLite3 artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: sqlite3-dll
+        path: deps/sqlite3.dll
+
+  package-release:
+    runs-on: ubuntu-latest
+    needs: [check-release, build-sqlite]
+    if: ${{ needs.check-release.outputs.release_created }}
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Download SQLite3 artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: sqlite3-dll
+        path: deps/
+
     - name: Fetch dependencies
-      # if: ${{ steps.release.outputs.release_created }}
       run: |
         # Create deps directory
         mkdir -p deps
@@ -86,15 +119,35 @@ jobs:
         unzip lua-websockets.zip
         cp -r lua-websockets-2.2/src/* deps/
         rm -rf lua-websockets.zip lua-websockets-2.2
+        
+        # Fetch copas dependencies
+        # binaryheap
+        curl -o deps/binaryheap.lua https://raw.githubusercontent.com/Tieske/binaryheap.lua/refs/heads/master/src/binaryheap.lua
+        
+        # coxpcall
+        curl -o deps/coxpcall.lua https://raw.githubusercontent.com/keplerproject/coxpcall/refs/heads/master/src/coxpcall.lua
+        
+        # timerwheel (extract from zip)
+        curl -L -o timerwheel.zip https://github.com/Tieske/timerwheel.lua/archive/refs/tags/1.0.2.zip
+        unzip timerwheel.zip
+        cp timerwheel.lua-1.0.2/src/timerwheel/init.lua deps/timerwheel.lua
+        rm -rf timerwheel.zip timerwheel.lua-1.0.2
 
     - name: Make release zipball
-      # if: ${{ steps.release.outputs.release_created }}
       run: |
         # Create captain directory structure
         mkdir -p release/captain
         
-        # Copy all repo content to captain folder (excluding .git and .github)
-        rsync -av --exclude='.git' --exclude='.github' --exclude='captures' ./ release/captain/
+        # Copy all repo content to captain folder (excluding dev/build files)
+        rsync -av \
+          --exclude='.git' \
+          --exclude='.github' \
+          --exclude='captures' \
+          --exclude='release' \
+          --exclude='.gitignore' \
+          --exclude='.editorconfig' \
+          --exclude='_images' \
+          ./ release/captain/
         
         # Create the zip file
         cd release
@@ -105,11 +158,12 @@ jobs:
         echo "Zip file contents:"
         unzip -l captain.zip | head -20
 
-    - name: Upload Release Artifact
-      # if: ${{ steps.release.outputs.release_created }}
-      # env:
-      #   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      # run: gh release upload ${{ steps.release.outputs.tag_name }} captain.zip
+    - name: Upload Release Asset
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
-        echo "Would upload captain.zip here"
+        # Upload to the release created by release-please
+        gh release upload ${{ needs.check-release.outputs.tag_name }} captain.zip --clobber
+        
+        echo "Uploaded captain.zip to release ${{ needs.check-release.outputs.tag_name }}"
         ls -la captain.zip

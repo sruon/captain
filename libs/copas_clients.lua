@@ -36,7 +36,6 @@ function copas_clients.websocket()
     return websocket.client.copas()
 end
 
--- WebSocket compatibility function for OBS (replaces websockets.lua)
 function copas_clients.websocket_connect(host, port, path)
     path = path or '/'
     local ws = copas_clients.websocket()
@@ -48,7 +47,6 @@ function copas_clients.websocket_connect(host, port, path)
     return ws
 end
 
--- HTTP convenience functions that use copas.http directly
 function copas_clients.http_request(url, body)
     ensure_copas_processing()
     return copas.addthread(function()

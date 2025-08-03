@@ -2,7 +2,7 @@
 -- Requires the Websocket server to be enabled in OBS.
 -- Requires OBS profile and scene to be configured correctly.
 -- Splitting per zone requires Setting > Output > Output Mode: Advanced > Recording > Automatic File Splitting: Only split manually
-local obs = require('libs/obs')
+local obs = require('obs')
 local utils = require('utils')
 
 ---@class OBSAddon : AddonInterface

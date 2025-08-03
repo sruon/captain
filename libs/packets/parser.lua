@@ -1,5 +1,5 @@
-local breader     = require('libs/packets/bitreader')
-local definitions = require('libs/packets/definitions')
+local breader     = require('bitreader')
+local definitions = require('packets.definitions')
 ---@type table
 local bit         = bit or require('bit')
 

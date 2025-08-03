@@ -371,6 +371,14 @@ backend.msg                            = function(header, message)
     print(chat.header(header):append(chat.message(message)))
 end
 
+backend.warnMsg                        = function(header, message)
+    print(chat.header(header):append(chat.color1(5, message)))
+end
+
+backend.errMsg                        = function(header, message)
+    print(chat.header(header):append(chat.error(message)))
+end
+
 backend.player_name                    = function()
     local player = GetPlayerEntity()
     if player ~= nil then

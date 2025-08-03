@@ -1,6 +1,6 @@
-local copas_clients = require('libs/copas_clients')
-local json = require('deps/json')
-local sha = require('libs/ffi/sha')
+local copas_clients = require('copas_clients')
+local json = require('json')
+local sha = require('ffi.sha')
 
 ---@class OBS
 ---@field client table WebSocket client instance

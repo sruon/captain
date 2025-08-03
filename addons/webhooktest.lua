@@ -12,7 +12,7 @@ local addon =
     },
 }
 
-local copas_clients = require('libs/copas_clients')
+local copas_clients = require('copas_clients')
 
 -- Send zone change notification
 local function sendZoneNotification(zone_id, zone_name)

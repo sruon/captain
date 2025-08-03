@@ -1,7 +1,7 @@
 ---@diagnostic disable: deprecated
 
 local backend  = require('backend/backend')
-local serpent  = require("deps/serpent")
+local serpent  = require("serpent")
 
 local utils    = {}
 
@@ -222,6 +222,26 @@ utils.getProcessInfo = function()
     local window_name = ffi.string(window_buffer)
     
     return process_path, window_name
+end
+
+-- Performance monitoring wrapper
+-- Wraps a function call and warns if execution takes longer than threshold
+-- Returns: all function results..., elapsed_time
+utils.withPerformanceMonitoring = function(name, func, threshold)
+    threshold = threshold or 0.10 -- Default 100ms
+    local start_time = os.clock()
+    local result = table.pack(func())
+    local elapsed = os.clock() - start_time
+    
+    if elapsed > threshold then
+        backend.warnMsg('captain', string.format('%s took %.3fs', name, elapsed))
+    end
+    
+    -- Add elapsed time to the end of results
+    result[result.n + 1] = elapsed
+    result.n = result.n + 1
+    
+    return table.unpack(result, 1, result.n)
 end
 
 return utils
