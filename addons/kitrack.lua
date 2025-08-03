@@ -18,7 +18,7 @@ local addon =
     },
     files             =
     {
-        global = nil,
+        global  = nil,
         capture = nil,
     },
     keyItemMap        = {}, -- Store key items by table index
@@ -61,8 +61,8 @@ local function checkKeyItemChanges(keyItemIds, tableIndex)
         addon.keyItemMap[tableIndex] = {}
     end
 
-    local currentMap = {}
-    local newItems = {}
+    local currentMap   = {}
+    local newItems     = {}
     local removedItems = {}
 
     -- Build current state map
@@ -84,7 +84,7 @@ local function checkKeyItemChanges(keyItemIds, tableIndex)
         end
     end
 
-    addon.keyItemMap[tableIndex] = currentMap
+    addon.keyItemMap[tableIndex]        = currentMap
 
     -- Mark this table as initialized
     addon.initializedTables[tableIndex] = true
@@ -92,22 +92,22 @@ local function checkKeyItemChanges(keyItemIds, tableIndex)
     return newItems, removedItems, isFirstUpdate
 end
 
-addon.onInitialize = function(rootDir)
+addon.onInitialize     = function(rootDir)
     addon.files.global = backend.fileOpen(string.format('%s/%s.log', rootDir, backend.player_name()))
 end
 
-addon.onCaptureStart = function(captureDir)
+addon.onCaptureStart   = function(captureDir)
     addon.files.capture = backend.fileOpen(string.format('%s/%s.log', captureDir, backend.player_name()))
 end
 
-addon.onCaptureStop = function()
+addon.onCaptureStop    = function()
     addon.files.capture = nil
 end
 
 addon.onIncomingPacket = function(id, data)
     if id == PacketId.GP_SERV_COMMAND_SCENARIOITEM then
         ---@type GP_SERV_COMMAND_SCENARIOITEM
-        local packet = backend.parsePacket('incoming', data)
+        local packet     = backend.parsePacket('incoming', data)
 
         -- Get all key item IDs from the bitfields
         local flagValues = {}
@@ -115,17 +115,17 @@ addon.onIncomingPacket = function(id, data)
             flagValues[i] = flag
         end
 
-        local keyItemIds = bitfieldsToKeyItemIds(flagValues, packet.TableIndex)
+        local keyItemIds                            = bitfieldsToKeyItemIds(flagValues, packet.TableIndex)
 
         -- Check for changes
         local newItems, removedItems, isFirstUpdate = checkKeyItemChanges(keyItemIds, packet.TableIndex)
 
-        local player = backend.get_player_entity_data()
-        local dataFields =
+        local player                                = backend.get_player_entity_data()
+        local dataFields                            =
         {
-            x = player.x,
-            y = player.y,
-            z = player.z,
+            x        = player.x,
+            y        = player.y,
+            z        = player.z,
             zoneName = player.zoneName,
         }
 

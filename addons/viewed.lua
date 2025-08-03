@@ -17,7 +17,7 @@ local addon =
     defaultSettings =
     {
         enabled = false,
-        port = 55555,
+        port    = 55555,
     },
     settings        = {},
     udp_socket      = nil,
@@ -54,12 +54,12 @@ addon.onOutgoingPacket = function(id, data, size)
     backend.schedule(function() sendUDPPacket(rawData) end, 0)
 end
 
-addon.onInitialize = function(_)
-    local socket = require('socket')
+addon.onInitialize     = function(_)
+    local socket     = require('socket')
     addon.udp_socket = socket.udp()
 end
 
-addon.onUnload = function()
+addon.onUnload         = function()
     addon.settings.enabled = false
 
     if addon.udp_socket then
@@ -68,25 +68,25 @@ addon.onUnload = function()
     end
 end
 
-addon.onConfigMenu = function()
+addon.onConfigMenu     = function()
     return
     {
         {
-            key = 'enabled',
-            title = 'Enable VieweD bridge',
+            key         = 'enabled',
+            title       = 'Enable VieweD bridge',
             description = 'If enabled, this addon will stream packets to VieweD.',
-            type = 'checkbox',
-            default = addon.defaultSettings.enabled,
+            type        = 'checkbox',
+            default     = addon.defaultSettings.enabled,
         },
         {
-            key = 'port',
-            title = 'VieweD UDP port',
+            key         = 'port',
+            title       = 'VieweD UDP port',
             description = 'VieweD UDP port to stream packets to.',
-            type = 'slider',
-            min = 1025,
-            max = 65535,
-            step = 1,
-            default = addon.defaultSettings.port,
+            type        = 'slider',
+            min         = 1025,
+            max         = 65535,
+            step        = 1,
+            default     = addon.defaultSettings.port,
         },
     }
 end

@@ -3,7 +3,7 @@
 ---@field files { incomingAll: File?, outgoingAll: File?, bothAll: File?, outgoingPerId: table<number, File>, incomingPerId: table<number, File> }
 ---@field captureDir? string
 ---@field windows { inputPacket: any, outputPacket: any }
-local addon =
+local addon            =
 {
     name       = 'PacketViewer',
     filters    =
@@ -64,7 +64,7 @@ addon.onIncomingPacket = function(id, data, size)
 end
 
 addon.onOutgoingPacket = function(id, data, size)
-    local timestr = os.date('%Y-%m-%d %H:%M:%S')
+    local timestr  = os.date('%Y-%m-%d %H:%M:%S')
     local hexidstr = string.format('0x%.3X', id)
 
     if captain.isCapturing then
@@ -91,20 +91,20 @@ addon.onOutgoingPacket = function(id, data, size)
     --addon.windows.outputPacket:updateText(string.hexformat_file(data, size))
 end
 
-addon.onCaptureStart = function(captureDir)
+addon.onCaptureStart   = function(captureDir)
     addon.captureDir        = captureDir
     addon.files.incomingAll = backend.fileOpen(addon.captureDir .. 'incoming.log')
     addon.files.outgoingAll = backend.fileOpen(addon.captureDir .. 'outgoing.log')
     addon.files.bothAll     = backend.fileOpen(addon.captureDir .. 'full.log')
 end
 
-addon.onCaptureStop = function()
+addon.onCaptureStop    = function()
     addon.files.incomingAll = nil
     addon.files.outgoingAll = nil
     addon.files.bothAll     = nil
 end
 
-addon.onInitialize = function(_)
+addon.onInitialize     = function(_)
     addon.windows.inputPacket  = backend.textBox('out')
     addon.windows.outputPacket = backend.textBox('in')
 

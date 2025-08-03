@@ -2,7 +2,7 @@
 -- Logic pulled out of npclogger so that the packet is sent just once for many addons
 -- TODO: This could be moved to captain itself and updates vended as a new event onWidescanUpdate
 ---@class WidescanAddon : AddonInterface
-local addon =
+local addon            =
 {
     name             = 'AutoWidescan',
     filters          =
@@ -16,7 +16,7 @@ local addon =
         },
         outgoing =
         {
-            [PacketId.GP_CLI_COMMAND_GAMEOK] = true,  -- Client is ready to receive additional packets
+            [PacketId.GP_CLI_COMMAND_GAMEOK] = true, -- Client is ready to receive additional packets
         },
     },
     settings         = {},
@@ -55,12 +55,12 @@ end
 addon.onOutgoingPacket = function(id, data)
     -- Client is ready to receive additional packets
     if id == PacketId.GP_CLI_COMMAND_GAMEOK then
-        addon.zonedOut = false
+        addon.zonedOut         = false
         addon.lastWidescanTime = os.time()
     end
 end
 
-addon.onPrerender = function()
+addon.onPrerender      = function()
     if not addon.settings.widescan.enabled then
         return
     end
@@ -81,25 +81,25 @@ addon.onPrerender = function()
     end
 end
 
-addon.onConfigMenu = function()
+addon.onConfigMenu     = function()
     return
     {
         {
-            key = 'widescan.enabled',
-            title = 'Enable Auto Widescan',
+            key         = 'widescan.enabled',
+            title       = 'Enable Auto Widescan',
             description = 'If enabled, this addon will send widescan packets even when client does not allow it.',
-            type = 'checkbox',
-            default = addon.defaultSettings.widescan.enabled,
+            type        = 'checkbox',
+            default     = addon.defaultSettings.widescan.enabled,
         },
         {
-            key = 'widescan.delay',
-            title = 'Widescan Delay',
+            key         = 'widescan.delay',
+            title       = 'Widescan Delay',
             description = 'Time in seconds between widescan packets',
-            type = 'slider',
-            min = 5,
-            max = 60,
-            step = 5,
-            default = addon.defaultSettings.widescan.delay,
+            type        = 'slider',
+            min         = 5,
+            max         = 60,
+            step        = 5,
+            default     = addon.defaultSettings.widescan.delay,
         },
     }
 end

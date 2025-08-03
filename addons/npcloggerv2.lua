@@ -5,7 +5,7 @@
 ---@field rootDir? string
 ---@field captureDir? string
 ---@field databases { capture: Database?, global: Database? }
-local addon =
+local addon          =
 {
     name            = 'NPCLogger',
     filters         =
@@ -63,57 +63,57 @@ local addon =
     -- NPC schema based on actual packet structure
     schema          =
     {
-        UniqueNo = 12345,
-        ActIndex = 123,
-        SubKind = 1,
-        dir = 1.5,
-        x = 100.5,
-        y = 200.0,
-        z = 300.5,
-        Flags0 = 0,
-        Flags1 = 0,
-        Speed = 40,
-        SpeedBase = 40,
-        Hpp = 100,
+        UniqueNo      = 12345,
+        ActIndex      = 123,
+        SubKind       = 1,
+        dir           = 1.5,
+        x             = 100.5,
+        y             = 200.0,
+        z             = 300.5,
+        Flags0        = 0,
+        Flags1        = 0,
+        Speed         = 40,
+        SpeedBase     = 40,
+        Hpp           = 100,
         server_status = 0,
-        Flags2 = 0,
-        Flags3 = 0,
-        SubAnimation = 0,
-        GrapIdTbl = { 0, 0, 0, 0, 0, 0, 0, 0, 0 },
-        model_id = 123,
-        Name = 'Example NPC',
-        DoorId = 0,
-        Time = 0,
-        EndTime = 0,
-        legacy =
+        Flags2        = 0,
+        Flags3        = 0,
+        SubAnimation  = 0,
+        GrapIdTbl     = { 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+        model_id      = 123,
+        Name          = 'Example NPC',
+        DoorId        = 0,
+        Time          = 0,
+        EndTime       = 0,
+        legacy        =
         {
-            flag = 0,
-            speed = 40,
-            speedsub = 40,
-            status = 0,
-            animation = 0,
+            flag         = 0,
+            speed        = 40,
+            speedsub     = 40,
+            status       = 0,
+            animation    = 0,
             animationsub = 0,
-            flags = 0,
-            name_prefix = 0,
-            namevis = 0,
-            look = '0000000000000000000000000000000000000'
+            flags        = 0,
+            name_prefix  = 0,
+            namevis      = 0,
+            look         = '0000000000000000000000000000000000000',
         },
-        ws = { Level = 50, sName = 'Example Monster', Type = 1 },
+        ws            = { Level = 50, sName = 'Example Monster', Type = 1 },
     },
 }
 
 addon.onCaptureStart = function(captureDir)
-    addon.captureDir = captureDir
+    addon.captureDir        = captureDir
 
     addon.databases.capture = backend.databaseOpen(
         string.format('%s/databases/%s.db', captureDir, backend.zone_name()),
         {
-            schema = addon.schema,
+            schema      = addon.schema,
             max_history = addon.settings.database and addon.settings.database.max_history,
         })
 end
 
-addon.onCaptureStop = function()
+addon.onCaptureStop  = function()
     addon.captureDir = nil
     if addon.databases.capture then
         addon.databases.capture:close()
@@ -121,7 +121,7 @@ addon.onCaptureStop = function()
     end
 end
 
-addon.onClientReady = function(zoneId)
+addon.onClientReady  = function(zoneId)
     if addon.databases.global then
         addon.databases.global:close()
     end
@@ -129,7 +129,7 @@ addon.onClientReady = function(zoneId)
     addon.databases.global = backend.databaseOpen(
         string.format('%s/%s/%s.db', addon.rootDir, backend.player_name(), backend.zone_name(zoneId)),
         {
-            schema = addon.schema,
+            schema      = addon.schema,
             max_history = addon.settings.database and addon.settings.database.max_history,
         })
 
@@ -138,7 +138,7 @@ addon.onClientReady = function(zoneId)
         addon.databases.capture = backend.databaseOpen(
             string.format('%s/%s.db', addon.captureDir, backend.zone_name(zoneId)),
             {
-                schema = addon.schema,
+                schema      = addon.schema,
                 max_history = addon.settings.database and addon.settings.database.max_history,
             })
     end
@@ -246,12 +246,12 @@ local function parseNpcUpdate(data)
             )
 
             -- Format as a 4-character hex string
-            npc.legacy.look = string.format('%04X', subkind_status)
+            npc.legacy.look      = string.format('%04X', subkind_status)
 
             -- Add equipment data (0x32-0x43)
             for i = 1, 9 do
                 -- Format each 16-bit value as a 4-character hex string
-                local value = packet.Data.GrapIDTbl[i] or 0
+                local value     = packet.Data.GrapIDTbl[i] or 0
                 npc.legacy.look = npc.legacy.look .. string.format('%04X', value)
             end
         elseif packet.SubKind == 0 or packet.SubKind == 5 or packet.SubKind == 6 then
@@ -262,11 +262,11 @@ local function parseNpcUpdate(data)
             )
 
             -- Format as a 4-character hex string for SubKind+Status and another for model_id
-            npc.legacy.look = string.format('%04X%04X', subkind_status, packet.Data.model_id)
+            npc.legacy.look      = string.format('%04X%04X', subkind_status, packet.Data.model_id)
         end
     end
 
-    npc.type = packet.NPCType
+    npc.type  = packet.NPCType
 
     local mob = backend.get_mob_by_index(packet.ActIndex)
     if mob then
@@ -275,7 +275,7 @@ local function parseNpcUpdate(data)
         npc.polutils_name = 'NotFound'
     end
 
-    local mt = getmetatable(db)
+    local mt     = getmetatable(db)
     local result = db:add_or_update(packet.UniqueNo, npc)
     if result == mt.RESULT_NEW then
         table.insert(addon.notifications.npcCreated, packet.UniqueNo)
@@ -304,14 +304,14 @@ local function parseWidescanUpdate(data)
         return
     end
 
-    npc.ws =
+    npc.ws       =
     {
         Level = packet.Level,
         sName = packet.sName,
-        Type = packet.Type,
+        Type  = packet.Type,
     }
 
-    local mt = getmetatable(db)
+    local mt     = getmetatable(db)
     local result = db:add_or_update(UniqueNo, npc)
     if result == mt.RESULT_UPDATED then
         table.insert(addon.notifications.wsUpdated, UniqueNo)
@@ -326,18 +326,18 @@ addon.onIncomingPacket = function(id, data)
     end
 end
 
-addon.onInitialize = function(rootDir)
-    addon.rootDir = rootDir
+addon.onInitialize     = function(rootDir)
+    addon.rootDir          = rootDir
 
     addon.databases.global = backend.databaseOpen(
         string.format('%s/databases/%s/%s.db', rootDir, backend.player_name(), backend.zone_name()),
         {
-            schema = addon.schema,
+            schema      = addon.schema,
             max_history = addon.settings.database and addon.settings.database.max_history,
         })
 end
 
-addon.onPrerender = function()
+addon.onPrerender      = function()
     if not addon.coroutinesSetup then
         backend.forever(function()
             local db = getCurrentDb()
@@ -347,7 +347,7 @@ addon.onPrerender = function()
                 backend.msg('NPCLogger', report)
                 addon.notifications.npcCreated = {}
                 addon.notifications.npcUpdated = {}
-                addon.notifications.wsUpdated = {}
+                addon.notifications.wsUpdated  = {}
             end
         end, 60)
 

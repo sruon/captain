@@ -1,15 +1,15 @@
 -- Credits: sruon
 ---@class CapLogAddon : AddonInterface
 ---@field logs { global: File?, capture: File? }
-local addon =
+local addon          =
 {
     name     = 'CapLog',
     settings = {},
     logs     =
     {
-        global = nil,
+        global  = nil,
         capture = nil,
-    }
+    },
 }
 
 addon.onIncomingText = function(_, text)
@@ -27,7 +27,7 @@ addon.onIncomingText = function(_, text)
     end
 end
 
-addon.onCaptureStop = function()
+addon.onCaptureStop  = function()
     addon.logs.capture = nil
 end
 
@@ -35,19 +35,19 @@ addon.onCaptureStart = function(captureDir)
     addon.logs.capture = backend.fileOpen(captureDir .. backend.player_name() .. '.log')
 end
 
-addon.onInitialize = function(rootDir)
+addon.onInitialize   = function(rootDir)
     addon.logs.global = backend.fileOpen(rootDir .. backend.player_name() .. '.log')
 end
 
-addon.onCommand = function(_)
+addon.onCommand      = function(_)
 end
 
-local commands =
+local commands       =
 {
-    { cmd = 'test', desc = 'Test command', keybind = { key = 'p', ctrl = true, down = true } }
+    { cmd = 'test', desc = 'Test command', keybind = { key = 'p', ctrl = true, down = true } },
 }
 
-addon.onHelp = function()
+addon.onHelp         = function()
     return commands
 end
 

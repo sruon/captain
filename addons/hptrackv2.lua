@@ -5,7 +5,7 @@
 -- TODO: This code can be reused for the following:
 -- - Calculating proc rates on weapons / items
 ---@class HpTrackAddon : AddonInterface
-local addon =
+local addon                   =
 {
     name            = 'HPTrack',
     filters         =
@@ -19,7 +19,7 @@ local addon =
     settings        = {},
     defaultSettings =
     {
-        color =
+        color      =
         {
             system = ColorEnum.Purple,
         },
@@ -28,15 +28,15 @@ local addon =
     mobs            = {},
     files           =
     {
-        global = nil,
+        global  = nil,
         capture = nil,
     },
 }
 
 -- Messages that indicate damage has been dealt
-local DAMAGE_MESSAGES =
+local DAMAGE_MESSAGES         =
 {
-    [2] = true,   -- Magic damage
+    [2]   = true, -- Magic damage
     [252] = true, -- Magic burst damage
     [264] = true, -- AOE Magic damage
     [274] = true, -- Magic burst drain
@@ -45,15 +45,15 @@ local DAMAGE_MESSAGES =
 }
 
 -- Messages that indicate healing or recovery (not damage)
-local HEAL_MESSAGES =
+local HEAL_MESSAGES           =
 {
-    [7] = true,   -- Magic recovery
+    [7]   = true, -- Magic recovery
     [263] = true, -- AOE recovery
     [651] = true, -- Meteor recovery
 }
 
 -- Additional effect classifications for proc messages
-local PROC_EFFECTS =
+local PROC_EFFECTS            =
 {
     -- Skillchain effects
     [288] = 'Light',
@@ -80,22 +80,22 @@ local PROC_EFFECTS =
 }
 
 -- Known proc messages we want to ignore (not log as unknown)
-local KNOWN_NON_DAMAGE_PROCS =
+local KNOWN_NON_DAMAGE_PROCS  =
 {
-    [0] = true,   -- Haste Samba (No Message)
+    [0]   = true, -- Haste Samba (No Message)
     [161] = true, -- Drain Samba
     [162] = true, -- Aspir Samba
     [164] = true, -- Added Effect: Status
 }
 
 -- Additional effect classifications for react messages
-local REACT_EFFECTS =
+local REACT_EFFECTS           =
 {
     -- Spikes effects
-    [44] = 'Spikes/Reprisal',
+    [44]  = 'Spikes/Reprisal',
     [132] = 'Dread Spikes',
     -- Counter effects
-    [33] = 'Counter',
+    [33]  = 'Counter',
     [536] = 'Retaliation',
 }
 
@@ -147,7 +147,7 @@ local function getReactEffectName(message_id)
 end
 
 local function extractDamage(cmd_no, effect)
-    local damage = 0
+    local damage  = 0
     local message = effect.message or 0
 
     if cmd_no == 1 then
@@ -208,15 +208,15 @@ local function processDamage(mobId, damage, actionData)
     if not trackedMob then
         addon.mobs[mobId] =
         {
-            id = mobId,
+            id            = mobId,
             damageHistory = {},
         }
-        trackedMob = addon.mobs[mobId]
+        trackedMob        = addon.mobs[mobId]
     end
 
     local entry =
     {
-        damage = damage,
+        damage    = damage,
         timestamp = os.time(),
     }
 
@@ -241,7 +241,7 @@ local function calculateHpRange(trackedMob)
     end
 
     -- Find the last non-proc non-react damage entry
-    local lastDamage = 0
+    local lastDamage       = 0
     local additionalDamage = 0
 
     -- Work backwards through history to find last main hit and any proc/react hits after it
@@ -260,10 +260,10 @@ local function calculateHpRange(trackedMob)
     local lastCombinedDamage = lastDamage + additionalDamage
 
     -- Min HP = total damage without last combined hit + 1
-    local minHp = totalDamage - lastCombinedDamage + 1
+    local minHp              = totalDamage - lastCombinedDamage + 1
 
     -- Max HP = total damage
-    local maxHp = totalDamage
+    local maxHp              = totalDamage
 
     return minHp, maxHp
 end
@@ -273,17 +273,17 @@ local function processProcDamage(mobId, procData)
     if not trackedMob then
         addon.mobs[mobId] =
         {
-            id = mobId,
+            id            = mobId,
             damageHistory = {},
         }
-        trackedMob = addon.mobs[mobId]
+        trackedMob        = addon.mobs[mobId]
     end
 
     local entry =
     {
-        damage = procData.value,
+        damage    = procData.value,
         timestamp = os.time(),
-        is_proc = true,
+        is_proc   = true,
         proc_type = getProcEffectName(procData.message),
     }
 
@@ -295,24 +295,24 @@ end
 
 -- Helper function to process react damage from battle actions
 local function processReactDamage(targetMobId, actorId, reactData)
-    local mobId = actorId
-    local damage = reactData.value
+    local mobId      = actorId
+    local damage     = reactData.value
 
     local trackedMob = addon.mobs[mobId]
     if not trackedMob then
         addon.mobs[mobId] =
         {
-            id = mobId,
+            id            = mobId,
             damageHistory = {},
         }
-        trackedMob = addon.mobs[mobId]
+        trackedMob        = addon.mobs[mobId]
     end
 
     local entry =
     {
-        damage = damage,
-        timestamp = os.time(),
-        is_react = true,
+        damage     = damage,
+        timestamp  = os.time(),
+        is_react   = true,
         react_type = getReactEffectName(reactData.message),
     }
 
@@ -326,14 +326,14 @@ end
 local function createActionData(cmd_no, effect, actor_id)
     return
     {
-        cmd_no = cmd_no,
-        message = effect.message or 0,
-        info = effect.info or 0,
-        miss = effect.miss or 0,
+        cmd_no   = cmd_no,
+        message  = effect.message or 0,
+        info     = effect.info or 0,
+        miss     = effect.miss or 0,
         actor_id = actor_id,
-        kind = effect.kind or 0,
+        kind     = effect.kind or 0,
         sub_kind = effect.sub_kind or 0,
-        bit = effect.bit or 0,
+        bit      = effect.bit or 0,
     }
 end
 
@@ -348,9 +348,9 @@ local function createProcData(effect, mobId)
         if isTrustedProcId(effect.proc.message) then
             return
             {
-                kind = effect.proc.kind,
-                info = effect.proc.info,
-                value = effect.proc.value,
+                kind    = effect.proc.kind,
+                info    = effect.proc.info,
+                value   = effect.proc.value,
                 message = effect.proc.message,
             }
         end
@@ -370,9 +370,9 @@ local function createReactData(effect, mobId, actorId)
         if isTrustedReactId(effect.react.message) then
             return
             {
-                kind = effect.react.kind,
-                info = effect.react.info,
-                value = effect.react.value,
+                kind    = effect.react.kind,
+                info    = effect.react.info,
+                value   = effect.react.value,
                 message = effect.react.message,
             }
         end
@@ -387,7 +387,7 @@ addon.onIncomingPacket = function(id, data, size)
 
     if id == PacketId.GP_SERV_COMMAND_BATTLE2 then -- Action Message
         if not packet or not packet.target then return end
-        local cmd_no = packet.cmd_no
+        local cmd_no   = packet.cmd_no
         local actor_id = packet.m_uID
 
         for _, target in pairs(packet.target) do
@@ -401,7 +401,7 @@ addon.onIncomingPacket = function(id, data, size)
 
                     processDamage(mobId, damage, actionData)
 
-                    local proc_data = createProcData(effect, mobId)
+                    local proc_data  = createProcData(effect, mobId)
                     local react_data = createReactData(effect, mobId, actor_id)
 
                     if proc_data then
@@ -422,9 +422,9 @@ addon.onIncomingPacket = function(id, data, size)
             if trackedMob then
                 local minHp, maxHp = calculateHpRange(trackedMob)
 
-                local mob = backend.get_mob_by_index(packet.ActIndexTar)
-                local mob_name = mob and mob.name or tostring(defeatedId)
-                local log_string = string.format('Defeated %s: %d~%d HP',
+                local mob          = backend.get_mob_by_index(packet.ActIndexTar)
+                local mob_name     = mob and mob.name or tostring(defeatedId)
+                local log_string   = string.format('Defeated %s: %d~%d HP',
                     mob_name, minHp, maxHp)
 
                 backend.msg('HPTrack', log_string)
@@ -443,23 +443,23 @@ addon.onIncomingPacket = function(id, data, size)
     end
 end
 
-addon.onCaptureStart = function(captureDir)
-    addon.captureDir = captureDir
+addon.onCaptureStart   = function(captureDir)
+    addon.captureDir    = captureDir
     addon.files.capture = backend.fileOpen(captureDir .. backend.zone_name() .. '.log')
 end
 
-addon.onCaptureStop = function()
-    addon.captureDir = nil
+addon.onCaptureStop    = function()
+    addon.captureDir    = nil
     addon.files.capture = nil
 end
 
-addon.onInitialize = function(rootDir)
-    addon.rootDir = rootDir
+addon.onInitialize     = function(rootDir)
+    addon.rootDir      = rootDir
     addon.files.global = backend.fileOpen(rootDir .. backend.player_name() .. '/' .. backend.zone_name() .. '.log')
 end
 
-addon.onClientReady = function(zoneId)
-    addon.mobs = {}
+addon.onClientReady    = function(zoneId)
+    addon.mobs         = {}
     addon.files.global = backend.fileOpen(addon.rootDir .. backend.player_name() .. '/' .. backend.zone_name() .. '.log')
     if addon.files.capture then
         addon.files.capture = backend.fileOpen(addon.captureDir .. backend.zone_name() .. '.log')

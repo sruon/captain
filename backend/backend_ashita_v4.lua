@@ -3,11 +3,11 @@
 -- https://github.com/AshitaXI/Ashita-v4beta/tree/main/addons
 -- https://github.com/AshitaXI/example/blob/main/example.lua
 ---@type any
-ashita = ashita
+ashita        = ashita
 ---@type any
-AshitaCore = AshitaCore
+AshitaCore    = AshitaCore
 ---@type any
-addon = addon
+addon         = addon
 
 local backend = {}
 
@@ -83,21 +83,21 @@ backend.register_on_zone_change        = function(func)
         if (e.id == PacketId.GP_SERV_COMMAND_LOGOUT) then
             ---@type GP_SERV_COMMAND_LOGOUT
             local zoneOutPacket = backend.parsePacket('incoming', e.data)
-            serverIp = zoneOutPacket.GP_SERV_LOGOUTSUB.ip
+            serverIp            = zoneOutPacket.GP_SERV_LOGOUTSUB.ip
         end
     end
 
     ashita.events.register('packet_in', 'packet_in_zone_cb', incomingAdaptor)
 end
 
-backend.register_on_client_ready        = function(func)
-    local expectedZone = nil
+backend.register_on_client_ready       = function(func)
+    local expectedZone    = nil
     local incomingAdaptor = function(e)
         -- Track when zoning in
         if (e.id == PacketId.GP_SERV_COMMAND_LOGIN) then
             ---@type GP_SERV_COMMAND_LOGIN
             local zonePacket = backend.parsePacket('incoming', e.data)
-            expectedZone = zonePacket.ZoneNo
+            expectedZone     = zonePacket.ZoneNo
         end
     end
 
@@ -197,7 +197,6 @@ backend.register_event_prerender       = function(func)
                 imgui.End()
             end
         end
-
     end
     ashita.events.register('d3d_present', 'present_cb', adaptor)
 end
@@ -226,15 +225,15 @@ local function create_dir_recursive(dirpath)
     ashita.fs.create_dir(dirpath)
 end
 
-backend.dir_exists                     = function(dirpath)
+backend.dir_exists               = function(dirpath)
     return ashita.fs.exists(backend.script_path() .. dirpath)
 end
 
-backend.file_exists                    = function(filepath)
+backend.file_exists              = function(filepath)
     return file_exists_check(backend.script_path() .. filepath)
 end
 
-backend.create_dir                     = function(dirpath)
+backend.create_dir               = function(dirpath)
     -- Check if path is already absolute
     local full_path
     if dirpath:match('^[A-Za-z]:') or dirpath:match('^/') then
@@ -247,67 +246,67 @@ backend.create_dir                     = function(dirpath)
     create_dir_recursive(full_path)
 end
 
-backend.read_file                      = function(filepath)
+backend.read_file                = function(filepath)
     local full_path = backend.script_path() .. filepath
-    local file = io.open(full_path, 'r')
+    local file      = io.open(full_path, 'r')
     if not file then return nil end
     local content = file:read('*all')
     file:close()
-    
+
     -- Remove UTF-8 BOM if present
     if content and content:sub(1, 3) == string.char(0xEF, 0xBB, 0xBF) then
         content = content:sub(4)
     end
-    
+
     return content
 end
 
-backend.write_file                     = function(filepath, content)
+backend.write_file               = function(filepath, content)
     local full_path = backend.script_path() .. filepath
-    
+
     -- Create directory if needed
     local directory = full_path:match('(.+)[/\\][^/\\]*$')
     if directory and not ashita.fs.exists(directory) then
         create_dir_recursive(directory)
     end
-    
+
     local file = io.open(full_path, 'w')
     if not file then return false end
-    
+
     if type(content) == 'table' then
         content = table.concat(content)
     end
-    
+
     file:write(content)
     file:close()
     return true
 end
 
-backend.append_file                    = function(filepath, content)
+backend.append_file              = function(filepath, content)
     local full_path = backend.script_path() .. filepath
-    
+
     -- Create directory if needed
     local directory = full_path:match('(.+)[/\\][^/\\]*$')
     if directory and not ashita.fs.exists(directory) then
         create_dir_recursive(directory)
     end
-    
+
     local file = io.open(full_path, 'a')
     if not file then return false end
-    
+
     if type(content) == 'table' then
         content = table.concat(content)
     end
-    
+
     file:write(content)
     file:close()
     return true
 end
 
-backend.read_lines                     = function(filepath)
+backend.read_lines               = function(filepath)
     local content = backend.read_file(filepath)
     if not content then return nil end
-    
+
     local lines = {}
     for line in content:gmatch('[^\r\n]+') do
         table.insert(lines, line)
@@ -315,7 +314,7 @@ backend.read_lines                     = function(filepath)
     return lines
 end
 
-backend.list_files                     = function(relPath)
+backend.list_files               = function(relPath)
     local full_path = addon.path .. relPath
     return ashita.fs.get_dir(full_path, '.*', true)
 end
@@ -323,30 +322,30 @@ end
 --------------------------------
 -- Text Display
 --------------------------------
-local textBoxIdCounter                 = 0
+local textBoxIdCounter           = 0
 
-backend.textBox                        = function(_)
-    local box = {}
-    box.name = '' .. textBoxIdCounter
-    box.title = nil
-    box.text = nil
-    box.visible = true
+backend.textBox                  = function(_)
+    local box        = {}
+    box.name         = '' .. textBoxIdCounter
+    box.title        = nil
+    box.text         = nil
+    box.visible      = true
 
     textBoxIdCounter = textBoxIdCounter + 1
 
-    box.show = function(self)
+    box.show         = function(self)
         self.visible = true
     end
 
-    box.hide = function(self)
+    box.hide         = function(self)
         self.visible = false
     end
 
-    box.updateTitle = function(self, str)
+    box.updateTitle  = function(self, str)
         self.title = str or ''
     end
 
-    box.updateText = function(self, str)
+    box.updateText   = function(self, str)
         self.text = str or ''
     end
 
@@ -358,28 +357,28 @@ end
 --------------------------------
 -- Misc
 --------------------------------
-backend.script_path                    = function()
+backend.script_path              = function()
     local path = addon.path
 
-    path = string.gsub(path, '\\', '/')
-    path = string.gsub(path, '//', '/')
+    path       = string.gsub(path, '\\', '/')
+    path       = string.gsub(path, '//', '/')
 
     return path
 end
 
-backend.msg                            = function(header, message)
+backend.msg                      = function(header, message)
     print(chat.header(header):append(chat.message(message)))
 end
 
-backend.warnMsg                        = function(header, message)
+backend.warnMsg                  = function(header, message)
     print(chat.header(header):append(chat.color1(5, message)))
 end
 
-backend.errMsg                        = function(header, message)
+backend.errMsg                   = function(header, message)
     print(chat.header(header):append(chat.error(message)))
 end
 
-backend.player_name                    = function()
+backend.player_name              = function()
     local player = GetPlayerEntity()
     if player ~= nil then
         return player.Name
@@ -388,7 +387,7 @@ backend.player_name                    = function()
     return nil
 end
 
-backend.zone                           = function()
+backend.zone                     = function()
     local entityData = backend.get_player_entity_data()
     if entityData == nil then
         return 0
@@ -397,18 +396,18 @@ backend.zone                           = function()
     return entityData.zoneID
 end
 
-backend.zone_name                      = function(zone)
+backend.zone_name                = function(zone)
     local zoneId = zone or backend.zone()
 
     return AshitaCore:GetResourceManager():GetString('zones.names', zoneId)
 end
 
-backend.target_index                   = function()
+backend.target_index             = function()
     return AshitaCore:GetMemoryManager():GetTarget():GetTargetIndex(0)
 end
 
-backend.target_name                    = function()
-    local index = backend.target_index()
+backend.target_name              = function()
+    local index  = backend.target_index()
     local target = GetEntity(index)
 
     if target == nil then
@@ -418,8 +417,8 @@ backend.target_name                    = function()
     return target.Name
 end
 
-backend.target_hpp                     = function()
-    local index = backend.target_index()
+backend.target_hpp               = function()
+    local index  = backend.target_index()
     local target = GetEntity(index)
 
     if target == nil then
@@ -429,85 +428,85 @@ backend.target_hpp                     = function()
     return target.HPPercent
 end
 
-backend.get_player_entity_data         = function()
-    local entity = AshitaCore:GetMemoryManager():GetEntity()
-    local party = AshitaCore:GetMemoryManager():GetParty()
-    local player = AshitaCore:GetMemoryManager():GetPlayer()
-    local index = party:GetMemberTargetIndex(0)
+backend.get_player_entity_data   = function()
+    local entity           = AshitaCore:GetMemoryManager():GetEntity()
+    local party            = AshitaCore:GetMemoryManager():GetParty()
+    local player           = AshitaCore:GetMemoryManager():GetPlayer()
+    local index            = party:GetMemberTargetIndex(0)
 
-    local playerZoneID = party:GetMemberZone(0)
+    local playerZoneID     = party:GetMemberZone(0)
 
     local playerEntityData =
     {
-        name = party:GetMemberName(0),
-        serverId = party:GetMemberServerId(0),
-        mJob = AshitaCore:GetResourceManager():GetString('jobs.names_abbr', player:GetMainJob()),
-        sJob = AshitaCore:GetResourceManager():GetString('jobs.names_abbr', player:GetSubJob()),
+        name      = party:GetMemberName(0),
+        serverId  = party:GetMemberServerId(0),
+        mJob      = AshitaCore:GetResourceManager():GetString('jobs.names_abbr', player:GetMainJob()),
+        sJob      = AshitaCore:GetResourceManager():GetString('jobs.names_abbr', player:GetSubJob()),
         mJobLevel = player:GetMainJobLevel(),
         sJobLevel = player:GetSubJobLevel(),
-        zoneID = playerZoneID,
-        zoneName = AshitaCore:GetResourceManager():GetString('zones.names', playerZoneID),
+        zoneID    = playerZoneID,
+        zoneName  = AshitaCore:GetResourceManager():GetString('zones.names', playerZoneID),
         targIndex = index,
-        x = string.format('%+08.03f', entity:GetLocalPositionX(index)),
-        y = string.format('%+08.03f', entity:GetLocalPositionY(index)),
-        z = string.format('%+08.03f', entity:GetLocalPositionZ(index)),
-        r = string.format('%03d', utils.headingToByteRotation(entity:GetLocalPositionYaw(index))),
+        x         = string.format('%+08.03f', entity:GetLocalPositionX(index)),
+        y         = string.format('%+08.03f', entity:GetLocalPositionY(index)),
+        z         = string.format('%+08.03f', entity:GetLocalPositionZ(index)),
+        r         = string.format('%03d', utils.headingToByteRotation(entity:GetLocalPositionYaw(index))),
     }
     return playerEntityData
 end
 
-backend.get_target_entity_data         = function()
+backend.get_target_entity_data   = function()
     local target = GetEntity(AshitaCore:GetMemoryManager():GetTarget():GetTargetIndex(0))
     if target == nil then
         return nil
     end
 
-    local index = AshitaCore:GetMemoryManager():GetTarget():GetTargetIndex(0)
+    local index            = AshitaCore:GetMemoryManager():GetTarget():GetTargetIndex(0)
     local targetEntityData =
     {
-        name = AshitaCore:GetMemoryManager():GetEntity():GetName(index),
-        serverId = AshitaCore:GetMemoryManager():GetEntity():GetServerId(index),
+        name      = AshitaCore:GetMemoryManager():GetEntity():GetName(index),
+        serverId  = AshitaCore:GetMemoryManager():GetEntity():GetServerId(index),
         targIndex = index,
-        x = string.format('%+08.03f', AshitaCore:GetMemoryManager():GetEntity():GetLocalPositionX(index)),
-        y = string.format('%+08.03f', AshitaCore:GetMemoryManager():GetEntity():GetLocalPositionY(index)),
-        z = string.format('%+08.03f', AshitaCore:GetMemoryManager():GetEntity():GetLocalPositionZ(index)),
-        r = utils.headingToByteRotation(AshitaCore:GetMemoryManager():GetEntity():GetLocalPositionYaw(index)),
+        x         = string.format('%+08.03f', AshitaCore:GetMemoryManager():GetEntity():GetLocalPositionX(index)),
+        y         = string.format('%+08.03f', AshitaCore:GetMemoryManager():GetEntity():GetLocalPositionY(index)),
+        z         = string.format('%+08.03f', AshitaCore:GetMemoryManager():GetEntity():GetLocalPositionZ(index)),
+        r         = utils.headingToByteRotation(AshitaCore:GetMemoryManager():GetEntity():GetLocalPositionYaw(index)),
     }
     return targetEntityData
 end
 
-backend.get_monster_ability_name       = function(id)
+backend.get_monster_ability_name = function(id)
     return AshitaCore:GetResourceManager():GetString('monsters.abilities', id - 256):gsub('%z', '')
 end
 
-backend.get_job_ability_name           = function(id)
+backend.get_job_ability_name     = function(id)
     local a = AshitaCore:GetResourceManager():GetAbilityById(id + 0x200)
     return (a and a.Name[1]) or 'Unknown Ability'
 end
 
-backend.get_weapon_skill_name          = function(id)
+backend.get_weapon_skill_name    = function(id)
     local a = AshitaCore:GetResourceManager():GetAbilityById(id)
     return (a and a.Name[1]) or 'Unknown Weaponskill'
 end
 
-backend.get_spell_name                 = function(id)
+backend.get_spell_name           = function(id)
     local s = AshitaCore:GetResourceManager():GetSpellById(id)
     return (s and s.Name[1]) or 'Unknown Spell'
 end
 
-backend.get_key_item_name              = function(id)
+backend.get_key_item_name        = function(id)
     local s = AshitaCore:GetResourceManager():GetString('keyitems.names', id)
     return s or 'Unknown Key Item'
 end
 
-backend.get_item_name                  = function(id)
+backend.get_item_name            = function(id)
     local s = AshitaCore:GetResourceManager():GetItemById(id)
     return (s and s.Name[1]) or 'Unknown Item'
 end
 
-backend.get_mob_by_index               = function(index)
+backend.get_mob_by_index         = function(index)
     local mgr = AshitaCore:GetMemoryManager()
-    local e = mgr:GetEntity(index)
+    local e   = mgr:GetEntity(index)
     if e then
         local targetEntityData =
         {
@@ -527,15 +526,15 @@ backend.get_mob_by_index               = function(index)
     return nil
 end
 
-backend.get_mob_by_id                  = function(id)
-    local mgr = AshitaCore:GetMemoryManager()
+backend.get_mob_by_id            = function(id)
+    local mgr  = AshitaCore:GetMemoryManager()
     local target
     local tIdx = 0
     for x = 0, 2302 do
         local e = mgr:GetEntity(x)
         if (e and e:GetServerId(x) == id) then
             target = e
-            tIdx = x
+            tIdx   = x
         end
     end
 
@@ -559,7 +558,7 @@ backend.get_mob_by_id                  = function(id)
 end
 
 --credits: Thorny
-backend.is_mob                         = function(index)
+backend.is_mob                   = function(index)
     if (index >= 0x400) then
         return false
     end
@@ -567,7 +566,7 @@ backend.is_mob                         = function(index)
     return (bit.band(AshitaCore:GetMemoryManager():GetEntity():GetSpawnFlags(index), 0x10) ~= 0)
 end
 
-backend.is_npc                         = function(index)
+backend.is_npc                   = function(index)
     if (index >= 0x400) then
         return false
     end
@@ -577,7 +576,7 @@ end
 
 -- scheduling coroutines makes reloading impossible
 -- unless we're checking constantly for the reload signal
-backend.schedule                       = function(func, delay)
+backend.schedule                 = function(func, delay)
     ashita.tasks.once(0, function()
         while not captain.reloadSignal do
             if delay <= 1 then
@@ -599,7 +598,7 @@ backend.schedule                       = function(func, delay)
 end
 
 -- sugar.loop does not support early exits
-backend.forever                        = function(func, delay, ...)
+backend.forever                  = function(func, delay, ...)
     local args = { ... }
 
     ashita.tasks.once(0, function()
@@ -615,7 +614,7 @@ backend.forever                        = function(func, delay, ...)
     end)
 end
 
-backend.convert_int_to_float           = function(raw)
+backend.convert_int_to_float     = function(raw)
     return string.unpack('f', string.pack('I4', raw))
 end
 
@@ -625,12 +624,12 @@ end
 --------------------------------
 -- Injects a widescan request packet
 --------------------------------
-backend.doWidescan                     = function()
+backend.doWidescan               = function()
     backend.injectPacket(PacketId.GP_CLI_COMMAND_TRACKING_LIST,
         { PacketId.GP_CLI_COMMAND_TRACKING_LIST, 0x04, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00 })
 end
 
-backend.doCheck                        = function(targetIndex)
+backend.doCheck                  = function(targetIndex)
     local mob = backend.get_mob_by_index(targetIndex)
     if mob == nil or mob.serverId == 0 then
         return
@@ -657,11 +656,11 @@ end
 --------------------------------
 -- Adds an arbitrary packet to the outgoing queue
 --------------------------------
-backend.injectPacket                   = function(id, content)
+backend.injectPacket             = function(id, content)
     AshitaCore:GetPacketManager():AddOutgoingPacket(id, content)
 end
 
-backend.registerKeyBind                = function(params, command)
+backend.registerKeyBind          = function(params, command)
     local kb = AshitaCore:GetInputManager():GetKeyboard()
     if not command:startswith('/') then
         command = '/' .. command
@@ -679,7 +678,7 @@ backend.registerKeyBind                = function(params, command)
     )
 end
 
-backend.deregisterKeyBind              = function(params)
+backend.deregisterKeyBind        = function(params)
     local kb = AshitaCore:GetInputManager():GetKeyboard()
     kb:Unbind(
         kb:S2D(params.key),
@@ -692,17 +691,17 @@ backend.deregisterKeyBind              = function(params)
     )
 end
 
-backend.loadConfig                     = function(name, defaults)
+backend.loadConfig               = function(name, defaults)
     return settings.load(T(defaults) or T {}, name)
 end
 
-backend.saveConfig                     = function(name)
+backend.saveConfig               = function(name)
     return settings.save(name)
 end
 
 
-backend.notificationsRender            = function(notifications)
-    local vp_size =
+backend.notificationsRender = function(notifications)
+    local vp_size            =
     {
         x = backend.get_resolution_width(),
         y = backend.get_resolution_height(),
@@ -714,7 +713,7 @@ backend.notificationsRender            = function(notifications)
         ImGuiWindowFlags_NoSavedSettings, ImGuiWindowFlags_NoFocusOnAppearing
     )
 
-    local height = 0
+    local height             = 0
 
     -- Push styles for the notifications
     imgui.PushStyleVar(ImGuiStyleVar_WindowPadding, { 8, 8 })
@@ -723,7 +722,7 @@ backend.notificationsRender            = function(notifications)
 
     -- Calculate width for uniform notifications
     local avg_char_width = imgui.GetFontSize() * 0.5
-    local uniform_width = (80 * avg_char_width * captain.settings.notifications.scale) + 20
+    local uniform_width  = (80 * avg_char_width * captain.settings.notifications.scale) + 20
 
     -- Define colors
     local function normalizeColor(colorEnum, alpha)
@@ -736,15 +735,15 @@ backend.notificationsRender            = function(notifications)
         }
     end
 
-    local KEY_COLOR = normalizeColor(captain.settings.notifications.colors.key)
-    local VALUE_COLOR = normalizeColor(captain.settings.notifications.colors.value)
-    local TITLE_COLOR = normalizeColor(captain.settings.notifications.colors.title)
-    local WHITE_COLOR = { 1.0, 1.0, 1.0, 1.0 }
-    local TRANSPARENT = { 0.0, 0.0, 0.0, 0.0 }
+    local KEY_COLOR    = normalizeColor(captain.settings.notifications.colors.key)
+    local VALUE_COLOR  = normalizeColor(captain.settings.notifications.colors.value)
+    local TITLE_COLOR  = normalizeColor(captain.settings.notifications.colors.title)
+    local WHITE_COLOR  = { 1.0, 1.0, 1.0, 1.0 }
+    local TRANSPARENT  = { 0.0, 0.0, 0.0, 0.0 }
 
     local typeHandlers =
     {
-        ['table'] = function(fieldName, value)
+        ['table']   = function(fieldName, value)
             local values = {}
             for i, v in ipairs(value) do table.insert(values, tostring(v)) end
             if #values == 0 then
@@ -753,13 +752,13 @@ backend.notificationsRender            = function(notifications)
             return fieldName .. '[]', table.concat(values, ', ')
         end,
 
-        ['nil'] = function(fieldName, _) return fieldName, 'nil' end,
+        ['nil']     = function(fieldName, _) return fieldName, 'nil' end,
 
-        ['number'] = function(fieldName, value)
+        ['number']  = function(fieldName, value)
             return fieldName, math.floor(value) == value and tostring(value) or string.format('%.2f', value)
         end,
 
-        ['string'] = function(fieldName, value)
+        ['string']  = function(fieldName, value)
             return fieldName, #value > 40 and value:sub(1, 37) .. '...' or value
         end,
 
@@ -776,10 +775,10 @@ backend.notificationsRender            = function(notifications)
 
     -- Process notifications from newest to oldest
     for i = #notifications, 1, -1 do
-        local toast = notifications[i]
+        local toast    = notifications[i]
 
         -- Prepare notification background
-        local opacity = toast.bg.alpha / 255
+        local opacity  = toast.bg.alpha / 255
         local bg_color =
         {
             toast.bg.red / 255, toast.bg.green / 255, toast.bg.blue / 255, opacity,
@@ -808,7 +807,7 @@ backend.notificationsRender            = function(notifications)
 
             -- Handle dragging
             if imgui.IsWindowHovered() and imgui.IsMouseDragging(0) then
-                local delta_x, delta_y = imgui.GetMouseDragDelta(0)
+                local delta_x, delta_y                  = imgui.GetMouseDragDelta(0)
                 captain.settings.notifications.offset.x = captain.settings.notifications.offset.x - delta_x
                 captain.settings.notifications.offset.y = captain.settings.notifications.offset.y - delta_y
                 backend.saveConfig('captain')
@@ -821,23 +820,23 @@ backend.notificationsRender            = function(notifications)
 
             -- Render data if available
             if toast.data and type(toast.data) == 'table' then
-                local max_line_width = uniform_width
+                local max_line_width     = uniform_width
                 local current_line_width = 0
-                local is_first_in_line = true
-                local grouped_data = {}
+                local is_first_in_line   = true
+                local grouped_data       = {}
 
                 -- Preprocess data
                 for i, pair in ipairs(toast.data) do
                     local key, value = processFieldValue(pair[1], pair[2])
-                    local key_size = { imgui.CalcTextSize(key) }
+                    local key_size   = { imgui.CalcTextSize(key) }
                     local colon_size = { imgui.CalcTextSize(': ') }
                     local value_size = { imgui.CalcTextSize(value) }
 
                     table.insert(grouped_data,
                         {
-                            key = key,
-                            value = value,
-                            width = key_size[1] + colon_size[1] + value_size[1] + 15,
+                            key        = key,
+                            value      = value,
+                            width      = key_size[1] + colon_size[1] + value_size[1] + 15,
                             orig_index = i,
                         })
                 end
@@ -845,9 +844,9 @@ backend.notificationsRender            = function(notifications)
                 -- Render data items
                 for _, item in ipairs(grouped_data) do
                     local key, value, width = item.key, item.value, item.width
-                    local is_array = key:match('%[%]$') ~= nil
-                    local is_long_value = width > (max_line_width * 0.8)
-                    local needs_new_line = (is_array or is_long_value) or
+                    local is_array          = key:match('%[%]$') ~= nil
+                    local is_long_value     = width > (max_line_width * 0.8)
+                    local needs_new_line    = (is_array or is_long_value) or
                       (not is_first_in_line and current_line_width + width > max_line_width)
 
                     -- Start new line if needed
@@ -876,7 +875,7 @@ backend.notificationsRender            = function(notifications)
                         current_line_width, is_first_in_line = 0, true
                     else
                         current_line_width = current_line_width + width
-                        is_first_in_line = false
+                        is_first_in_line   = false
                     end
                 end
 
@@ -897,21 +896,21 @@ backend.notificationsRender            = function(notifications)
 end
 
 
-backend.get_resolution_width           = function()
+backend.get_resolution_width  = function()
     return AshitaCore:GetConfigurationManager():GetUInt32('boot', 'ffxi.registry', '0001', 1920)
 end
 
-backend.get_resolution_height          = function()
+backend.get_resolution_height = function()
     return AshitaCore:GetConfigurationManager():GetUInt32('boot', 'ffxi.registry', '0002', 1080)
 end
 
-backend.reload                         = function()
+backend.reload                = function()
     captain.reloadSignal = true
     backend.msg('captain', 'Reloading. Coroutines may take a moment to finish.')
     AshitaCore:GetChatManager():QueueCommand(-1, '/addon reload captain')
 end
 
-backend.configMenu                     = function()
+backend.configMenu            = function()
     -- If config is not being shown, return early
     if not captain.showConfig then
         return
@@ -925,7 +924,7 @@ backend.configMenu                     = function()
         for _, setting in ipairs(settings_list) do
             -- Process setting path
             local parts = {}
-            local path = setting.path or setting.key -- Support both formats
+            local path  = setting.path or setting.key -- Support both formats
             for part in string.gmatch(path, '[^%.]+') do
                 table.insert(parts, part)
             end
@@ -949,10 +948,10 @@ backend.configMenu                     = function()
             end
 
             -- Display the setting name
-            local title = setting.ui and setting.ui.title or setting.title
+            local title       = setting.ui and setting.ui.title or setting.title
 
             -- Get UI properties
-            local ui = setting.ui or setting
+            local ui          = setting.ui or setting
             local settingType = ui.type or 'slider'
 
             -- For checkboxes, put the title on the same line as the control
@@ -962,9 +961,10 @@ backend.configMenu                     = function()
                 imgui.SameLine()
 
                 -- Create checkbox without title text
-                local buffer = { settingRef[lastPart] }
+                local buffer       = { settingRef[lastPart] }
                 -- Make control ID more unique by including the full path and category
-                local controlID = string.format('##setting_%s_%s', category_id or 'unknown', path:gsub(' ', '_'):gsub('%.', '_'):lower())
+                local controlID    = string.format('##setting_%s_%s', category_id or 'unknown',
+                    path:gsub(' ', '_'):gsub('%.', '_'):lower())
 
                 -- Create checkbox without title
                 local valueChanged = imgui.Checkbox(controlID, buffer)
@@ -992,8 +992,9 @@ backend.configMenu                     = function()
                 imgui.TextColored(CORAL, title)
 
                 -- Create buffer with current value
-                local buffer = { settingRef[lastPart] }
-                local controlID = string.format('##setting_%s_%s', category_id or 'unknown', path:gsub(' ', '_'):gsub('%.', '_'):lower())
+                local buffer       = { settingRef[lastPart] }
+                local controlID    = string.format('##setting_%s_%s', category_id or 'unknown',
+                    path:gsub(' ', '_'):gsub('%.', '_'):lower())
 
                 local valueChanged = false
 
@@ -1003,10 +1004,10 @@ backend.configMenu                     = function()
                 -- Create appropriate control based on type
                 if settingType == 'slider' then
                     -- Determine if it's an integer slider
-                    local step = ui.step or 1
+                    local step      = ui.step or 1
                     local isInteger = step and step == math.floor(step) and step == 1
-                    local min = ui.min or 0
-                    local max = ui.max or 100
+                    local min       = ui.min or 0
+                    local max       = ui.max or 100
 
                     if isInteger then
                         valueChanged = imgui.SliderInt(
@@ -1096,20 +1097,20 @@ backend.configMenu                     = function()
         end
 
         local current_tab = nil
-        
+
         if imgui.BeginTabBar('##captain_config_tabbar', ImGuiTabBarFlags_NoCloseWithMiddleMouseButton) then
             -- Captain core settings - combined in one tab
             if imgui.BeginTabItem('Captain') then
                 current_tab = 'Captain'
                 imgui.BeginGroup()
-                
+
                 -- Render all captain settings with separators
                 for i, category in ipairs(settings_schema.categories) do
                     -- Add section header in red
                     imgui.TextColored({ 1.0, 0.2, 0.2, 1.0 }, category.title)
                     imgui.Separator()
                     imgui.Spacing()
-                    
+
                     -- Get all UI-configurable settings for this category
                     local ui_settings = settings_schema:get_ui_settings(category.id)
 
@@ -1125,9 +1126,9 @@ backend.configMenu                     = function()
                         function()
                             backend.saveConfig('captain')
                         end,
-                        category.id  -- Pass category ID for unique control IDs
+                        category.id -- Pass category ID for unique control IDs
                     )
-                    
+
                     -- Add spacing between sections (but not after the last one)
                     if i < #settings_schema.categories then
                         imgui.Spacing()
@@ -1162,7 +1163,7 @@ backend.configMenu                     = function()
                                     if setting.default ~= nil then
                                         return setting.default
                                     end
-                                    
+
                                     -- Fall back to navigating defaultSettings
                                     local defaultRef = addon.defaultSettings
                                     for _, part in ipairs(parts) do
@@ -1179,7 +1180,7 @@ backend.configMenu                     = function()
                                 function()
                                     backend.saveConfig(addonName)
                                 end,
-                                addonName  -- Pass addon name for unique control IDs
+                                addonName -- Pass addon name for unique control IDs
                             )
 
                             imgui.EndGroup()
@@ -1191,29 +1192,29 @@ backend.configMenu                     = function()
 
             imgui.EndTabBar()
         end
-        
+
         -- Footer buttons - shown on all pages
         imgui.Separator()
         imgui.Spacing()
-        
+
         -- Center the buttons using automatic sizing
-        local window_width = imgui.GetWindowWidth()
+        local window_width   = imgui.GetWindowWidth()
         local button_spacing = 20
-        
+
         -- Calculate button sizes (only Reset Tab and Close)
-        local reset_size = { imgui.CalcTextSize('Reset Tab') }
-        local close_size = { imgui.CalcTextSize('Close') }
-        
+        local reset_size     = { imgui.CalcTextSize('Reset Tab') }
+        local close_size     = { imgui.CalcTextSize('Close') }
+
         -- Add padding to button sizes
-        local padding = 20
-        reset_size[1] = reset_size[1] + padding
-        close_size[1] = close_size[1] + padding
-        
-        local total_width = reset_size[1] + close_size[1] + button_spacing
-        local start_x = (window_width - total_width) * 0.5
-        
+        local padding        = 20
+        reset_size[1]        = reset_size[1] + padding
+        close_size[1]        = close_size[1] + padding
+
+        local total_width    = reset_size[1] + close_size[1] + button_spacing
+        local start_x        = (window_width - total_width) * 0.5
+
         imgui.SetCursorPosX(start_x)
-        
+
         if imgui.Button('Reset Tab', reset_size) then
             if current_tab == 'Captain' then
                 -- Reset only captain settings
@@ -1229,7 +1230,7 @@ backend.configMenu                     = function()
                 end
             end
         end
-        
+
         imgui.SameLine(0, button_spacing)
         if imgui.Button('Close', close_size) then
             captain.showConfig = false

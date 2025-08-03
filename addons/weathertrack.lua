@@ -3,7 +3,7 @@
 -- Does not store with the capture, passive mode only!
 ---@class WeatherTrackAddon : AddonInterface
 ---@field database Database | nil
-local addon =
+local addon            =
 {
     name            = 'WeatherTrack',
     filters         =
@@ -18,13 +18,13 @@ local addon =
     defaultSettings =
     {
     },
-    database = nil,
+    database        = nil,
     currentWeather  = nil,
     rootDir         = nil,
 }
 
-addon.onInitialize = function(rootDir)
-    local dbPath = string.format('%s/%s.db', rootDir, backend.player_name())
+addon.onInitialize     = function(rootDir)
+    local dbPath   = string.format('%s/%s.db', rootDir, backend.player_name())
     addon.database = backend.databaseOpen(
         dbPath,
         {
@@ -42,7 +42,7 @@ addon.onInitialize = function(rootDir)
         })
 end
 
-addon.onUnload = function()
+addon.onUnload         = function()
     if addon.database then
         addon.database:close()
     end
@@ -56,7 +56,7 @@ addon.onIncomingPacket = function(id, data)
 
     if id == PacketId.GP_SERV_COMMAND_LOGIN then
         ---@type GP_SERV_COMMAND_LOGIN
-        local zoneInPacket = backend.parsePacket('incoming', data)
+        local zoneInPacket   = backend.parsePacket('incoming', data)
         local weatherDbEntry =
         {
             ZoneNo                    = zoneInPacket.ZoneNo,

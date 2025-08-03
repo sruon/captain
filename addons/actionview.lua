@@ -39,7 +39,7 @@ local addon =
             [14] = true,  -- Non-blinkable job abilities (Jigs, Sambas, Steps, Waltzes, Flourish)
             [15] = true,  -- Some RUN job abilities
         },
-        color =
+        color    =
         {
             id        = 22, -- Red Lotus Blade
             name      = 24, -- 34
@@ -64,14 +64,14 @@ local addon =
     },
     databases       =
     {
-        global =
+        global  =
         {
-            zone = nil,
+            zone    = nil,
             actions = nil, -- Single actions database instead of 15 category databases
         },
         capture =
         {
-            zone = nil,
+            zone    = nil,
             actions = nil, -- Single actions database instead of 15 category databases
         },
     },
@@ -79,14 +79,14 @@ local addon =
     -- Action schema based on actual data structure
     schema          =
     {
-        ActionType = 'Physical',  -- Action type string
-        category = 1,             -- Category number (cmd_no)
-        actor = 12345,            -- Actor ID (m_uID)
-        id = 123,                 -- Action/ability ID
-        message = 1,              -- Message ID from target result
-        animation = 456,          -- Animation ID (sub_kind)
-        name = 'Example Ability', -- Resolved action name
-        actor_name = 'Actor Name', -- Resolved actor name
+        ActionType = 'Physical',        -- Action type string
+        category   = 1,                 -- Category number (cmd_no)
+        actor      = 12345,             -- Actor ID (m_uID)
+        id         = 123,               -- Action/ability ID
+        message    = 1,                 -- Message ID from target result
+        animation  = 456,               -- Animation ID (sub_kind)
+        name       = 'Example Ability', -- Resolved action name
+        actor_name = 'Actor Name',      -- Resolved actor name
     },
     files           =
     {
@@ -116,15 +116,6 @@ local addon =
     },
 }
 
--- Builds a colorized chatlog string
---------------------------------------------------
-local function buildChatlogString(info)
-    local chatlog_string = addon.h.name .. addon.h.category .. '%s ' ..
-      addon.h.id .. '%s ' .. addon.h.animation .. '%s ' ..
-      addon.h.message .. '%s'
-    return string.format(chatlog_string, info.name, info.category, info.id, info.animation, info.message)
-end
-
 -- Builds a simple string for file logging
 --------------------------------------------------
 local function buildSimpleString(info)
@@ -140,15 +131,15 @@ local function isMob(id)
 end
 
 local function parseAction(action)
-    local result = {}
+    local result      = {}
 
-    local categories =
+    local categories  =
     {
-        [1] = function(action)
+        [1]  = function(action)
             return 'Melee Attack'
-        end,                                               -- Melee Attack
-        [2] = function(action) return 'Ranged Attack' end, -- Ranged Attack execution
-        [3] = function(action)                             -- WS or some damaging JAs
+        end,                                                -- Melee Attack
+        [2]  = function(action) return 'Ranged Attack' end, -- Ranged Attack execution
+        [3]  = function(action)                             -- WS or some damaging JAs
             local message = action.target[1].result[1].message
             if action.cmd_arg >= 257 then
                 return backend.get_monster_ability_name(action.cmd_arg)
@@ -158,26 +149,26 @@ local function parseAction(action)
                 return backend.get_weapon_skill_name(action.cmd_arg)
             end
         end,
-        [4] = function(action) -- Casted magic
+        [4]  = function(action) -- Casted magic
             return backend.get_spell_name(action.cmd_arg)
         end,
-        [5] = function(action) return backend.get_item_name(action.cmd_arg) end, -- Item Usage execution
-        [6] = function(action)                                                   -- Most job abilities; can include monster abilities
+        [5]  = function(action) return backend.get_item_name(action.cmd_arg) end, -- Item Usage execution
+        [6]  = function(action)                                                   -- Most job abilities; can include monster abilities
             if isMob(action.m_uID) then
                 return backend.get_monster_ability_name(action.cmd_arg)
             else
                 return backend.get_job_ability_name(action.cmd_arg)
             end
         end,
-        [7] = function(action) -- OK
+        [7]  = function(action) -- OK
             if isMob(action.m_uID) then
                 return backend.get_monster_ability_name(action.target[1].result[1].value)
             else
                 return backend.get_weapon_skill_name(action.target[1].result[1].value)
             end
-        end,                                                                                        -- TP Move Start
-        [8] = function(action) return backend.get_spell_name(action.target[1].result[1].value) end, -- Spell Start
-        [9] = function(action) return backend.get_item_name(action.target[1].result[1].value) end,  -- Item Usage initiation
+        end,                                                                                         -- TP Move Start
+        [8]  = function(action) return backend.get_spell_name(action.target[1].result[1].value) end, -- Spell Start
+        [9]  = function(action) return backend.get_item_name(action.target[1].result[1].value) end,  -- Item Usage initiation
         [11] = function(action)
             return backend.get_monster_ability_name(action.cmd_arg)
         end,
@@ -187,8 +178,8 @@ local function parseAction(action)
         [15] = function(action) return backend.get_job_ability_name(action.cmd_arg) end, -- Some RUN job abilities
     }
     result.ActionType = action.ActionType
-    result.category = action.cmd_no
-    result.actor = action.m_uID
+    result.category   = action.cmd_no
+    result.actor      = action.m_uID
 
     if result.category == 7 then -- TP Move Start has the ID in the target array
         result.id = action.target[1].result[1].value
@@ -197,7 +188,7 @@ local function parseAction(action)
     end
     if action.target and action.target[1] then
         if action.target[1].result and action.target[1].result[1] then
-            result.message = action.target[1].result[1].message
+            result.message   = action.target[1].result[1].message
             result.animation = action.target[1].result[1].sub_kind
             if action.cmd_no == 8 then
                 result.id = action.target[1].result[1].value
@@ -219,31 +210,16 @@ local function parseAction(action)
     else
         result.name = 'Unknown Ability'
     end
-    str_info.name = result.name
+    str_info.name     = result.name
 
     result.actor_name = ''
-    local mob = backend.get_mob_by_id(action.m_uID)
+    local mob         = backend.get_mob_by_id(action.m_uID)
     if mob and mob.name then
         result.actor_name = mob.name
     end
     str_info.actor_name = result.actor_name
 
     return result, str_info
-end
-
--- Inserts an action into the actions DB
----------------------------------------------------------------------
-local function addActionToCategory(db, result)
-    if not db.actions then
-        return false
-    end
-
-    -- Use category + id as unique key
-    local unique_key = string.format('%d_%d', result.category, result.id)
-    local mt = getmetatable(db.actions)
-    local r = db.actions:add_or_update(unique_key, result)
-
-    return r == mt.RESULT_NEW
 end
 
 -- Inserts an action into a zone mob DB
@@ -260,7 +236,7 @@ local function addActionToMobList(db, result)
     -- Also add to the single actions database
     if db.actions then
         local mt = getmetatable(db.actions)
-        local r = db.actions:add_or_update(mob_key, result)
+        local r  = db.actions:add_or_update(mob_key, result)
         return r == mt.RESULT_NEW
     end
 
@@ -270,7 +246,7 @@ end
 local function recordAction(result, str_info)
     local new_mob_ability = addActionToMobList(addon.databases.global, result)
 
-    local simple_string = buildSimpleString(str_info)
+    local simple_string   = buildSimpleString(str_info)
     addon.files.simple:append(simple_string .. '\n\n')
 
     if addon.captureDir then
@@ -281,14 +257,14 @@ end
 
 local function createActionNotification(result)
     -- Create title with ability name
-    local title = string.format('%s [%s]', result.name, result.ActionType)
+    local title      = string.format('%s [%s]', result.name, result.ActionType)
 
     -- Extract data fields from result - use array of key-value pairs to preserve order
     local dataFields = {}
 
     -- Add actor information
-    local actorText = result.actor
-    local mob = backend.get_mob_by_id(result.actor)
+    local actorText  = result.actor
+    local mob        = backend.get_mob_by_id(result.actor)
     if mob and mob.name then
         actorText = string.format('%d (%s)', result.actor, mob.name)
     end
@@ -329,20 +305,20 @@ end
 -- Loads a zone database into memory
 --------------------------------------------------
 local function prepareZoneDatabase(zone)
-    local path = string.format('%s/zone/%s.db', addon.rootDir, backend.zone_name(zone))
+    local path                  = string.format('%s/zone/%s.db', addon.rootDir, backend.zone_name(zone))
     addon.databases.global.zone = backend.databaseOpen(path,
-    {
-        schema = addon.schema,
-        max_history = addon.settings.database and addon.settings.database.max_history,
-    })
-
-    if captain.isCapturing then
-        local capture_path = string.format('%s/zone/%s.db', addon.captureDir, backend.zone_name(zone))
-        addon.databases.capture.zone = backend.databaseOpen(capture_path,
         {
-            schema = addon.schema,
+            schema      = addon.schema,
             max_history = addon.settings.database and addon.settings.database.max_history,
         })
+
+    if captain.isCapturing then
+        local capture_path           = string.format('%s/zone/%s.db', addon.captureDir, backend.zone_name(zone))
+        addon.databases.capture.zone = backend.databaseOpen(capture_path,
+            {
+                schema      = addon.schema,
+                max_history = addon.settings.database and addon.settings.database.max_history,
+            })
     end
 end
 
@@ -353,9 +329,9 @@ local function setupZone(zone)
     prepareZoneDatabase(zone)
 
     addon.vars.zone_start = bit.lshift(zone, 12) + 0x1000000
-    addon.vars.zone_end = addon.vars.zone_start + 1024 -- Full block of NPCs and mobs
+    addon.vars.zone_end   = addon.vars.zone_start + 1024 -- Full block of NPCs and mobs
 
-    addon.files.simple = backend.fileOpen(addon.rootDir .. 'simple/' .. current_zone .. '.log')
+    addon.files.simple    = backend.fileOpen(addon.rootDir .. 'simple/' .. current_zone .. '.log')
 
     if captain.isCapturing then
         addon.files.capture.simple = backend.fileOpen(addon.captureDir .. 'simple/' .. current_zone .. '.log')
@@ -370,9 +346,9 @@ local function initialize(rootDir)
     -- DISPLAY COLORS AND LOG HEADERS
     ---------------------------------------------------------------------------------
 
-    addon.rootDir = rootDir
-    addon.color = {}
-    addon.color.log =
+    addon.rootDir                  = rootDir
+    addon.color                    = {}
+    addon.color.log                =
     { -- Preformatted character codes for log colors.
         ID        = colors[addon.settings.color.id].chatColorCode,
         NAME      = colors[addon.settings.color.name].chatColorCode,
@@ -382,7 +358,7 @@ local function initialize(rootDir)
         MESSAGE   = colors[addon.settings.color.message].chatColorCode,
         SYSTEM    = colors[addon.settings.color.system].chatColorCode,
     }
-    addon.color.notification =
+    addon.color.notification       =
     { -- \\cs(#,#,#) values for Windower text boxes
         SYSTEM    = colors[addon.settings.color.system].rgb,
         NAME      = colors[addon.settings.color.name].rgb,
@@ -393,7 +369,7 @@ local function initialize(rootDir)
         MESSAGE   = colors[addon.settings.color.message].rgb,
     }
 
-    addon.h =
+    addon.h                        =
     { -- Headers for log string. ex: NPC:
         id        = addon.color.log.SYSTEM .. 'ID: ' .. addon.color.log.ID,
         name      = addon.color.log.NAME .. '%s' .. addon.color.log.SYSTEM .. ' > ',
@@ -406,44 +382,44 @@ local function initialize(rootDir)
     -- VARIABLES AND TEMPLATES
     ---------------------------------------------------------------------------------
 
-    addon.vars = {}
+    addon.vars                     = {}
 
-    addon.files = {}
-    addon.files.capture = {}
-    addon.files.simple = backend.fileOpen(addon.rootDir .. backend.player_name() .. '/logs/simple.log')
+    addon.files                    = {}
+    addon.files.capture            = {}
+    addon.files.simple             = backend.fileOpen(addon.rootDir .. backend.player_name() .. '/logs/simple.log')
 
     -- Create single actions database instead of 15 category databases
-    local actions_path = string.format('%s/actions.db', addon.rootDir)
+    local actions_path             = string.format('%s/actions.db', addon.rootDir)
     addon.databases.global.actions = backend.databaseOpen(actions_path,
-    {
-        schema = addon.schema,
-        max_history = addon.settings.database and addon.settings.database.max_history,
-    })
+        {
+            schema      = addon.schema,
+            max_history = addon.settings.database and addon.settings.database.max_history,
+        })
 
     setupZone(backend.zone())
 end
 
-addon.onClientReady = setupZone
+addon.onClientReady    = setupZone
 
 addon.onIncomingPacket = function(id, data)
     checkAction(data)
 end
 
-addon.onCaptureStart = function(captureDir)
-    addon.captureDir = captureDir
+addon.onCaptureStart   = function(captureDir)
+    addon.captureDir                = captureDir
 
     -- Create single actions database for capture instead of 15 category databases
-    local capture_actions_path = string.format('%s/actions.db', captureDir)
+    local capture_actions_path      = string.format('%s/actions.db', captureDir)
     addon.databases.capture.actions = backend.databaseOpen(capture_actions_path,
-    {
-        schema = addon.schema,
-        max_history = addon.settings.database and addon.settings.database.max_history,
-    })
+        {
+            schema      = addon.schema,
+            max_history = addon.settings.database and addon.settings.database.max_history,
+        })
 
     setupZone(backend.zone())
 end
 
-addon.onCaptureStop = function()
+addon.onCaptureStop    = function()
     addon.captureDir = nil
 
     if addon.databases.capture.actions then
@@ -456,6 +432,6 @@ addon.onCaptureStop = function()
     end
 end
 
-addon.onInitialize = initialize
+addon.onInitialize     = initialize
 
 return addon

@@ -8,7 +8,7 @@
 ---@field captureDir? string
 ---@field lastCoords table<number, { x: number, y: number, z: number, dir: number, startTime: number, lastTime: number, leg: number }>
 ---@field csvFiles table<number, CSV>
-local addon =
+local addon          =
 {
     name            = 'PathLog',
     filters         =
@@ -36,7 +36,7 @@ local addon =
     lastCoords      = {},
 }
 
-addon.onInitialize = function(rootDir)
+addon.onInitialize   = function(rootDir)
     addon.rootDir = rootDir
 end
 
@@ -52,7 +52,7 @@ addon.onCaptureStart = function(captureDir)
     addon.captureDir = captureDir
 end
 
-addon.onCaptureStop = function()
+addon.onCaptureStop  = function()
     for _, csvFile in pairs(addon.csvFiles) do
         if csvFile then
             csvFile:close()
@@ -64,14 +64,14 @@ addon.onCaptureStop = function()
     addon.captureDir = nil
 end
 
-addon.onZoneChange = function()
+addon.onZoneChange   = function()
     for _, csvFile in pairs(addon.csvFiles) do
         if csvFile then
             csvFile:close()
         end
     end
 
-    addon.csvFiles = {}
+    addon.csvFiles   = {}
     addon.lastCoords = {}
 end
 
@@ -83,11 +83,11 @@ end
 ---@param csvFile CSV CSV file to write to
 local function trackPosition(id, x, y, z, dir, csvFile)
     local currentTime = os.time()
-    local lastCoords = addon.lastCoords[id]
+    local lastCoords  = addon.lastCoords[id]
 
     -- First position for this entity
     if not lastCoords then
-        lastCoords =
+        lastCoords           =
         {
             x         = x,
             y         = y,
@@ -173,7 +173,7 @@ addon.onIncomingPacket = function(id, data)
         end
 
         if not addon.csvFiles[packet.UniqueNo] then
-            local baseDir = addon.captureDir or addon.rootDir
+            local baseDir                   = addon.captureDir or addon.rootDir
 
             addon.csvFiles[packet.UniqueNo] = backend.csvOpen(
                 string.format('%s/%s/%s/%s/%s.csv',
@@ -207,7 +207,7 @@ addon.onOutgoingPacket = function(id, data)
         if not player then return end
 
         if not addon.csvFiles[player.serverId] then
-            local baseDir = addon.captureDir or addon.rootDir
+            local baseDir                   = addon.captureDir or addon.rootDir
 
             addon.csvFiles[player.serverId] = backend.csvOpen(
                 string.format('%s/%s/PC_%s.csv',
@@ -228,7 +228,7 @@ addon.onOutgoingPacket = function(id, data)
     end
 end
 
-addon.onConfigMenu = function()
+addon.onConfigMenu     = function()
     return
     {
         {

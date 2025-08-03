@@ -27,7 +27,7 @@ local addon =
     charTp          = 0,
     files           =
     {
-        global = nil,
+        global  = nil,
         capture = nil,
     },
 }
@@ -63,8 +63,8 @@ addon.onIncomingPacket = function(id, data, size)
             if not knownMob then
                 addon.mobs[packet.m_uID] =
                 {
-                    lastAttack = os.clock(),
-                    delays = {},
+                    lastAttack   = os.clock(),
+                    delays       = {},
                     hitsPerRound = {},
                 }
             else
@@ -91,9 +91,9 @@ addon.onIncomingPacket = function(id, data, size)
         -- 2. Store TP on the player
         -- 3. Hand-to-hand mobs
         ---@type GP_SERV_COMMAND_GROUP_ATTR
-        packet = packet
-        local oldTp = addon.charTp
-        local newTp = packet.Tp
+        packet       = packet
+        local oldTp  = addon.charTp
+        local newTp  = packet.Tp
         local tpDiff = newTp - oldTp
         addon.charTp = newTp
 
@@ -102,7 +102,7 @@ addon.onIncomingPacket = function(id, data, size)
         -- Some low delay player weapons may get caught in this range.
         if tpDiff >= 9 and tpDiff <= 53 then
             local estimatedDelay = estimateMonsterDelay(tpDiff)
-            local mob = addon.mobs[curTarget.serverId]
+            local mob            = addon.mobs[curTarget.serverId]
             if not mob then
                 return
             end
@@ -120,11 +120,11 @@ addon.onIncomingPacket = function(id, data, size)
             local trackedMob = addon.mobs[defeatedId]
 
             if trackedMob then
-                local mob = backend.get_mob_by_index(packet.ActIndexTar)
+                local mob      = backend.get_mob_by_index(packet.ActIndexTar)
                 local mob_name = mob and mob.name or tostring(defeatedId)
 
                 if #trackedMob.delays > 0 then
-                    local sample_count = #trackedMob.delays
+                    local sample_count  = #trackedMob.delays
 
                     local sorted_delays = utils.deepCopy(trackedMob.delays)
                     table.sort(sorted_delays)
@@ -134,25 +134,25 @@ addon.onIncomingPacket = function(id, data, size)
                         sum = sum + delay
                     end
 
-                    local mean = sum / sample_count
-                    local median = stats.median(sorted_delays)
-                    local std_dev = stats.stddev(sorted_delays, mean)
+                    local mean         = sum / sample_count
+                    local median       = stats.median(sorted_delays)
+                    local std_dev      = stats.stddev(sorted_delays, mean)
 
                     local stats_result =
                     {
-                        min = sorted_delays[1],
-                        max = sorted_delays[#sorted_delays],
-                        avg = mean,
-                        median = median,
+                        min     = sorted_delays[1],
+                        max     = sorted_delays[#sorted_delays],
+                        avg     = mean,
+                        median  = median,
                         std_dev = std_dev,
                     }
 
-                    local ffxi_stats =
+                    local ffxi_stats   =
                     {
-                        min = secondsToFFXIDelay(stats_result.min),
-                        max = secondsToFFXIDelay(stats_result.max),
-                        avg = secondsToFFXIDelay(stats_result.avg),
-                        median = secondsToFFXIDelay(stats_result.median),
+                        min     = secondsToFFXIDelay(stats_result.min),
+                        max     = secondsToFFXIDelay(stats_result.max),
+                        avg     = secondsToFFXIDelay(stats_result.avg),
+                        median  = secondsToFFXIDelay(stats_result.median),
                         std_dev = secondsToFFXIDelay(stats_result.std_dev),
                     }
 
@@ -213,23 +213,23 @@ addon.onIncomingPacket = function(id, data, size)
     end
 end
 
-addon.onCaptureStart = function(captureDir)
-    addon.captureDir = captureDir
+addon.onCaptureStart   = function(captureDir)
+    addon.captureDir    = captureDir
     addon.files.capture = backend.fileOpen(captureDir .. backend.zone_name() .. '.log')
 end
 
-addon.onCaptureStop = function()
-    addon.captureDir = nil
+addon.onCaptureStop    = function()
+    addon.captureDir    = nil
     addon.files.capture = nil
 end
 
-addon.onInitialize = function(rootDir)
-    addon.rootDir = rootDir
+addon.onInitialize     = function(rootDir)
+    addon.rootDir      = rootDir
     addon.files.global = backend.fileOpen(rootDir .. backend.player_name() .. '/' .. backend.zone_name() .. '.log')
 end
 
-addon.onClientReady = function(zoneId)
-    addon.mobs = {}
+addon.onClientReady    = function(zoneId)
+    addon.mobs         = {}
     addon.files.global = backend.fileOpen(addon.rootDir .. backend.player_name() .. '/' .. backend.zone_name() .. '.log')
     if addon.files.capture then
         addon.files.capture = backend.fileOpen(addon.captureDir .. backend.zone_name() .. '.log')

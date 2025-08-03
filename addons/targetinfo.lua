@@ -3,7 +3,7 @@
 -- Sends /check packets to get level if widescan has not been done yet
 ---@class TargetInfoAddon : AddonInterface
 ---@field targetInfo TextBox?
-local addon =
+local addon            =
 {
     name            = 'TargetInfo',
     targetInfo      = nil,
@@ -39,7 +39,7 @@ addon.onIncomingPacket = function(id, data)
             end
 
             if packet.Data2 ~= 0 then
-                addon.checkData[packet.ActIndexTar] =
+                addon.checkData[packet.ActIndexTar]    =
                 {
                     level = packet.Data,
                 }
@@ -55,7 +55,7 @@ addon.onIncomingPacket = function(id, data)
         end
     elseif id == PacketId.GP_SERV_COMMAND_TRACKING_LIST then
         ---@type GP_SERV_COMMAND_TRACKING_LIST
-        packet = packet
+        packet                           = packet
 
         addon.checkData[packet.ActIndex] =
         {
@@ -64,13 +64,13 @@ addon.onIncomingPacket = function(id, data)
     end
 end
 
-addon.onPrerender = function()
-    local targetData = backend.get_target_entity_data()
-    local targetTitleStr = ''
+addon.onPrerender      = function()
+    local targetData      = backend.get_target_entity_data()
+    local targetTitleStr  = ''
     local targetOutputStr = ''
     if targetData then
         local checkData = addon.checkData[targetData.targIndex]
-        local levelStr = 'Lv. ?'
+        local levelStr  = 'Lv. ?'
         if checkData and checkData.level ~= -1 then
             levelStr = string.format('Lv. %d', checkData.level)
         elseif not addon.pendingCheck[targetData.targIndex] then
@@ -80,7 +80,7 @@ addon.onPrerender = function()
             end
         end
 
-        targetTitleStr = string.format('%s[%d/%d] %s', targetData.name, targetData.serverId, targetData.targIndex,
+        targetTitleStr  = string.format('%s[%d/%d] %s', targetData.name, targetData.serverId, targetData.targIndex,
             levelStr)
 
         targetOutputStr =
@@ -100,25 +100,25 @@ addon.onPrerender = function()
     end
 end
 
-addon.onInitialize = function(_)
+addon.onInitialize     = function(_)
     addon.targetInfo = backend.textBox('target')
 end
 
-addon.onZoneChange = function(_)
-    addon.checkData = {}
+addon.onZoneChange     = function(_)
+    addon.checkData    = {}
     addon.pendingCheck = {}
 end
 
-addon.onConfigMenu = function()
+addon.onConfigMenu     = function()
     return
     {
         {
-            key = 'sendCheck',
-            title = 'Enable auto /check',
+            key         = 'sendCheck',
+            title       = 'Enable auto /check',
             description =
             'Sends /check packets when encountering a new target. Faster than widescan but does not work for NMs.',
-            type = 'checkbox',
-            default = addon.defaultSettings.sendCheck,
+            type        = 'checkbox',
+            default     = addon.defaultSettings.sendCheck,
         },
     }
 end
