@@ -458,7 +458,7 @@ addon.onInitialize = function(rootDir)
     addon.files.global = backend.fileOpen(rootDir .. backend.player_name() .. '/' .. backend.zone_name() .. '.log')
 end
 
-addon.onZoneChange = function(zoneId)
+addon.onClientReady = function(zoneId)
     addon.mobs = {}
     addon.files.global = backend.fileOpen(addon.rootDir .. backend.player_name() .. '/' .. backend.zone_name() .. '.log')
     if addon.files.capture then

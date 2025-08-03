@@ -16,13 +16,13 @@ local addon =
         outgoing =
         {
             [PacketId.MAGIC_ALL_PACKETS] = true,
-        }
+        },
     },
     settings   = {},
     windows    =
     {
         inputPacket  = {},
-        outputPacket = {}
+        outputPacket = {},
     },
     captureDir = nil,
     files      =
@@ -32,7 +32,7 @@ local addon =
         bothAll       = nil, -- All packets saved to one file
         outgoingPerId = {},  -- Outgoing packets saved to separate files
         incomingPerId = {},  -- Incoming packets saved to separate files
-    }
+    },
 }
 
 addon.onIncomingPacket = function(id, data, size)

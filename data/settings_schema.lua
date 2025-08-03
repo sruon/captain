@@ -152,8 +152,6 @@ local settings_schema =
             },
             text =
             {
-                size = { default = 15 },
-                font = { default = 'Consolas' },
                 alpha = { default = 255 },
                 red = { default = 255 },
                 green = { default = 255 },
@@ -215,11 +213,6 @@ local settings_schema =
                     draggable = { default = true },
                 },
                 padding = { default = 3 },
-                text =
-                {
-                    size = { default = 13 },
-                    font = { default = 'Consolas' },
-                },
             },
         },
     },
@@ -228,12 +221,12 @@ local settings_schema =
     categories =
     {
         {
-            id = 'notifications',
-            title = 'Notifications',
-        },
-        {
             id = 'textBox',
             title = 'TextBox',
+        },
+        {
+            id = 'notifications',
+            title = 'Notifications',
         },
     },
 

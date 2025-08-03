@@ -15,11 +15,12 @@ require('common')
 local chat                             = require('chat')
 local imgui                            = require('imgui')
 local settings                         = require('settings')
-local scaling                          = require('scaling')
 
 local CORAL                            = { 1.0, 0.65, 0.26, 1.0 }
 
 local gui                              = {}
+
+local serverIp                         = nil
 
 --------------------------------
 -- Event hooks
@@ -65,17 +66,67 @@ backend.register_event_outgoing_packet = function(func)
         e.blocked = func(e.id, e.data, e.size)
         return e.blocked
     end
+
     ashita.events.register('packet_out', 'packet_out_cb', adaptor)
 end
 
 backend.register_on_zone_change        = function(func)
-    local adaptor = function(e)
+    local incomingAdaptor = function(e)
+        -- Track when zoning in
         if (e.id == PacketId.GP_SERV_COMMAND_LOGIN) then
+            ---@type GP_SERV_COMMAND_LOGIN
             local zonePacket = backend.parsePacket('incoming', e.data)
             func(zonePacket.ZoneNo)
         end
+
+        -- Track the IP on zone out packet, so we can check if we're on retail.
+        if (e.id == PacketId.GP_SERV_COMMAND_LOGOUT) then
+            ---@type GP_SERV_COMMAND_LOGOUT
+            local zoneOutPacket = backend.parsePacket('incoming', e.data)
+            serverIp = zoneOutPacket.GP_SERV_LOGOUTSUB.ip
+        end
     end
-    ashita.events.register('packet_in', 'packet_in_zone_cb', adaptor)
+
+    ashita.events.register('packet_in', 'packet_in_zone_cb', incomingAdaptor)
+end
+
+backend.register_on_client_ready        = function(func)
+    local expectedZone = nil
+    local incomingAdaptor = function(e)
+        -- Track when zoning in
+        if (e.id == PacketId.GP_SERV_COMMAND_LOGIN) then
+            ---@type GP_SERV_COMMAND_LOGIN
+            local zonePacket = backend.parsePacket('incoming', e.data)
+            expectedZone = zonePacket.ZoneNo
+        end
+    end
+
+    local outgoingAdaptor = function(e)
+        -- Track when zoning in
+        if (e.id == PacketId.GP_CLI_COMMAND_GAMEOK) then
+            if expectedZone then
+                func(expectedZone)
+            end
+
+            expectedZone = nil
+        end
+    end
+
+    ashita.events.register('packet_in', 'packet_in_clientrdy_cb', incomingAdaptor)
+    ashita.events.register('packet_out', 'packet_out_clientrdy_cb', outgoingAdaptor)
+end
+
+backend.is_retail                      = function()
+    if not serverIp then
+        return false
+    end
+
+    local a, b, c, d = serverIp:match('(%d+)%.(%d+)%.(%d+)%.(%d+)')
+    if not a then return false end
+
+    local ipNum = a * 16777216 + b * 65536 + c * 256 + d
+
+    return ipNum >= 2090244096 and ipNum <= 2090246143
 end
 
 -- from logs addon
@@ -118,10 +169,8 @@ backend.register_event_incoming_text   = function(func)
 end
 
 backend.register_event_prerender       = function(func)
-    local customFont = backend.fontGet('Consolas', backend.scale_font(captain.settings.notifications.text.size))
-
     local adaptor = function()
-        imgui.PushFont(customFont)
+        -- Use default ImGui font, scaling is applied per-window
         func()
 
         local flags = bit.bor(
@@ -149,7 +198,6 @@ backend.register_event_prerender       = function(func)
             end
         end
 
-        imgui.PopFont()
     end
     ashita.events.register('d3d_present', 'present_cb', adaptor)
 end
@@ -157,21 +205,119 @@ end
 --------------------------------
 -- File IO
 --------------------------------
-backend.dir_exists                     = function(path)
-    return ashita.fs.exists(path)
+-- Pure Lua file existence check
+local function file_exists_check(filepath)
+    local file = io.open(filepath, 'r')
+    if file then
+        file:close()
+        return true
+    end
+    return false
 end
 
-backend.file_exists                    = function(path)
-    return ashita.fs.exists(path)
+-- Pure Lua directory creation (recursive)
+local function create_dir_recursive(dirpath)
+    -- Use the existing Ashita function, but only as last resort
+    -- Try to create parent directories first
+    local parent = dirpath:match('(.+)[/\\][^/\\]*$')
+    if parent and not ashita.fs.exists(parent) then
+        create_dir_recursive(parent)
+    end
+    ashita.fs.create_dir(dirpath)
 end
 
-backend.create_dir                     = function(filename)
-    ashita.fs.create_dir(filename)
+backend.dir_exists                     = function(dirpath)
+    return ashita.fs.exists(backend.script_path() .. dirpath)
+end
+
+backend.file_exists                    = function(filepath)
+    return file_exists_check(backend.script_path() .. filepath)
+end
+
+backend.create_dir                     = function(dirpath)
+    -- Check if path is already absolute
+    local full_path
+    if dirpath:match('^[A-Za-z]:') or dirpath:match('^/') then
+        -- Already absolute path
+        full_path = dirpath
+    else
+        -- Relative path - prepend script path
+        full_path = backend.script_path() .. dirpath
+    end
+    create_dir_recursive(full_path)
+end
+
+backend.read_file                      = function(filepath)
+    local full_path = backend.script_path() .. filepath
+    local file = io.open(full_path, 'r')
+    if not file then return nil end
+    local content = file:read('*all')
+    file:close()
+    
+    -- Remove UTF-8 BOM if present
+    if content and content:sub(1, 3) == string.char(0xEF, 0xBB, 0xBF) then
+        content = content:sub(4)
+    end
+    
+    return content
+end
+
+backend.write_file                     = function(filepath, content)
+    local full_path = backend.script_path() .. filepath
+    
+    -- Create directory if needed
+    local directory = full_path:match('(.+)[/\\][^/\\]*$')
+    if directory and not ashita.fs.exists(directory) then
+        create_dir_recursive(directory)
+    end
+    
+    local file = io.open(full_path, 'w')
+    if not file then return false end
+    
+    if type(content) == 'table' then
+        content = table.concat(content)
+    end
+    
+    file:write(content)
+    file:close()
+    return true
+end
+
+backend.append_file                    = function(filepath, content)
+    local full_path = backend.script_path() .. filepath
+    
+    -- Create directory if needed
+    local directory = full_path:match('(.+)[/\\][^/\\]*$')
+    if directory and not ashita.fs.exists(directory) then
+        create_dir_recursive(directory)
+    end
+    
+    local file = io.open(full_path, 'a')
+    if not file then return false end
+    
+    if type(content) == 'table' then
+        content = table.concat(content)
+    end
+    
+    file:write(content)
+    file:close()
+    return true
+end
+
+backend.read_lines                     = function(filepath)
+    local content = backend.read_file(filepath)
+    if not content then return nil end
+    
+    local lines = {}
+    for line in content:gmatch('[^\r\n]+') do
+        table.insert(lines, line)
+    end
+    return lines
 end
 
 backend.list_files                     = function(relPath)
-    local path = addon.path .. relPath
-    return ashita.fs.get_dir(path, '.*', true)
+    local full_path = addon.path .. relPath
+    return ashita.fs.get_dir(full_path, '.*', true)
 end
 
 --------------------------------
@@ -230,7 +376,8 @@ backend.player_name                    = function()
     if player ~= nil then
         return player.Name
     end
-    return 'Unknown'
+
+    return nil
 end
 
 backend.zone                           = function()
@@ -340,7 +487,7 @@ backend.get_spell_name                 = function(id)
     return (s and s.Name[1]) or 'Unknown Spell'
 end
 
-backend.get_key_item_name                  = function(id)
+backend.get_key_item_name              = function(id)
     local s = AshitaCore:GetResourceManager():GetString('keyitems.names', id)
     return s or 'Unknown Key Item'
 end
@@ -432,8 +579,8 @@ backend.schedule                       = function(func, delay)
             else
                 local slept = 0
                 while slept < delay and not captain.reloadSignal do
-                    coroutine.sleep(1)
-                    slept = slept + 1
+                    coroutine.sleep(0.1)
+                    slept = slept + 0.1
                 end
 
                 func()
@@ -453,8 +600,8 @@ backend.forever                        = function(func, delay, ...)
 
             local slept = 0
             while slept < delay and not captain.reloadSignal do
-                coroutine.sleep(1)
-                slept = slept + 1
+                coroutine.sleep(0.1)
+                slept = slept + 0.1
             end
         end
     end)
@@ -545,17 +692,6 @@ backend.saveConfig                     = function(name)
     return settings.save(name)
 end
 
-local fontCache                        = {}
-
-backend.fontGet                        = function(fontName, fontSize)
-    local key = fontName .. '_' .. fontSize
-    if not fontCache[key] then
-        local path = string.format('%s/fonts/%s.ttf', addon.path, fontName)
-        fontCache[key] = imgui.AddFontFromFileTTF(path, fontSize)
-    end
-
-    return fontCache[key]
-end
 
 backend.notificationsRender            = function(notifications)
     local vp_size =
@@ -752,9 +888,6 @@ backend.notificationsRender            = function(notifications)
     return height
 end
 
-backend.scale_font                     = scaling.scale_f
-backend.scale_width                    = scaling.scale_w
-backend.scale_height                   = scaling.scale_h
 
 backend.get_resolution_width           = function()
     return AshitaCore:GetConfigurationManager():GetUInt32('boot', 'ffxi.registry', '0001', 1920)
@@ -780,7 +913,7 @@ backend.configMenu                     = function()
     local settings_schema = require('data/settings_schema')
 
     -- Helper function to render settings UI for a given set of settings
-    local function renderSettings(settings_list, settingsRoot, getDefaultValue, saveConfigFunc)
+    local function renderSettings(settings_list, settingsRoot, getDefaultValue, saveConfigFunc, category_id)
         for _, setting in ipairs(settings_list) do
             -- Process setting path
             local parts = {}
@@ -809,34 +942,35 @@ backend.configMenu                     = function()
 
             -- Display the setting name
             local title = setting.ui and setting.ui.title or setting.title
-            
+
             -- Get UI properties
             local ui = setting.ui or setting
             local settingType = ui.type or 'slider'
-            
+
             -- For checkboxes, put the title on the same line as the control
             if settingType == 'checkbox' then
                 -- For checkboxes, show colored title first, then the checkbox on same line
                 imgui.TextColored(CORAL, title)
                 imgui.SameLine()
-                
+
                 -- Create checkbox without title text
                 local buffer = { settingRef[lastPart] }
-                local controlID = string.format('##setting_%s', path:gsub(' ', '_'):gsub('%.', '_'):lower())
-                
+                -- Make control ID more unique by including the full path and category
+                local controlID = string.format('##setting_%s_%s', category_id or 'unknown', path:gsub(' ', '_'):gsub('%.', '_'):lower())
+
                 -- Create checkbox without title
                 local valueChanged = imgui.Checkbox(controlID, buffer)
-                
+
                 -- Apply changes if the value changed
                 if valueChanged then
                     settingRef[lastPart] = buffer[1]
                     saveConfigFunc()
                 end
-                
+
                 -- Add reset button on the same line
                 imgui.SameLine()
                 local resetID = string.format('Reset##reset_%s', path:gsub('[%.]', '_'):lower())
-                
+
                 if imgui.Button(resetID) then
                     -- Reset to default value
                     local defaultValue = getDefaultValue(setting, parts)
@@ -848,16 +982,16 @@ backend.configMenu                     = function()
             else
                 -- For non-checkbox controls, display title first
                 imgui.TextColored(CORAL, title)
-                
+
                 -- Create buffer with current value
                 local buffer = { settingRef[lastPart] }
-                local controlID = string.format('##setting_%s', path:gsub(' ', '_'):gsub('%.', '_'):lower())
-                
+                local controlID = string.format('##setting_%s_%s', category_id or 'unknown', path:gsub(' ', '_'):gsub('%.', '_'):lower())
+
                 local valueChanged = false
-                
+
                 -- Use a relative width based on the window width
                 imgui.PushItemWidth(imgui.GetWindowWidth() * 0.8)
-                
+
                 -- Create appropriate control based on type
                 if settingType == 'slider' then
                     -- Determine if it's an integer slider
@@ -865,7 +999,7 @@ backend.configMenu                     = function()
                     local isInteger = step and step == math.floor(step) and step == 1
                     local min = ui.min or 0
                     local max = ui.max or 100
-                    
+
                     if isInteger then
                         valueChanged = imgui.SliderInt(
                             controlID,
@@ -883,7 +1017,7 @@ backend.configMenu                     = function()
                         elseif step < 0.01 then
                             format = '%.3f'
                         end
-                        
+
                         valueChanged = imgui.SliderFloat(
                             controlID,
                             buffer,
@@ -905,19 +1039,19 @@ backend.configMenu                     = function()
                         buffer
                     )
                 end
-                
+
                 imgui.PopItemWidth()
-                
+
                 -- Apply changes if the value changed
                 if valueChanged then
                     settingRef[lastPart] = buffer[1]
                     saveConfigFunc()
                 end
-                
+
                 -- Add reset button on the same line
                 imgui.SameLine()
                 local resetID = string.format('Reset##reset_%s', path:gsub('[%.]', '_'):lower())
-                
+
                 if imgui.Button(resetID) then
                     -- Reset to default value
                     local defaultValue = getDefaultValue(setting, parts)
@@ -927,7 +1061,7 @@ backend.configMenu                     = function()
                     end
                 end
             end
-            
+
             -- Show tooltip on hover (for both checkbox and non-checkbox)
             if imgui.IsItemHovered() then
                 imgui.BeginTooltip()
@@ -936,7 +1070,7 @@ backend.configMenu                     = function()
                     imgui.Text(description)
                     imgui.Separator()
                 end
-                
+
                 local defaultValue = getDefaultValue(setting, parts)
                 if defaultValue ~= nil then
                     imgui.Text(string.format('Default: %s', tostring(defaultValue)))
@@ -953,12 +1087,21 @@ backend.configMenu                     = function()
             captain.showConfig = false
         end
 
+        local current_tab = nil
+        
         if imgui.BeginTabBar('##captain_config_tabbar', ImGuiTabBarFlags_NoCloseWithMiddleMouseButton) then
-            -- Captain core settings
-            for _, category in ipairs(settings_schema.categories) do
-                if imgui.BeginTabItem(category.title) then
-                    imgui.BeginGroup()
-
+            -- Captain core settings - combined in one tab
+            if imgui.BeginTabItem('Captain') then
+                current_tab = 'Captain'
+                imgui.BeginGroup()
+                
+                -- Render all captain settings with separators
+                for i, category in ipairs(settings_schema.categories) do
+                    -- Add section header in red
+                    imgui.TextColored({ 1.0, 0.2, 0.2, 1.0 }, category.title)
+                    imgui.Separator()
+                    imgui.Spacing()
+                    
                     -- Get all UI-configurable settings for this category
                     local ui_settings = settings_schema:get_ui_settings(category.id)
 
@@ -973,12 +1116,19 @@ backend.configMenu                     = function()
                         -- Function to save config
                         function()
                             backend.saveConfig('captain')
-                        end
+                        end,
+                        category.id  -- Pass category ID for unique control IDs
                     )
-
-                    imgui.EndGroup()
-                    imgui.EndTabItem()
+                    
+                    -- Add spacing between sections (but not after the last one)
+                    if i < #settings_schema.categories then
+                        imgui.Spacing()
+                        imgui.Spacing()
+                    end
                 end
+
+                imgui.EndGroup()
+                imgui.EndTabItem()
             end
 
             -- Addon settings
@@ -991,6 +1141,7 @@ backend.configMenu                     = function()
                     if addonConfig and #addonConfig > 0 then
                         -- Create a tab for this addon
                         if imgui.BeginTabItem(addonName) then
+                            current_tab = addonName
                             imgui.BeginGroup()
 
                             -- Render addon settings
@@ -998,7 +1149,13 @@ backend.configMenu                     = function()
                                 addonConfig,
                                 addon.settings,
                                 -- Function to get default value from addon's defaultSettings
-                                function(_, parts)
+                                function(setting, parts)
+                                    -- Debug: Check if we're getting the setting's own default first
+                                    if setting.default ~= nil then
+                                        return setting.default
+                                    end
+                                    
+                                    -- Fall back to navigating defaultSettings
                                     local defaultRef = addon.defaultSettings
                                     for _, part in ipairs(parts) do
                                         if defaultRef and type(defaultRef) == 'table' then
@@ -1013,7 +1170,8 @@ backend.configMenu                     = function()
                                 -- Function to save config
                                 function()
                                     backend.saveConfig(addonName)
-                                end
+                                end,
+                                addonName  -- Pass addon name for unique control IDs
                             )
 
                             imgui.EndGroup()
@@ -1024,6 +1182,49 @@ backend.configMenu                     = function()
             end
 
             imgui.EndTabBar()
+        end
+        
+        -- Footer buttons - shown on all pages
+        imgui.Separator()
+        imgui.Spacing()
+        
+        -- Center the buttons using automatic sizing
+        local window_width = imgui.GetWindowWidth()
+        local button_spacing = 20
+        
+        -- Calculate button sizes (only Reset Tab and Close)
+        local reset_size = { imgui.CalcTextSize('Reset Tab') }
+        local close_size = { imgui.CalcTextSize('Close') }
+        
+        -- Add padding to button sizes
+        local padding = 20
+        reset_size[1] = reset_size[1] + padding
+        close_size[1] = close_size[1] + padding
+        
+        local total_width = reset_size[1] + close_size[1] + button_spacing
+        local start_x = (window_width - total_width) * 0.5
+        
+        imgui.SetCursorPosX(start_x)
+        
+        if imgui.Button('Reset Tab', reset_size) then
+            if current_tab == 'Captain' then
+                -- Reset only captain settings
+                captain.settings = require('data/settings_schema').get_defaults()
+                backend.saveConfig('captain')
+            elseif current_tab and captain.addons[current_tab] then
+                -- Reset only the current addon's settings
+                local addon = captain.addons[current_tab]
+                if addon.defaultSettings then
+                    -- Deep copy defaultSettings to avoid reference issues
+                    addon.settings = utils.deepcopy(addon.defaultSettings)
+                    backend.saveConfig(current_tab)
+                end
+            end
+        end
+        
+        imgui.SameLine(0, button_spacing)
+        if imgui.Button('Close', close_size) then
+            captain.showConfig = false
         end
 
         imgui.End()

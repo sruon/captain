@@ -1,18 +1,14 @@
 ---@class BackendBase
 ---@class Ashitav4Backend : BackendBase, BackendInterface
----@class WindowerBackend : BackendBase, BackendInterface
 
 local backend
 
 --------------------------------
 -- Load platform specific backends
 --------------------------------
-local isWindowerv4 = windower ~= nil
 local isAshitav4 = ashita ~= nil and ashita.events ~= nil
 
-if isWindowerv4 then
-    backend = require('backend/backend_windower_v4')
-elseif isAshitav4 ~= nil then
+if isAshitav4 ~= nil then
     backend = require('backend/backend_ashita_v4')
 else
     print('Captain: COULD NOT FIND RELEVANT BACKEND!')
@@ -21,21 +17,20 @@ end
 --------------------------------
 -- Add additional _platform agnostic_ functions to supplement backends
 --------------------------------
-local files                = require('backend/files')
 local packets              = require('libs/packets/parser')
-local database             = require('libs/database')
+local database             = require('libs/ffi/sqlite3')
 local csv                  = require('libs/csv')
 --------------------------------
 -- Handles opening, or creating, a file object. Returns it.
 --------------------------------
 backend.fileOpen           = function(path)
     -- Replace spaces with underscores in the path
-    path = path:gsub("%s+", "_"):gsub(":", "_"):gsub("%?", "qm"):gsub("'", "_"):gsub('"', "_")
-    
+    path = path:gsub('%s+', '_'):gsub(':', '_'):gsub('%?', 'qm'):gsub("'", '_'):gsub('"', '_')
+
     local file =
     {
-        path = backend.script_path() .. path,
-        stream = files.new(path, true),
+        path = path,  -- Store relative path
+        full_path = backend.script_path() .. path,
         locked = false,
         scheduled = false,
         buffer = '',
@@ -83,7 +78,14 @@ backend.fileWrite          = function(file)
     local to_write = file.buffer
     file.buffer = ''
     file.scheduled = false
-    file.stream:append(to_write)
+    
+    if to_write and to_write ~= '' then
+        local success = backend.append_file(file.path, to_write)
+        if not success then
+            print('[backend] Failed to write to file: ' .. file.path)
+        end
+    end
+    
     file.locked = false
 end
 
@@ -91,8 +93,9 @@ end
 -- Reads the entire file and returns it
 --------------------------------
 backend.fileRead           = function(file)
-    local data = file.stream:read('*all*')
+    local data = backend.read_file(file.path)
     if data == nil then
+        print('[backend] Failed to read file: ' .. file.path)
         return ''
     end
     return data
@@ -102,19 +105,22 @@ end
 -- Zero out a file and empties the buffer
 --------------------------------
 backend.fileClear          = function(file)
-    file.stream:write('')
+    local success = backend.write_file(file.path, '')
+    if not success then
+        print('[backend] Failed to clear file: ' .. file.path)
+    end
     file.buffer = ''
     file.scheduled = false
 end
 
 backend.databaseOpen       = function(path, opts)
-    local file = backend.fileOpen(path)
-    local db = database.new(file, opts)
-    db:load()
+    -- For database, we need the full path, not relative
+    local full_path = backend.script_path() .. path
+    local db = database.new({ path = full_path }, opts)
     return db
 end
 
-backend.csvOpen = function(path, columns)
+backend.csvOpen            = function(path, columns)
     local file = backend.fileOpen(path)
     local csvFile = csv.new(file, columns)
     return csvFile
@@ -140,7 +146,8 @@ backend.notificationCreate = function(emitter, title, dataFields, frozen)
                 fieldMsg = fieldMsg .. ', '
             end
         end
-        backend.msg(emitter, colors[captain.settings.notifications.colors.title].chatColorCode .. title .. '\n' .. fieldMsg)
+        backend.msg(emitter,
+            colors[captain.settings.notifications.colors.title].chatColorCode .. title .. '\n' .. fieldMsg)
     end
 
     -- Pass directly to the notification manager

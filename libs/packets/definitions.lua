@@ -152,20 +152,21 @@ local definitions =
                     { name = 'value', bits = 16 },
                 },
             },                                                          -- 0x56-0x5F
-            { name = 'SubMapNumber',      bits = 16 },                  -- 0x60-0x61
-            { name = 'EventNum',          bits = 16 },                  -- 0x62-0x63
-            { name = 'EventPara',         bits = 16 },                  -- 0x64-0x65
-            { name = 'EventMode',         bits = 16 },                  -- 0x66-0x67
-            { name = 'WeatherNumber',     bits = 16 },                  -- 0x68-0x69
-            { name = 'WeatherNumber2',    bits = 16 },                  -- 0x6A-0x6B
-            { name = 'WeatherTime',       bits = 32 },                  -- 0x6C-0x6F
-            { name = 'WeatherTime2',      bits = 32 },                  -- 0x70-0x73
-            { name = 'WeatherOffsetTime', bits = 32 },                  -- 0x74-0x77
-            { name = 'ShipStart',         bits = 32 },                  -- 0x78-0x7B
-            { name = 'ShipEnd',           bits = 16 },                  -- 0x7C-0x7D
-            { name = 'IsMonstrosity',     bits = 16 },                  -- 0x7E-0x7F
-            { name = 'LoginState',        bits = 32 },                  -- 0x80-0x83
-            { name = 'name',              type = 'string', size = 16 }, -- 0x84-0x93
+            { name = 'SubMapNumber',       bits = 16 },                 -- 0x60-0x61
+            { name = 'EventNum',           bits = 16 },                 -- 0x62-0x63
+            { name = 'EventPara',          bits = 16 },                 -- 0x64-0x65
+            { name = 'EventMode',          bits = 16 },                 -- 0x66-0x67
+            { name = 'WeatherNumber',      bits = 16 },                 -- 0x68-0x69
+            { name = 'WeatherNumber2',     bits = 16 },                 -- 0x6A-0x6B
+            { name = 'WeatherTime',        bits = 32 },                 -- 0x6C-0x6F
+            { name = 'WeatherTime2',       bits = 32 },                 -- 0x70-0x73
+            { name = 'WeatherOffsetTime',  bits = 16 },                 -- 0x74-0x77
+            { name = 'WeatherOffsetTime2', bits = 16 },                 -- 0x74-0x77
+            { name = 'ShipStart',          bits = 32 },                 -- 0x78-0x7B
+            { name = 'ShipEnd',            bits = 16 },                 -- 0x7C-0x7D
+            { name = 'IsMonstrosity',      bits = 16 },                 -- 0x7E-0x7F
+            { name = 'LoginState',         bits = 32 },                 -- 0x80-0x83
+            { name = 'name',               type = 'string', size = 16 }, -- 0x84-0x93
             {
                 name = 'certificate',
                 type = 'array',
@@ -2795,6 +2796,12 @@ local definitions =
                     return flags
                 end,
             },
+        },
+        [PacketId.GP_SERV_COMMAND_WEATHER] =
+        {
+            { name = 'StartTime',         bits = 32 }, -- 0x04
+            { name = 'WeatherNumber',     bits = 16 }, -- 0x08
+            { name = 'WeatherOffsetTime', bits = 16 }, -- 0x0A
         },
     },
     outgoing =

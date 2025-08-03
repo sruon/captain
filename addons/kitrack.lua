@@ -137,20 +137,22 @@ addon.onIncomingPacket = function(id, data)
                 for _, kid in ipairs(newItems) do
                     local notificationData =
                     {
-                        { 'ID',   kid },
-                        { 'Name', backend.get_key_item_name(kid) },
-                        { 'X',    dataFields.x },
-                        { 'Y',    dataFields.y },
-                        { 'Z',    dataFields.z },
-                        { 'Zone', dataFields.zoneName },
-                        { 'Timestamp', os.time() }
+                        { 'ID',        kid },
+                        { 'Name',      backend.get_key_item_name(kid) },
+                        { 'X',         dataFields.x },
+                        { 'Y',         dataFields.y },
+                        { 'Z',         dataFields.z },
+                        { 'Zone',      dataFields.zoneName },
+                        { 'Timestamp', os.time() },
                     }
                     if addon.files.global then
-                        addon.files.global:append(string.format('[%s] Obtained KI\n%s\n\n', tstamp, utils.dump(notificationData)))
+                        addon.files.global:append(string.format('[%s] Obtained KI\n%s\n\n', tstamp,
+                            utils.dump(notificationData)))
                     end
 
                     if addon.files.capture then
-                        addon.files.capture:append(string.format('[%s] Obtained KI\n%s\n\n', tstamp, utils.dump(notificationData)))
+                        addon.files.capture:append(string.format('[%s] Obtained KI\n%s\n\n', tstamp,
+                            utils.dump(notificationData)))
                     end
 
                     backend.notificationCreate('KITrack', 'Obtained Key Item', notificationData, false)
@@ -169,11 +171,13 @@ addon.onIncomingPacket = function(id, data)
                         { 'Zone', dataFields.zoneName },
                     }
                     if addon.files.global then
-                        addon.files.global:append(string.format('[%s] Lost KI\n%s\n\n', tstamp, utils.dump(notificationData)))
+                        addon.files.global:append(string.format('[%s] Lost KI\n%s\n\n', tstamp,
+                            utils.dump(notificationData)))
                     end
 
                     if addon.files.capture then
-                        addon.files.capture:append(string.format('[%s] Lost KI\n%s\n\n', tstamp, utils.dump(notificationData)))
+                        addon.files.capture:append(string.format('[%s] Lost KI\n%s\n\n', tstamp,
+                            utils.dump(notificationData)))
                     end
 
                     backend.notificationCreate('KITrack', 'Lost Key Item', notificationData, false)

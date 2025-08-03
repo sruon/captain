@@ -57,6 +57,7 @@
 ---@field WeatherTime number
 ---@field WeatherTime2 number
 ---@field WeatherOffsetTime number
+---@field WeatherOffsetTime2 number
 ---@field ShipStart number
 ---@field ShipEnd number
 ---@field IsMonstrosity number
@@ -619,6 +620,11 @@
 ---@field State number
 ---@field sName string -- 16 bytes
 
+---@class GP_SERV_COMMAND_WEATHER : ParsedPacket
+---@field StartTime number
+---@field WeatherNumber number
+---@field WeatherOffsetTime number
+
 ---@class GP_CLI_COMMAND_SHOP_BUY : ParsedPacket
 ---@field ItemNum number
 ---@field ShopNo number
@@ -800,4 +806,3 @@
 ---@field ItemNo number
 ---@field PropertyItemIndex number
 ---@field ItemNum number
-

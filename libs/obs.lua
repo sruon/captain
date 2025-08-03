@@ -1,6 +1,6 @@
-local ws = require('libs/websockets')
-local json = require('libs/json')
-local sha = require('libs/sha')
+local copas_clients = require('libs/copas_clients')
+local json = require('deps/json')
+local sha = require('libs/ffi/sha')
 
 ---@class OBS
 ---@field client table WebSocket client instance
@@ -40,7 +40,7 @@ end
 function OBS:connect()
     if self.client then return self, nil end
 
-    local client, err = ws.connect(self.host, self.port)
+    local client, err = copas_clients.websocket_connect(self.host, self.port)
     if not client then return nil, 'Connection error: ' .. (err or 'unknown error') end
 
     if client.socket then client.socket:settimeout(self.timeout) end
@@ -258,6 +258,19 @@ function OBS:SetProfileParameter(cat, name, value)
             parameterName = name,
             parameterValue = value,
         })
+end
+
+---Sets input settings for a source
+---@param input_name string Name of the input source
+---@param settings table Settings to apply
+---@param overlay boolean|nil Whether to overlay on existing settings (default: true)
+---@return table|nil response, string|nil error_message
+function OBS:SetInputSettings(input_name, settings, overlay)
+    return self:send_request('SetInputSettings', {
+        inputName = input_name,
+        inputSettings = settings,
+        overlay = overlay ~= false -- Default to true
+    })
 end
 
 return OBS
