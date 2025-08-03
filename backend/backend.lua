@@ -131,7 +131,7 @@ end
 -- Notification display
 --------------------------------
 
-backend.notificationCreate = function(emitter, title, dataFields, frozen)
+backend.notificationCreate = function(emitter, title, dataFields)
     if not dataFields or type(dataFields) ~= 'table' then
         dataFields = {}
     end
@@ -163,7 +163,7 @@ backend.notificationCreate = function(emitter, title, dataFields, frozen)
         {
             title = title,
             data  = dataFields, -- Array of key-value pairs
-        }, frozen or false)
+        })
 end
 
 --------------------------------

@@ -700,6 +700,7 @@ backend.saveConfig               = function(name)
 end
 
 
+
 backend.notificationsRender = function(notifications)
     local vp_size            =
     {
@@ -775,7 +776,12 @@ backend.notificationsRender = function(notifications)
 
     -- Process notifications from newest to oldest
     for i = #notifications, 1, -1 do
-        local toast    = notifications[i]
+        local toast = notifications[i]
+        
+        -- Skip invalid notifications
+        if not toast or not toast.id then
+            goto continue
+        end
 
         -- Prepare notification background
         local opacity  = toast.bg.alpha / 255
@@ -800,8 +806,9 @@ backend.notificationsRender = function(notifications)
             { uniform_width, 0 }, { vp_size.x * 0.7, vp_size.y * 0.8 }
         )
 
-        -- Create window
-        if imgui.Begin(string.format('##TOAST%d', i), { true }, NOTIFY_TOAST_FLAGS) then
+        -- Create window with stable ID based on notification ID
+        local window_id = string.format('##TOAST_%s', toast.id or i)
+        if imgui.Begin(window_id, { true }, NOTIFY_TOAST_FLAGS) then
             imgui.SetWindowFontScale(captain.settings.notifications.scale)
             imgui.PushTextWrapPos(uniform_width)
 
@@ -889,6 +896,8 @@ backend.notificationsRender = function(notifications)
         end
 
         imgui.PopStyleColor(2)
+        
+        ::continue::
     end
 
     imgui.PopStyleVar(3)

@@ -54,7 +54,7 @@
 ---@field fileClear fun(file: File)
 ---@field databaseOpen fun(path: string, opts?: { [string]: any }): Database
 ---@field csvOpen fun(path: string, opts?: { [string]: any }): CSV
----@field notificationCreate fun(emitter: string,title: string, notificationData: { [string]: any }, freeze: boolean)
+---@field notificationCreate fun(emitter: string,title: string, notificationData: { [string]: any })
 ---@field parsePacket fun(dir: string, packet: string): any | nil -- Parses a raw packet and returns the parsed data
 
 ---@class BackendInterface

@@ -7,14 +7,12 @@
 ---@class NotificationParams
 ---@field title string?
 ---@field data table[]?
----@field freeze boolean?
 
 ---@class NotificationManager
 ---@field notifications table
----@field frozen boolean
 ---@field settings { show: boolean, max_num: number, autoHide: boolean, hideDelay: number, spacing: number, pos: { x: number, y: number }, bg: table, text: table }
 ---@field render fun(self: NotificationManager)
----@field create fun(self: NotificationManager, params: NotificationParams, freeze: boolean)
+---@field create fun(self: NotificationManager, params: NotificationParams)
 local notificationManager   = {}
 notificationManager.__index = notificationManager
 
@@ -24,17 +22,14 @@ function notificationManager.new(settings)
     ---@type NotificationManager
     local self         = setmetatable({}, notificationManager)
     self.notifications = {}
-    self.frozen        = false
     self.settings      = settings
     return self
 end
 
-function notificationManager:create(params, freeze)
+function notificationManager:create(params)
     if not self.settings.show then
         return
     end
-
-    self.frozen        = freeze
 
     local notification = {}
 
@@ -56,50 +51,24 @@ function notificationManager:create(params, freeze)
     -- Add new notification at the end (newest)
     table.insert(self.notifications, notification)
 
-    -- If we have too many notifications, handle removal with respect to frozen state
+    -- If we have too many notifications, remove oldest ones
     while #self.notifications > self.settings.max_num do
-        local function wait_for_max_unfreeze()
-            if self.frozen then
-                backend.schedule(wait_for_max_unfreeze, 1.0)
-            else
-                -- Only remove once we're not frozen
-                if type(backend.notificationDestroy) == 'function' then
-                    backend.notificationDestroy(self.notifications[1])
-                end
-
-                table.remove(self.notifications, 1)
-            end
-        end
-
-        -- Start the wait/check process
-        wait_for_max_unfreeze()
+        table.remove(self.notifications, 1)
     end
 
     if self.settings.autoHide then
         local notification_ref = notification
 
-        local function wait_for_unfreeze()
-            if self.frozen then
-                backend.schedule(wait_for_unfreeze, 1.0)
-            else
-                local function try_remove()
-                    for i = #self.notifications, 1, -1 do
-                        if self.notifications[i] == notification_ref then
-                            if type(backend.notificationDestroy) == 'function' then
-                                backend.notificationDestroy(self.notifications[i])
-                            end
-
-                            table.remove(self.notifications, i)
-                            return
-                        end
-                    end
+        local function try_remove()
+            for i = #self.notifications, 1, -1 do
+                if self.notifications[i] == notification_ref then
+                    table.remove(self.notifications, i)
+                    return
                 end
-
-                backend.schedule(try_remove, self.settings.hideDelay or 6.0)
             end
         end
 
-        backend.schedule(wait_for_unfreeze, 1.0)
+        backend.schedule(try_remove, self.settings.hideDelay or 6.0)
     end
 end
 
