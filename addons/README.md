@@ -12,7 +12,7 @@ The only requirement is that the addon returns **a table**, with a `name` field.
 
 ```lua
 -- my_addon.lua
-local addon = 
+local addon =
 {
     name = 'my_addon'
 }
@@ -34,7 +34,7 @@ Paths are relative to captain root directory.
 
 ```lua
 -- addons/my_addon/my_addon.lua
-local addon_values = require('addons/my_addon/otherstuff')
+local addon_values = require('addons.my_addon.otherstuff')
 ```
 
 ## Opt-in to events
@@ -45,7 +45,7 @@ Packets aside, simply implementing the function will enable the events.
 
 ```lua
 -- my_addon.lua
-local addon = 
+local addon =
 {
     name = 'my_addon'
 }
@@ -74,17 +74,17 @@ A special value of `PacketId.MAGIC_ALL_PACKETS` indicates the addon receives all
 
 ```lua
 -- my_addon.lua
-local addon = 
+local addon =
 {
     name = 'my_addon',
-    filters = 
+    filters =
     {
-        incoming = 
+        incoming =
         {
             [PacketId.GP_SERV_COMMAND_CHAR_NPC] = true, -- Receive inbound NPC updates
         },
-        
-        outgoing = 
+
+        outgoing =
         {
             [PacketId.MAGIC_ALL_PACKETS]        = true, -- Receive ALL outgoing packets
         },
@@ -103,13 +103,13 @@ return addon
 ## Interacting with captain and FFXI
 
 A global `backend` object is available to all addons. This object contains various methods for interacting with the
-client. This object is intended to be launcher-agnostic and work across both Ashita and Windower.
+client.
 
 ### Querying information about entities
 
-```lua 
+```lua
 -- my_addon.lua
-local addon = 
+local addon =
 {
     name = 'my_addon',
 }
@@ -117,8 +117,8 @@ local addon =
 addon.onInitialize = function(rootDir)
     -- Full list of methods is defined in backend/backend_interface.lua
     local playerName = backend.player_name()
-    local zoneName = backend.zone_name()
-    local mob = backend.get_mob_by_index(200)
+    local zoneName   = backend.zone_name()
+    local mob        = backend.get_mob_by_index(200)
 end
 ```
 
@@ -126,7 +126,7 @@ end
 
 ```lua
 -- my_addon.lua
-local addon = 
+local addon =
 {
     name = 'my_addon',
     file = nil,
@@ -157,18 +157,17 @@ end
 You may define a set of default settings. `captain` will automatically merge them with local user settings for your
 addon and inject it in `addon.settings`
 
-Settings are saved and loaded from the following locations:
+Settings are saved and loaded from the following location:
 
-- Windower: `<captain_root>/data/<addon>.xml`
-- Ashita: `<ashita_root>/config/addons/captain/<char_name>/<addon_name>.lua`
+- `<ashita_root>/config/addons/captain/<char_name>/<addon_name>.lua`
 
 ```lua
 -- my_addon.lua
-local addon = 
+local addon =
 {
     name = 'my_addon',
     settings = {},
-    defaultSettings = 
+    defaultSettings =
     {
         magicNumber = 10,
     }
@@ -192,12 +191,12 @@ Not all packet types are supported at this time.
 
 ```lua
 -- my_addon.lua
-local addon = 
+local addon =
 {
     name = 'my_addon',
-    filters = 
+    filters =
     {
-        incoming = 
+        incoming =
         {
             [PacketId.GP_SERV_COMMAND_TRACKING_LIST] = true, -- Receive widescan updates
         },
@@ -238,7 +237,7 @@ addon.onInitialize = function(_)
 end
 
 return addon
-```  
+```
 
 ### Creating notifications
 
@@ -271,15 +270,15 @@ local data = { name = "Name", actor = 5, category = 10, id = 15, animation = 20,
 backend.notificationCreate(addon.template, data, false)
 ```
 
-### Storing data in a structured way
+### Storing structured data
 
 This is a slightly different spin on how the Windower addon stored captured data in "databases".
 
-The key difference being that it is addon-agnostic and tracks changes for a given key.
+The key difference being that it is addon-agnostic and tracks changes for a given key. This is powered by SQLite.
 
 ```lua
 -- my_addon.lua
-local addon = 
+local addon =
 {
     name = 'my_addon',
     database = nil,
@@ -289,57 +288,68 @@ addon.onZoneChange = function(zoneId)
     if addon.database then
         addon.database:add_or_update(zoneId, { time = os.time(), player_name = backend.player_name() })
     end
-    
+
     -- You can also retrieve existing items by "primary key"
     local entry = addon.database:get(zoneId)
     -- entry will be either a copy of the entry or nil if not found
-    
+
     -- Or by field value
     -- Note: will return first found
     local entry, entryId = addon.database:find_by('player_name', backend.player_name())
     -- entryId is the primary key of the entry
     -- entry will be either a copy of the entry or nil if not found
-
-    -- You can save the database once done
-    -- Note: This will overwrite the existing file
-    local madeChanges = addon.database:save()
-    -- madeChanges will be true if any write was necessary
 end
 
 addon.onInitialize = function(rootDir)
-    addon.database = backend.databaseOpen(string.format('%s/databases/zone_changes.db', rootDir))
+    -- A schema must always be passed so the appropriate columns can be created
+    -- File name must end in .db
+    addon.databases = backend.databaseOpen(string.format('%s/zone_changes.db', rootDir),
+        {
+            schema      = { time = 1, player_name = 'Test' },
+        })
     -- Certain parameters can be passed to change the default behavior
-    addon.database = backend.databaseOpen(string.format('%s/databases/zone_changes.db', rootDir), {
+    addon.database = backend.databaseOpen(string.format('%s/zone_changes.db', rootDir),
+    {
+        schema         = { time = 1, player_name = 'Test' },
         ignore_updates = { 'time' },  -- Fields to ignore when checking for changes
-        max_history = 10,             -- Maximum number of history entries to keep for each row
-        sort_keys = { 'player_name' } -- Changes the order of fields when saving to file
+        max_history    = 10,          -- Maximum number of history entries to keep for each row
     })
 end
 
 return addon
 ```
 
-Example output
-
+### Logging data points
 ```lua
-return {
-  [16982134] = {version = 2, data = {UniqueNo = 16982134, polutils_name = "Kubhe Ijyuhla", type = "Equipped NPC", ActIndex = 118, Flags0 = {GroundFlag = 0, KingFlag = 0, MovTime = 1, RunMode = 0, facetarget = 0, unknown_1_6 = 0}, Flags1 = {AnonymousFlag = 1, AwayFlag = 0, BazaarFlag = 0, ChocoboIndex = 0, CliPosInitFlag = 1, Gender = 0, GmLevel = 0, GraphSize = 1, HackMove = 0, HideFlag = 0, InvisFlag = 0, LfgFlag = 1, LinkDeadFlag = 0, LinkShellFlag = 0, MonsterFlag = 0, PlayOnelineFlag = 0, SleepFlag = 0, TalkUcoffFlag = 0, TargetOffFlag = 0, TurnFlag = 0, YellFlag = 0, unknown_0_3 = 0, unknown_0_4 = 0, unknown_2_5 = 0, unknown_2_6 = 0, unknown_2_7 = 0, unknown_3_4 = 0}, Flags2 = {AutoPartyFlag = 0, CharmFlag = 0, GmIconFlag = 0, NamedFlag = 1, PvPFlag = 0, ShadowFlag = 0, ShipStartMode = 0, SingleFlag = 0, b = 0, g = 0, r = 0}, Flags3 = {BallistaTeam = 0, CliPriorityFlag = 0, LfgMasterFlag = 0, MentorFlag = 0, MonStat = 5, MotStopFlag = 0, NewCharacterFlag = 0, OcclusionoffFlag = 0, PetFlag = 0, PetNewFlag = 0, SilenceFlag = 0, TrustFlag = 0, unknown_0_3 = 0, unknown_2_3 = 0, unknown_2_4 = 0, unknown_2_6 = 0, unknown_3_1 = 0, unknown_3_2 = 0, unknown_3_3 = 0, unknown_3_4 = 0, unknown_3_5 = 0, unknown_3_6 = 0, unknown_3_7 = 0}, GrapIdTbl = {1803, 4096, 8199, 12295, 16391, 20487, 24576, 28672, 0}, Hpp = 100, Speed = 40, SpeedBase = 40, SubKind = 1, dir = 141, legacy = {animation = 0, animationsub = 1, flag = 1, flags = 27, look = "0001070B10002007300740075007600070000000", name_prefix = 32, namevis = 0, speed = 40, speedsub = 40, status = 0}, server_status = 0, ws = {Level = 0, Type = 1, sName = ""}, x = 23.256999969482422, y = 21.531999588012695, z = 0}, history = {{changes={ActIndex={to=118},Flags0={to={GroundFlag=0,KingFlag=0,MovTime=1,RunMode=0,facetarget=0,unknown_1_6=0}},Flags1={to={AnonymousFlag=1,AwayFlag=0,BazaarFlag=0,ChocoboIndex=0,CliPosInitFlag=1,Gender=0,GmLevel=0,GraphSize=1,HackMove=0,HideFlag=0,InvisFlag=0,LfgFlag=1,LinkDeadFlag=0,LinkShellFlag=0,MonsterFlag=0,PlayOnelineFlag=0,SleepFlag=0,TalkUcoffFlag=0,TargetOffFlag=0,TurnFlag=0,YellFlag=0,unknown_0_3=0,unknown_0_4=0,unknown_2_5=0,unknown_2_6=0,unknown_2_7=0,unknown_3_4=0}},Flags2={to={AutoPartyFlag=0,CharmFlag=0,GmIconFlag=0,NamedFlag=1,PvPFlag=0,ShadowFlag=0,ShipStartMode=0,SingleFlag=0,b=0,g=0,r=0}},Flags3={to={BallistaTeam=0,CliPriorityFlag=0,LfgMasterFlag=0,MentorFlag=0,MonStat=5,MotStopFlag=0,NewCharacterFlag=0,OcclusionoffFlag=0,PetFlag=0,PetNewFlag=0,SilenceFlag=0,TrustFlag=0,unknown_0_3=0,unknown_2_3=0,unknown_2_4=0,unknown_2_6=0,unknown_3_1=0,unknown_3_2=0,unknown_3_3=0,unknown_3_4=0,unknown_3_5=0,unknown_3_6=0,unknown_3_7=0}},GrapIdTbl={to={1803,4096,8199,12295,16391,20487,24576,28672,0}},Speed={to=40},SpeedBase={to=40},SubKind={to=1},UniqueNo={to=16982134},legacy={to={animation=0,animationsub=1,flag=1,flags=27,look="0001070B10002007300740075007600070000000",name_prefix=32,namevis=0,speed=40,speedsub=40,status=0}},polutils_name={to="Kubhe Ijyuhla"},server_status={to=0},type={to="Equipped NPC"}},time=1745990457},{changes={ws={to={Level=0,Type=1,sName=""}}},time=1745990476}}},
-  [16982135] = {version = 2, data = {UniqueNo = 16982135, polutils_name = "Tohka Telposkha", type = "Equipped NPC", ActIndex = 119, Flags0 = {GroundFlag = 0, KingFlag = 0, MovTime = 21, RunMode = 0, facetarget = 0, unknown_1_6 = 0}, Flags1 = {AnonymousFlag = 1, AwayFlag = 0, BazaarFlag = 0, ChocoboIndex = 0, CliPosInitFlag = 1, Gender = 0, GmLevel = 0, GraphSize = 1, HackMove = 0, HideFlag = 0, InvisFlag = 0, LfgFlag = 1, LinkDeadFlag = 0, LinkShellFlag = 0, MonsterFlag = 0, PlayOnelineFlag = 0, SleepFlag = 0, TalkUcoffFlag = 0, TargetOffFlag = 0, TurnFlag = 0, YellFlag = 0, unknown_0_3 = 0, unknown_0_4 = 0, unknown_2_5 = 0, unknown_2_6 = 0, unknown_2_7 = 0, unknown_3_4 = 0}, Flags2 = {AutoPartyFlag = 0, CharmFlag = 0, GmIconFlag = 0, NamedFlag = 1, PvPFlag = 0, ShadowFlag = 0, ShipStartMode = 0, SingleFlag = 0, b = 0, g = 0, r = 0}, Flags3 = {BallistaTeam = 0, CliPriorityFlag = 0, LfgMasterFlag = 0, MentorFlag = 0, MonStat = 5, MotStopFlag = 0, NewCharacterFlag = 0, OcclusionoffFlag = 0, PetFlag = 0, PetNewFlag = 0, SilenceFlag = 0, TrustFlag = 0, unknown_0_3 = 0, unknown_2_3 = 0, unknown_2_4 = 0, unknown_2_6 = 0, unknown_3_1 = 0, unknown_3_2 = 0, unknown_3_3 = 0, unknown_3_4 = 0, unknown_3_5 = 0, unknown_3_6 = 0, unknown_3_7 = 0}, GrapIdTbl = {1796, 4096, 8196, 12292, 16388, 20484, 24576, 28672, 0}, Hpp = 100, Speed = 40, SpeedBase = 40, SubKind = 1, dir = 32, legacy = {animation = 0, animationsub = 1, flag = 21, flags = 27, look = "0001070410002004300440045004600070000000", name_prefix = 32, namevis = 0, speed = 40, speedsub = 40, status = 0}, server_status = 0, ws = {Level = 0, Type = 1, sName = ""}, x = 22.104999542236328, y = 22.759000778198242, z = 0}, history = {{changes={ActIndex={to=119},Flags0={to={GroundFlag=0,KingFlag=0,MovTime=21,RunMode=0,facetarget=0,unknown_1_6=0}},Flags1={to={AnonymousFlag=1,AwayFlag=0,BazaarFlag=0,ChocoboIndex=0,CliPosInitFlag=1,Gender=0,GmLevel=0,GraphSize=1,HackMove=0,HideFlag=0,InvisFlag=0,LfgFlag=1,LinkDeadFlag=0,LinkShellFlag=0,MonsterFlag=0,PlayOnelineFlag=0,SleepFlag=0,TalkUcoffFlag=0,TargetOffFlag=0,TurnFlag=0,YellFlag=0,unknown_0_3=0,unknown_0_4=0,unknown_2_5=0,unknown_2_6=0,unknown_2_7=0,unknown_3_4=0}},Flags2={to={AutoPartyFlag=0,CharmFlag=0,GmIconFlag=0,NamedFlag=1,PvPFlag=0,ShadowFlag=0,ShipStartMode=0,SingleFlag=0,b=0,g=0,r=0}},Flags3={to={BallistaTeam=0,CliPriorityFlag=0,LfgMasterFlag=0,MentorFlag=0,MonStat=5,MotStopFlag=0,NewCharacterFlag=0,OcclusionoffFlag=0,PetFlag=0,PetNewFlag=0,SilenceFlag=0,TrustFlag=0,unknown_0_3=0,unknown_2_3=0,unknown_2_4=0,unknown_2_6=0,unknown_3_1=0,unknown_3_2=0,unknown_3_3=0,unknown_3_4=0,unknown_3_5=0,unknown_3_6=0,unknown_3_7=0}},GrapIdTbl={to={1796,4096,8196,12292,16388,20484,24576,28672,0}},Speed={to=40},SpeedBase={to=40},SubKind={to=1},UniqueNo={to=16982135},legacy={to={animation=0,animationsub=1,flag=21,flags=27,look="0001070410002004300440045004600070000000",name_prefix=32,namevis=0,speed=40,speedsub=40,status=0}},polutils_name={to="Tohka Telposkha"},server_status={to=0},type={to="Equipped NPC"}},time=1745990457},{changes={ws={to={Level=0,Type=1,sName=""}}},time=1745990476}}},
-}
+-- File name, followed by a table of columns
+addon.csvFiles[packet.UniqueNo] = backend.csvOpen(
+                string.format('%s/%s/%s/%s/%s.csv',
+                    baseDir,
+                    backend.player_name(),
+                    backend.zone_name(),
+                    mob.name,
+                    packet.UniqueNo),
+                { 'leg', 'x', 'y', 'z', 'dir', 'delta' })
+
+csvFile:add_entry(
+            {
+                leg = 1, x = x, y = y, z = z, dir = dir, delta = 0,
+            })
+csvFile:save()
 ```
 
 ### A note about coroutines
 
-An arbitrary amount of coroutines can be created. 
+An arbitrary amount of coroutines can be created.
 
-The only restriction is that they cannot be created in the `onInitialize` method. 
+The only restriction is that they cannot be created in the `onInitialize` method.
 Doing so will cause `captain` to never complete loading.
 
 The preferred pattern is to check if coroutines have been started in the `onPrerender` event.
 
 ```lua
 -- my_addon.lua
-local addon = 
+local addon =
 {
     name = 'my_addon',
     coroutinesSetup = false,

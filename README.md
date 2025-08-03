@@ -11,6 +11,13 @@ By using `captain` you acknowledge you are aware of the risks.
 
 Certain actions are known to be relatively safe and are enabled by default (such as Auto Wide Scan), others are explicitly opt-in.
 
+## A note about privacy
+Captures contain the full dump of packets emitted and received by your client. This includes chat messages and other information you may wish to keep private.
+
+Captain captures the remote server IP to allow verifying if a capture was obtained from the official FFXI game servers.
+
+Understand that making captures available to the public may leak such information.
+
 ## Goal
 
 While the original `captain` attempted to bridge the gap between Windower and Ashita, it is not a stated goal of this fork as maintaining, creating addons and testing while accounting for the quirks of several launchers is not feasible at this time.
@@ -108,7 +115,10 @@ This is the only accepted source of truth for packets related informations.
 - Witness protection
 - EventView zone events
 
-### Development
+### Development: Addons
+See [Addons Guide](./addons/README.md)
+
+### Development: captain
 
 - TODO
 
@@ -119,6 +129,34 @@ symbolic link created for C:\ffxi\Ashita\addons\captain <<===>> C:\ffxi\captain
 C:\ffxi>mklink /D C:\ffxi\Windower\addons\captain C:\ffxi\captain
 symbolic link created for C:\ffxi\Windower\addons\captain <<===>> C:\ffxi\captain
 ```
+
+## Compatibility
+
+Event methods ("addon hooks") are expected to be stable.
+
+Dependencies and backend methods **may change without notice** until the project is considered stable.
+
+## Q&A
+### What's the point of captures, anyway?
+Captures allow us to understand FFXI official server behavior in various scenario and then to replicate it for emulation purposes.
+For example, we can see the models used by enemies, the abilities they use and where they spawn.
+
+While captures contain an incredible wealth of information, they are just one of many tools used for emulation as a large part of the game behavior is not directly available in packet form.
+
+We can see a spell did hit for 500 points of damage, however we cannot _directly_ deduce the various numbers that went into calculating this number. Understanding the effect of various factors on calculations require running through specific test cases 1000, if not 10000s of times.
+
+This framework can help with the collection and aggregation of data in such cases.
+
+### Will this ever be available for Windower
+The code was built in a way to make this possible but I cannot realistically commit to supporting two launchers.
+
+If you're interested about maintaining compatibility with Windower, please reach out.
+
+### Will this get me banned
+
+With the features provided out of the box, _probably not_ but consider it as a very real possibility.
+
+Use a trial/burner account if you're concerned (Retail) or seek permission from the server owner (PServer).
 
 ## Based on & made possible by
 

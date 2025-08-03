@@ -22,13 +22,6 @@ local addon          =
         database =
         {
             max_history    = 10,
-            sort_keys      =
-            {
-                'UniqueNo',
-                'polutils_name',
-                'Name',
-                'type',
-            },
             ignore_updates =
             {
                 'x',

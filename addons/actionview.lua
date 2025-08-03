@@ -52,11 +52,6 @@ local addon =
         database =
         {
             max_history    = 10,
-            sort_keys      =
-            {
-                'actor_name',
-                'name',
-            },
             ignore_updates =
             {
             },

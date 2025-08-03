@@ -37,23 +37,32 @@ local addon =
 
 -- captain notifies addons of zone changes.
 -- This can be used to open a new log file for each zone
+-- Note: The client MAY NOT be ready at this time and will not render certain information. Prefer onClientReady.
 addon.onZoneChange = function(zoneId)
+end
+
+-- captain notifies addons of zone changes AND client ready.
+-- This can be used to open a new log file for each zone
+addon.onClientReady = function(zoneId)
 end
 
 -- captain notifies addons they're being initialized.
 -- rootDir will be a non-capture specific folder scoped to your addon
 -- example: <captain_root>/captures/examplesimple/
+-- DO NOT INITIALIZE COROUTINES IN THIS METHOD
 addon.onInitialize = function(rootDir)
     -- Store rootDir if needed, or initialize log files directly...
     addon.logFile = backend.fileOpen(rootDir .. 'widescan.log')
 end
 
 -- captain notifies addons they're being unloaded
+-- Clean up resources, if any, especially if they're locked.
 addon.onUnload = function()
 end
 
--- captain notifiers addons of render events.
+-- captain notifies addons of render events.
 -- If you have any UI to update, this is where you would do it
+-- You may also initialize any coroutine you need.
 addon.onPrerender = function()
 end
 
@@ -112,8 +121,8 @@ addon.onHelp = function()
         cmd = 'hello',
         desc = 'Hello world!',
 
-        -- An optional keybind can be specified, here we bind it to Ctrl+X
-        keybind = { key = 'x', down = true, ctrl = true },
+        -- An optional keybind can be specified, here we bind it to Ctrl+Y
+        keybind = { key = 'y', down = true, ctrl = true },
     }
 end
 
