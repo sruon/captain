@@ -6,6 +6,7 @@ on:
 
 permissions:
   contents: write
+  pull-requests: write
 
 jobs:
   release:
@@ -16,13 +17,16 @@ jobs:
       uses: actions/checkout@v4
       with:
         fetch-depth: 0
+        token: ${{ secrets.GITHUB_TOKEN }}
 
     - uses: googleapis/release-please-action@v4
       id: release
       with:
         release-type: simple
+        token: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Make release zipball
+      if: ${{ steps.release.outputs.release_created }}
       run: |
         # Create captain directory structure
         mkdir -p release/captain
@@ -40,4 +44,7 @@ jobs:
         unzip -l captain.zip | head -20
 
     - name: Upload Release Artifact
+      if: ${{ steps.release.outputs.release_created }}
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: gh release upload ${{ steps.release.outputs.tag_name }} captain.zip
