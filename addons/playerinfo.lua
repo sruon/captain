@@ -110,7 +110,7 @@ end
 
 addon.onInitialize     = function(rootDir)
     addon.playerInfo       = backend.textBox('playerinfo')
-    addon.databases.global = backend.databaseOpen(string.format('%s/databases/%s.db', rootDir, backend.player_name()),
+    addon.databases.global = backend.databaseOpen(string.format('%s/%s.db', rootDir, backend.player_name()),
         {
             schema      = addon.schema,
             max_history = addon.settings.database and addon.settings.database.max_history,

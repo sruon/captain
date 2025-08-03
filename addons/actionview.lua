@@ -62,12 +62,12 @@ local addon =
         global  =
         {
             zone    = nil,
-            actions = nil, -- Single actions database instead of 15 category databases
+            actions = nil,
         },
         capture =
         {
             zone    = nil,
-            actions = nil, -- Single actions database instead of 15 category databases
+            actions = nil,
         },
     },
 

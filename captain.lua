@@ -44,12 +44,13 @@ local database          = require('ffi.sqlite3')
 
 captain                 =
 {
-    addons          = {},
-    isCapturing     = false,
-    reloadSignal    = false,
-    showConfig      = false,
-    settings        = backend.loadConfig('captain', require('data/settings_schema').get_defaults()),
-    notificationMgr = nil,
+    addons              = {},
+    isCapturing         = false,
+    reloadSignal        = false,
+    showConfig          = false,
+    needsInitialization = false,
+    settings            = backend.loadConfig('captain', require('data/settings_schema').get_defaults()),
+    notificationMgr     = nil,
 }
 
 captain.notificationMgr = notifications.new(captain.settings.notifications or {})
@@ -257,19 +258,9 @@ backend.register_event_load(function()
     -- Force close any stale SQLite connections from previous crashes
     database.force_close_all_connections()
 
+    -- Load settings and register keybinds, but don't initialize yet
     for addonName, subAddon in pairs(captain.addons) do
         subAddon.settings = backend.loadConfig(addonName, subAddon.defaultSettings)
-
-        -- Initialize addons
-        if type(subAddon.onInitialize) == 'function' then
-            local start_time = os.clock()
-            safe_call(addonName .. '.onInitialize', subAddon.onInitialize, string.format('captures/%s/', addonName))
-            local elapsed = os.clock() - start_time
-            if elapsed > 0.1 then
-                backend.warnMsg('captain', string.format('%s onInitialize took %.3fs', addonName, elapsed))
-            end
-            table.insert(addon_timings, { name = addonName, time = elapsed, phase = 'init' })
-        end
 
         -- Check addon is publishing commands with optional keybinds
         if type(subAddon.onHelp) == 'function' then
@@ -283,6 +274,22 @@ backend.register_event_load(function()
                 end
             end
         end
+    end
+
+    -- Check if player is already loaded, if so initialize immediately
+    if backend.player_name() ~= nil then
+        for addonName, subAddon in pairs(captain.addons) do
+            if type(subAddon.onInitialize) == 'function' then
+                utils.withPerformanceMonitoring(addonName .. '.onInitialize', function()
+                    return safe_call(addonName .. '.onInitialize', subAddon.onInitialize,
+                        string.format('captures/%s/', addonName))
+                end)
+            end
+        end
+        captain.needsInitialization = false
+    else
+        -- Mark that we need to initialize addons when client is ready
+        captain.needsInitialization = true
     end
 
     -- Report total time and slowest operations
@@ -450,6 +457,20 @@ backend.register_on_zone_change(function(zoneId)
 end)
 
 backend.register_on_client_ready(function(zoneId)
+    -- Initialize addons if this is the first time client is ready
+    if captain.needsInitialization then
+        captain.needsInitialization = false
+        for addonName, subAddon in pairs(captain.addons) do
+            if type(subAddon.onInitialize) == 'function' then
+                utils.withPerformanceMonitoring(addonName .. '.onInitialize', function()
+                    return safe_call(addonName .. '.onInitialize', subAddon.onInitialize,
+                        string.format('captures/%s/', addonName))
+                end)
+            end
+        end
+    end
+
+    -- Call normal client ready handlers
     for addonName, addon in pairs(captain.addons) do
         if type(addon.onClientReady) == 'function' then
             utils.withPerformanceMonitoring(addonName .. '.onClientReady', function()

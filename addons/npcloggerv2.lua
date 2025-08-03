@@ -99,7 +99,7 @@ addon.onCaptureStart = function(captureDir)
     addon.captureDir        = captureDir
 
     addon.databases.capture = backend.databaseOpen(
-        string.format('%s/databases/%s.db', captureDir, backend.zone_name()),
+        string.format('%s/%s.db', captureDir, backend.zone_name()),
         {
             schema      = addon.schema,
             max_history = addon.settings.database and addon.settings.database.max_history,
@@ -323,7 +323,7 @@ addon.onInitialize     = function(rootDir)
     addon.rootDir          = rootDir
 
     addon.databases.global = backend.databaseOpen(
-        string.format('%s/databases/%s/%s.db', rootDir, backend.player_name(), backend.zone_name()),
+        string.format('%s/%s/%s.db', rootDir, backend.player_name(), backend.zone_name()),
         {
             schema      = addon.schema,
             max_history = addon.settings.database and addon.settings.database.max_history,
