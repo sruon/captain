@@ -18,6 +18,7 @@ end
 -- Add additional _platform agnostic_ functions to supplement backends
 --------------------------------
 local packets              = require('packets.parser')
+local serpent              = require('serpent')
 local database             = require('ffi.sqlite3')
 local csv                  = require('csv')
 --------------------------------
@@ -139,9 +140,16 @@ backend.notificationCreate = function(emitter, title, dataFields, frozen)
     if #dataFields > 0 then
         local fieldMsg = ''
         for i, field in ipairs(dataFields) do
+            local value_str
+            if type(field[2]) == 'table' then
+                value_str = serpent.line(field[2], { comment = false, sortkeys = true })
+            else
+                value_str = tostring(field[2])
+            end
+            
             fieldMsg = fieldMsg .. string.format('%s: %s',
                 colors[captain.settings.notifications.colors.key].chatColorCode .. field[1],
-                colors[captain.settings.notifications.colors.value].chatColorCode .. tostring(field[2]))
+                colors[captain.settings.notifications.colors.value].chatColorCode .. value_str)
             if i < #dataFields then
                 fieldMsg = fieldMsg .. ', '
             end
