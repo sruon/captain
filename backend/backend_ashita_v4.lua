@@ -504,6 +504,11 @@ backend.get_item_name            = function(id)
     return (s and s.Name[1]) or 'Unknown Item'
 end
 
+backend.get_item_flags            = function(id)
+    local s = AshitaCore:GetResourceManager():GetItemById(id)
+    return (s and s.Flags) or 0
+end
+
 backend.get_mob_by_index         = function(index)
     local mgr = AshitaCore:GetMemoryManager()
     local e   = mgr:GetEntity(index)
@@ -555,6 +560,26 @@ backend.get_mob_by_id            = function(id)
     }
 
     return targetEntityData
+end
+
+backend.get_inventory_item       = function(container, index)
+    local inv   = AshitaCore:GetMemoryManager():GetInventory()
+    local iitem = inv:GetContainerItem(container, index)
+
+    return iitem
+end
+
+backend.get_inventory_items      = function(container)
+    local ret = {}
+    local inv = AshitaCore:GetMemoryManager():GetInventory()
+    local cnt = inv:GetContainerCount(container)
+
+    for i = 0, cnt do
+        local iitem = inv:GetContainerItem(container, i)
+        table.insert(ret, iitem)
+    end
+
+    return ret
 end
 
 --credits: Thorny
@@ -777,7 +802,7 @@ backend.notificationsRender = function(notifications)
     -- Process notifications from newest to oldest
     for i = #notifications, 1, -1 do
         local toast = notifications[i]
-        
+
         -- Skip invalid notifications
         if not toast or not toast.id then
             goto continue
@@ -896,7 +921,7 @@ backend.notificationsRender = function(notifications)
         end
 
         imgui.PopStyleColor(2)
-        
+
         ::continue::
     end
 

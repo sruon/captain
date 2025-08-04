@@ -2226,7 +2226,7 @@ local definitions =
                     -- Calculate item count based on packet size
                     -- (4 * packet_size - struct_size) / item_struct_size + 1
                     local packet_size = hdr.size
-                    return math.floor((4 * packet_size - 8) / 12) + 1
+                    return math.floor((4 * packet_size - 8) / 12)
                 end,
                 layout =
                 {

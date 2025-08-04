@@ -16,6 +16,14 @@
 ---@field zoneID number
 ---@field zoneName string
 
+---@class Item
+---@field Id integer
+---@field Index integer
+---@field Count integer
+---@field Flags integer
+---@field Price integer
+---@field Extra integer[]
+
 ---@class TextBox
 ---@field name string
 ---@field title string
@@ -90,9 +98,12 @@
 ---@field get_weapon_skill_name fun(id: number): string
 ---@field get_spell_name fun(id: number): string
 ---@field get_item_name fun(id: number): string
+---@field get_item_flags fun(id: number): integer
 ---@field get_key_item_name fun(id: number): string
 ---@field get_mob_by_index fun(index: number): Entity?
 ---@field get_mob_by_id fun(id: number): Entity?
+---@field get_inventory_item fun(container: integer, index: integer): Item?
+---@field get_inventory_items fun(container: integer): Item[]?
 ---@field is_mob fun(index: number): boolean
 ---@field is_npc fun(index: number): boolean
 ---@field schedule fun(func: fun(), delay: number)
