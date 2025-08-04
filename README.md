@@ -83,6 +83,7 @@ This is the only accepted source of truth for packets related informations.
 - `packetbridge` - Re-emits received/sent packets to an arbitrary UDP endpoint.
 - `weathertrack` - Logs weather changes in a database.
 - `obs`          - Automates the management of OBS and saves recordings in the capture folder.
+- `guildstock`   - Logs items sold and purchased by Guild Shops
 
 ### Standard library
 - UI configuration

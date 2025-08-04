@@ -2806,6 +2806,12 @@ local definitions =
     },
     outgoing =
     {
+        [PacketId.GP_CLI_COMMAND_ACTION] =
+        {
+            { name = 'UniqueNo',  bits = 32 }, -- 0x04
+            { name = 'ActIndex',  bits = 16 }, -- 0x08
+            { name = 'ActionID',  bits = 16 }, -- 0x0A
+        },
         [PacketId.GP_CLI_COMMAND_POS] =
         {
             { name = 'x',          bits = 32, type = 'float' }, -- 0x04 - The local clients X position
