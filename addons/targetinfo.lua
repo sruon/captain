@@ -89,7 +89,7 @@ addon.onPrerender      = function()
           'Z: ' .. targetData.z .. ' ' ..
           'R: ' .. targetData.r
         if addon.targetInfo then
-            addon.targetInfo:updateTitle(targetTitleStr)
+            addon.targetInfo:updateTitle({ { text = targetTitleStr, color = { 1.0, 0.65, 0.26, 1.0 } } })
             addon.targetInfo:updateText(targetOutputStr)
             addon.targetInfo:show()
         end

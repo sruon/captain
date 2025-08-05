@@ -133,7 +133,6 @@ addon.onOutgoingPacket = function(id, data)
 end
 
 addon.onIncomingPacket = function(id, data)
-    -- Only support capturing from retail. You may need to rezone before this passes.
     if not backend.is_retail() then
         return
     end

@@ -31,8 +31,8 @@
 ---@field visible boolean
 ---@field show fun(self: TextBox)
 ---@field hide fun(self: TextBox)
----@field updateText fun(self: TextBox, text: string)
----@field updateTitle fun(self: TextBox, text: string)
+---@field updateText fun(self: TextBox, text: string | table)
+---@field updateTitle fun(self: TextBox, text: string | table)
 
 ---@class File
 ---@field path string
@@ -104,6 +104,7 @@
 ---@field get_mob_by_id fun(id: number): Entity?
 ---@field get_inventory_item fun(container: integer, index: integer): Item?
 ---@field get_inventory_items fun(container: integer): Item[]?
+---@field get_server_ip fun(): integer
 ---@field is_mob fun(index: number): boolean
 ---@field is_npc fun(index: number): boolean
 ---@field schedule fun(func: fun(), delay: number)

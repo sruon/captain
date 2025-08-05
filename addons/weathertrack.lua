@@ -49,7 +49,6 @@ addon.onUnload         = function()
 end
 
 addon.onIncomingPacket = function(id, data)
-    -- Only support capturing from retail. You may need to rezone before this passes.
     if not backend.is_retail() then
         return
     end
@@ -68,11 +67,6 @@ addon.onIncomingPacket = function(id, data)
             StartTime                 = zoneInPacket.WeatherTime,
             WeatherOffsetTime         = zoneInPacket.WeatherOffsetTime,
         }
-
-        backend.msg('WeatherTrack',
-            string.format('[%s] WeatherNumber %d WeatherStartTime %d WeatherOffsetTime %d',
-                backend.zone_name(zoneInPacket.ZoneNo),
-                weatherDbEntry.WeatherNumber, weatherDbEntry.StartTime, weatherDbEntry.WeatherOffsetTime))
 
         -- Track current weather so we can add it to the subsequent DB entry
         addon.currentWeather =
@@ -112,9 +106,7 @@ addon.onIncomingPacket = function(id, data)
             StartTime                 = weatherPacket.StartTime,
             WeatherOffsetTime         = weatherPacket.WeatherOffsetTime,
         }
-        backend.msg('WeatherTrack', string.format('[%s] WeatherNumber %d WeatherStartTime %d WeatherOffsetTime %d',
-            backend.zone_name(),
-            weatherDbEntry.WeatherNumber, weatherDbEntry.StartTime, weatherDbEntry.WeatherOffsetTime))
+
         addon.currentWeather =
         {
             WeatherNumber     = weatherPacket.WeatherNumber,

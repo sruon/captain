@@ -117,16 +117,13 @@ backend.register_on_client_ready       = function(func)
 end
 
 backend.is_retail                      = function()
-    if not serverIp then
+    local zoneIp = backend.get_server_ip()
+    if zoneIp == 0 then
         return false
     end
 
-    local a, b, c, d = serverIp:match('(%d+)%.(%d+)%.(%d+)%.(%d+)')
-    if not a then return false end
-
-    local ipNum = a * 16777216 + b * 65536 + c * 256 + d
-
-    return ipNum >= 2090244096 and ipNum <= 2090246143
+    -- SE IP range 124.150.152.0/21
+    return zoneIp >= 2090244096 and zoneIp <= 2090246143
 end
 
 -- from logs addon
@@ -168,6 +165,25 @@ backend.register_event_incoming_text   = function(func)
     ashita.events.register('text_in', 'text_in_cb', adaptor)
 end
 
+local function colored_text(fragments)
+    -- Handle string input
+    if type(fragments) == "string" then
+        imgui.Text(fragments)
+        return
+    end
+
+    -- Handle table input
+    for i, fragment in ipairs(fragments) do
+        if i > 1 then imgui.SameLine() end
+
+        if fragment.color then
+            imgui.TextColored(fragment.color, fragment.text)
+        else
+            imgui.Text(fragment.text)
+        end
+    end
+end
+
 backend.register_event_prerender       = function(func)
     local adaptor = function()
         -- Use default ImGui font, scaling is applied per-window
@@ -190,10 +206,10 @@ backend.register_event_prerender       = function(func)
                 imgui.SetWindowFontScale(captain.settings.textBox.scale)
 
                 if box.title then
-                    imgui.TextColored(CORAL, box.title)
+                    colored_text(box.title)
                     imgui.Separator()
                 end
-                imgui.TextUnformatted(box.text)
+                colored_text(box.text)
                 imgui.End()
             end
         end
@@ -580,6 +596,26 @@ backend.get_inventory_items      = function(container)
     end
 
     return ret
+end
+
+-- credits: atom0s accounts lib
+backend.get_server_ip = function()
+    local main_sys    = ashita.memory.find('FFXiMain.dll', 0, '8B0D????????8D04808B8481????????C3', 0, 0)
+    if not main_sys then
+        return 0
+    end
+
+    local ptr = ashita.memory.read_uint32(main_sys + 0x02);
+    local ret = ashita.memory.read_uint32(ptr)
+    local leIP = ashita.memory.read_uint32(ret)
+    local beIP = bit.bor(
+        bit.lshift(bit.band(leIP, 0x000000FF), 24),
+        bit.lshift(bit.band(leIP, 0x0000FF00), 8),
+        bit.rshift(bit.band(leIP, 0x00FF0000), 8),
+        bit.rshift(bit.band(leIP, 0xFF000000), 24)
+    )
+
+    return beIP
 end
 
 --credits: Thorny
