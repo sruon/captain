@@ -113,7 +113,7 @@ This is the only accepted source of truth for packets related informations.
 - `/cap reload` (`CTRL + Z`) to reload captain
 
 ### TODO
-- Witness protection
+- Finish Witness protection
 - EventView zone events
 
 ### Development: Addons

@@ -41,6 +41,7 @@ stats                   = require('stats')
 colors                  = require('colors')
 local notifications     = require('notifications')
 local database          = require('ffi.sqlite3')
+local witsec            = require('witsec')
 
 captain                 =
 {
@@ -132,7 +133,7 @@ local function recordManifest(captureDir)
         },
     }
 
-    local mFile = backend.fileOpen(captureDir .. 'manifest.txt')
+    local mFile    = backend.fileOpen(captureDir .. 'manifest.txt')
     mFile:append(utils.dump(manifest))
     mFile:flush()
 end
@@ -422,6 +423,11 @@ end)
 -- Notify addons of incoming packets, if their filters accept it
 backend.register_event_incoming_packet(function(id, data, size)
     local shouldBlock = false
+    local modifiedPacket = nil
+    if captain.settings.core.witsec then
+        modifiedPacket = witsec.rewritePacket(id, data)
+    end
+
     for addonName, addon in pairs(captain.addons) do
         if
           (addon.filters and addon.filters.incoming and addon.filters.incoming[id]) or
@@ -429,7 +435,7 @@ backend.register_event_incoming_packet(function(id, data, size)
         then
             if type(addon.onIncomingPacket) == 'function' then
                 local ok, result = utils.withPerformanceMonitoring(addonName .. '.onIncomingPacket', function()
-                    return safe_call(addonName .. '.onIncomingPacket', addon.onIncomingPacket, id, data, size)
+                    return safe_call(addonName .. '.onIncomingPacket', addon.onIncomingPacket, id, modifiedPacket or data, size)
                 end)
                 if result == true then
                     shouldBlock = true
@@ -438,7 +444,7 @@ backend.register_event_incoming_packet(function(id, data, size)
         end
     end
 
-    return shouldBlock
+    return shouldBlock, modifiedPacket
 end)
 
 -- Notify addons of outgoing packets, if their filters accept it

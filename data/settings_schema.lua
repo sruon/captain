@@ -50,166 +50,179 @@
 local settings_schema =
 {
     -- Core settings definition - everything in one place
-    settings =
+    settings        =
     {
+        core          =
+        {
+            witsec =
+            {
+                default = false,
+                ui      =
+                {
+                    title       = 'Enable Witness Protection',
+                    type        = 'checkbox',
+                    description = 'Enable auto-randomization of player name',
+                },
+            },
+        },
         notifications =
         {
             -- Config menu items have a 'ui' field
-            max_num =
+            max_num   =
             {
                 default = 4,
-                ui =
+                ui      =
                 {
-                    title = 'Max',
-                    type = 'slider',
-                    min = 3,
-                    max = 10,
-                    step = 1,
+                    title       = 'Max',
+                    type        = 'slider',
+                    min         = 3,
+                    max         = 10,
+                    step        = 1,
                     description = 'Maximum number of notifications to display',
                 },
             },
             hideDelay =
             {
                 default = 5,
-                ui =
+                ui      =
                 {
-                    title = 'Auto-hide delay',
-                    type = 'slider',
-                    min = 1,
-                    max = 10,
-                    step = 1,
+                    title       = 'Auto-hide delay',
+                    type        = 'slider',
+                    min         = 1,
+                    max         = 10,
+                    step        = 1,
                     description = 'Time in seconds before notifications auto-hide',
                 },
             },
-            spacing =
+            spacing   =
             {
                 default = 8,
-                ui =
+                ui      =
                 {
-                    title = 'Spacing',
-                    type = 'slider',
-                    min = 0,
-                    max = 20,
-                    step = 1,
+                    title       = 'Spacing',
+                    type        = 'slider',
+                    min         = 0,
+                    max         = 20,
+                    step        = 1,
                     description = 'Vertical spacing between notifications',
                 },
             },
-            scale =
+            scale     =
             {
                 default = 1.0,
-                ui =
+                ui      =
                 {
-                    title = 'Scale',
-                    type = 'slider',
-                    min = 0.1,
-                    max = 5.0,
-                    step = 0.05,
+                    title       = 'Scale',
+                    type        = 'slider',
+                    min         = 0.1,
+                    max         = 5.0,
+                    step        = 0.05,
                     description = 'Size scaling factor for notifications',
                 },
             },
-            offset =
+            offset    =
             {
                 x =
                 {
                     default = 20,
-                    ui =
+                    ui      =
                     {
-                        title = 'Offset X (from bottom right)',
-                        type = 'slider',
-                        min = 0,
-                        max = backend.get_resolution_width(),
-                        step = 5,
+                        title       = 'Offset X (from bottom right)',
+                        type        = 'slider',
+                        min         = 0,
+                        max         = backend.get_resolution_width(),
+                        step        = 5,
                         description = 'Horizontal offset from screen edge',
                     },
                 },
                 y =
                 {
                     default = 20,
-                    ui =
+                    ui      =
                     {
-                        title = 'Offset Y (from bottom right)',
-                        type = 'slider',
-                        min = 0,
-                        max = backend.get_resolution_height(),
-                        step = 5,
+                        title       = 'Offset Y (from bottom right)',
+                        type        = 'slider',
+                        min         = 0,
+                        max         = backend.get_resolution_height(),
+                        step        = 5,
                         description = 'Vertical offset from screen edge',
                     },
                 },
             },
             -- Non-UI settings just have default values
-            show = { default = true },
-            autoHide = { default = true },
-            colors =
+            show      = { default = true },
+            autoHide  = { default = true },
+            colors    =
             {
                 title = { default = ColorEnum.SoftBlue },
-                key = { default = ColorEnum.Purple },
+                key   = { default = ColorEnum.Purple },
                 value = { default = ColorEnum.Seafoam },
             },
-            pos =
+            pos       =
             {
                 x = { default = 200 },
                 y = { default = 50 },
             },
-            text =
+            text      =
             {
                 alpha = { default = 255 },
-                red = { default = 255 },
+                red   = { default = 255 },
                 green = { default = 255 },
-                blue = { default = 255 },
+                blue  = { default = 255 },
             },
-            flags =
+            flags     =
             {
-                right = { default = false },
-                bottom = { default = false },
-                bold = { default = false },
-                italic = { default = false },
+                right     = { default = false },
+                bottom    = { default = false },
+                bold      = { default = false },
+                italic    = { default = false },
                 draggable = { default = true },
             },
-            padding = { default = 0 },
-            bg =
+            padding   = { default = 0 },
+            bg        =
             {
-                red = { default = 30 },
+                red   = { default = 30 },
                 green = { default = 30 },
-                blue = { default = 60 },
+                blue  = { default = 60 },
                 alpha = { default = 230 },
             },
         },
-        textBox =
+        textBox       =
         {
-            scale =
+            scale    =
             {
                 default = 1.0,
-                ui =
+                ui      =
                 {
-                    title = 'Scale',
-                    type = 'slider',
-                    min = 0.5,
-                    max = 5.0,
-                    step = 0.1,
+                    title       = 'Scale',
+                    type        = 'slider',
+                    min         = 0.5,
+                    max         = 5.0,
+                    step        = 0.1,
                     description = 'Size scaling factor for text boxes',
                 },
             },
             defaults =
             {
-                pos =
+                pos     =
                 {
                     x = { default = 290 },
                     y = { default = 0 },
                 },
-                bg =
+                bg      =
                 {
-                    alpha = { default = 64 },
-                    red = { default = 0 },
-                    green = { default = 0 },
-                    blue = { default = 0 },
+                    alpha   = { default = 64 },
+                    red     = { default = 0 },
+                    green   = { default = 0 },
+                    blue    = { default = 0 },
                     visible = { default = true },
                 },
-                flags =
+                flags   =
                 {
-                    right = { default = false },
-                    bottom = { default = false },
-                    bold = { default = false },
-                    italic = { default = false },
+                    right     = { default = false },
+                    bottom    = { default = false },
+                    bold      = { default = false },
+                    italic    = { default = false },
                     draggable = { default = true },
                 },
                 padding = { default = 3 },
@@ -218,20 +231,24 @@ local settings_schema =
     },
 
     -- UI category definitions
-    categories =
+    categories      =
     {
         {
-            id = 'textBox',
+            id    = 'core',
+            title = 'Captain',
+        },
+        {
+            id    = 'textBox',
             title = 'TextBox',
         },
         {
-            id = 'notifications',
+            id    = 'notifications',
             title = 'Notifications',
         },
     },
 
     -- Build default settings from the schema
-    build_defaults = function(self)
+    build_defaults  = function(self)
         local function extract_defaults(schema, result)
             result = result or {}
 
@@ -262,6 +279,10 @@ local settings_schema =
         -- Define the order of UI elements for each category
         local ui_order =
         {
+            core          =
+            {
+                'witsec',
+            },
             notifications =
             {
                 'max_num',
@@ -271,13 +292,13 @@ local settings_schema =
                 'offset.x',
                 'offset.y',
             },
-            textBox =
+            textBox       =
             {
                 'scale',
             },
         }
 
-        local result = {}
+        local result   = {}
 
         -- Function to find a setting by path
         local function find_setting_by_path(schema, path)
@@ -304,11 +325,11 @@ local settings_schema =
 
                 if setting and setting.ui then
                     table.insert(result,
-                    {
-                        path = path,
-                        default = setting.default,
-                        ui = setting.ui,
-                    })
+                        {
+                            path    = path,
+                            default = setting.default,
+                            ui      = setting.ui,
+                        })
                 end
             end
         end
@@ -318,10 +339,10 @@ local settings_schema =
 }
 
 -- Build the default settings when this module is required
-local module = settings_schema
+local module          = settings_schema
 
 -- Add a function to explicitly get defaults
-module.get_defaults = function()
+module.get_defaults   = function()
     return module:build_defaults()
 end
 

@@ -20,8 +20,7 @@ local CORAL                            = { 1.0, 0.65, 0.26, 1.0 }
 
 local gui                              = {}
 
-local serverIp                         = nil
-
+local ffi                              = require('ffi')
 --------------------------------
 -- Event hooks
 -- https://docs.ashitaxi.com/dev/addons/events/
@@ -54,7 +53,18 @@ end
 
 backend.register_event_incoming_packet = function(func)
     local adaptor = function(e)
-        e.blocked = func(e.id, e.data, e.size)
+        local modifiedData      = nil
+        e.blocked, modifiedData = func(e.id, e.data, e.size)
+
+        -- Allow certain features to rewrite the packets
+        if modifiedData then
+            local buff = ffi.new('uint8_t[?]', #modifiedData)
+            for i = 1, #modifiedData do
+                buff[i - 1] = modifiedData:byte(i)
+            end
+            ffi.copy(e.data_modified_raw, buff, #modifiedData)
+        end
+
         return e.blocked
     end
 

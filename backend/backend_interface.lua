@@ -69,7 +69,7 @@
 ---@field register_event_load fun(func: fun())
 ---@field register_event_unload fun(func: fun())
 ---@field register_command fun(func: fun(args: string[]))
----@field register_event_incoming_packet fun(func: fun(id: number, data: number[], size: number) : boolean)
+---@field register_event_incoming_packet fun(func: fun(id: number, data: number[], size: number) : boolean, number[] | nil)
 ---@field register_event_outgoing_packet fun(func: fun(id: number, data: number[], size: number) : boolean)
 ---@field register_on_zone_change fun(func: fun(zone: number))
 ---@field register_on_client_ready fun(func: fun(zone: number))

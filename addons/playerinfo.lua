@@ -52,7 +52,7 @@ addon.onPrerender   = function()
     {
         {
             text  = string.format('%s[%d/%d] %s',
-                playerData.name, playerData.serverId, playerData.targIndex, playerJobString),
+                playerData.name, captain.settings.core.witsec and 0 or playerData.serverId, playerData.targIndex, playerJobString),
             color = { 1.0, 0.65, 0.26, 1.0 },
         },
         retailCheck,
