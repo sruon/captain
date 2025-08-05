@@ -77,14 +77,9 @@ addon.onPrerender   = function()
     end
 end
 
-addon.onClientReady = function()
-    addon.server.ip = backend.get_server_ip()
-end
-
 addon.onInitialize  = function(rootDir)
     addon.isRetail   = backend.is_retail()
     addon.playerInfo = backend.textBox('playerinfo')
-    addon.server.ip  = backend.get_server_ip()
 end
 
 return addon

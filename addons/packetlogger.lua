@@ -1,11 +1,10 @@
 -- Credits: Based on zach2good original work, adapted by sruon
----@class PacketViewerAddon : AddonInterface
+---@class PacketLoggerAddon : AddonInterface
 ---@field files { incomingAll: File?, outgoingAll: File?, bothAll: File?, outgoingPerId: table<number, File>, incomingPerId: table<number, File> }
 ---@field captureDir? string
----@field windows { inputPacket: any, outputPacket: any }
 local addon            =
 {
-    name       = 'PacketViewer',
+    name       = 'PacketLogger',
     filters    =
     {
         incoming =
@@ -19,11 +18,6 @@ local addon            =
         },
     },
     settings   = {},
-    windows    =
-    {
-        inputPacket  = {},
-        outputPacket = {},
-    },
     captureDir = nil,
     files      =
     {
@@ -58,9 +52,6 @@ addon.onIncomingPacket = function(id, data, size)
         addon.files.incomingPerId[id]:append(string.format('[%s] Packet %s\n', timestr, hexidstr))
         addon.files.incomingPerId[id]:append(string.hexformat_file(data, size) .. '\n')
     end
-
-    --addon.windows.inputPacket:updateTitle(string.format('[%s] Incoming packet %s', timestr, hexidstr))
-    --addon.windows.inputPacket:updateText(string.hexformat_file(data, size))
 end
 
 addon.onOutgoingPacket = function(id, data, size)
@@ -86,9 +77,6 @@ addon.onOutgoingPacket = function(id, data, size)
         addon.files.outgoingPerId[id]:append(string.format('[%s] Packet %s\n', timestr, hexidstr))
         addon.files.outgoingPerId[id]:append(string.hexformat_file(data, size) .. '\n')
     end
-
-    --addon.windows.outputPacket:updateTitle(string.format('[%s] Outgoing packet %s', timestr, hexidstr))
-    --addon.windows.outputPacket:updateText(string.hexformat_file(data, size))
 end
 
 addon.onCaptureStart   = function(captureDir)
@@ -102,15 +90,6 @@ addon.onCaptureStop    = function()
     addon.files.incomingAll = nil
     addon.files.outgoingAll = nil
     addon.files.bothAll     = nil
-end
-
-addon.onInitialize     = function(_)
-    addon.windows.inputPacket  = backend.textBox('out')
-    addon.windows.outputPacket = backend.textBox('in')
-
-    -- Kinda useless until we get some sort of filtering
-    addon.windows.inputPacket:hide()
-    addon.windows.outputPacket:hide()
 end
 
 return addon

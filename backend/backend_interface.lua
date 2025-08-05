@@ -105,6 +105,7 @@
 ---@field get_inventory_item fun(container: integer, index: integer): Item?
 ---@field get_inventory_items fun(container: integer): Item[]?
 ---@field get_server_ip fun(): integer
+---@field get_client_build_string fun(): string
 ---@field is_mob fun(index: number): boolean
 ---@field is_npc fun(index: number): boolean
 ---@field schedule fun(func: fun(), delay: number)

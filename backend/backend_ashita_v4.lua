@@ -167,7 +167,7 @@ end
 
 local function colored_text(fragments)
     -- Handle string input
-    if type(fragments) == "string" then
+    if type(fragments) == 'string' then
         imgui.Text(fragments)
         return
     end
@@ -184,7 +184,7 @@ local function colored_text(fragments)
     end
 end
 
-backend.register_event_prerender       = function(func)
+backend.register_event_prerender = function(func)
     local adaptor = function()
         -- Use default ImGui font, scaling is applied per-window
         func()
@@ -520,7 +520,7 @@ backend.get_item_name            = function(id)
     return (s and s.Name[1]) or 'Unknown Item'
 end
 
-backend.get_item_flags            = function(id)
+backend.get_item_flags           = function(id)
     local s = AshitaCore:GetResourceManager():GetItemById(id)
     return (s and s.Flags) or 0
 end
@@ -599,14 +599,14 @@ backend.get_inventory_items      = function(container)
 end
 
 -- credits: atom0s accounts lib
-backend.get_server_ip = function()
-    local main_sys    = ashita.memory.find('FFXiMain.dll', 0, '8B0D????????8D04808B8481????????C3', 0, 0)
+backend.get_server_ip            = function()
+    local main_sys = ashita.memory.find('FFXiMain.dll', 0, '8B0D????????8D04808B8481????????C3', 0, 0)
     if not main_sys then
         return 0
     end
 
-    local ptr = ashita.memory.read_uint32(main_sys + 0x02);
-    local ret = ashita.memory.read_uint32(ptr)
+    local ptr  = ashita.memory.read_uint32(main_sys + 0x02)
+    local ret  = ashita.memory.read_uint32(ptr)
     local leIP = ashita.memory.read_uint32(ret)
     local beIP = bit.bor(
         bit.lshift(bit.band(leIP, 0x000000FF), 24),
@@ -618,7 +618,16 @@ backend.get_server_ip = function()
     return beIP
 end
 
---credits: Thorny
+-- credits: atom0s
+backend.get_client_build_string  = function()
+    local sig      = ashita.memory.find('FFXiMain.dll', 0, '68????????E8????????83C4046AFF', 0, 0)
+    local ptr      = ashita.memory.read_uint32(sig + 0x01)
+    local buildStr = ashita.memory.read_string(ptr, 48)
+
+    return buildStr
+end
+
+-- credits: Thorny
 backend.is_mob                   = function(index)
     if (index >= 0x400) then
         return false

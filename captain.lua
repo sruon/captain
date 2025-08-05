@@ -109,6 +109,34 @@ local function safe_call(name, func, ...)
     return ok, result
 end
 
+-- Save a file with basic client information in the capture directory
+local function recordManifest(captureDir)
+    local addons = {}
+    for addonName, _ in pairs(captain.addons) do
+        table.insert(addons, addonName)
+    end
+
+    local manifest =
+    {
+        StartTime = os.time(),
+        FFXI      =
+        {
+            Build    = backend.get_client_build_string(),
+            ZoneIP   = utils.humanReadableIP(backend.get_server_ip()),
+            IsRetail = backend.is_retail(),
+        },
+        Captain   =
+        {
+            Version = version,
+            Addons  = addons,
+        },
+    }
+
+    local mFile = backend.fileOpen(captureDir .. 'manifest.txt')
+    mFile:append(utils.dump(manifest))
+    mFile:flush()
+end
+
 -- Notify addons of a capture starting
 local function StartCapture()
     if captain.isCapturing then
@@ -124,6 +152,7 @@ local function StartCapture()
         local baseDir = string.format('captures/%s/%s/', foldername, charname)
 
         backend.msg('captain', 'Starting capture at ' .. baseDir)
+        recordManifest(baseDir)
         captain.isCapturing = true
         for addonName, addon in pairs(captain.addons) do
             if type(addon.onCaptureStart) == 'function' then
