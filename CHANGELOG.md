@@ -1,5 +1,23 @@
 # Changelog
 
+## [1.3.0](https://github.com/sruon/captain/compare/v1.2.1...v1.3.0) (2025-08-05)
+
+
+### Features
+
+* **addon:** GuildStock, logs items purchased and sold by Guild Shops. ([7cc983f](https://github.com/sruon/captain/commit/7cc983f29122db55c9245f0ab2ee4e6826feef43))
+* **addons:** ShopStock ([94347d5](https://github.com/sruon/captain/commit/94347d5a2d8234a46c5456e54bcb9e3fdeaa2734))
+* **core:** Save manifest at root of capture directory ([24a6d6e](https://github.com/sruon/captain/commit/24a6d6e266a721c399893247a75000f2cad99a52))
+* **core:** witness protection ([3f1abce](https://github.com/sruon/captain/commit/3f1abceb6d62f08df523dd289b83a9db7ddd1edf))
+* **playerinfo:** In-memory retail check, display icon ([af74491](https://github.com/sruon/captain/commit/af74491ff4e4f2a092cf4301bc1b823d52b0a109))
+
+
+### Bug Fixes
+
+* **core:** delay initialization until player is ready ([ad50280](https://github.com/sruon/captain/commit/ad5028038cfee1402867224282b121760ce7f5ce))
+* **core:** Deprecate concept of frozen notifications ([98a9551](https://github.com/sruon/captain/commit/98a9551e0fcdf83cfa1b4e6ffbd10a1a7af36ee4))
+* **core:** Notifications no longer need to be destroyed explicitly ([4ff289e](https://github.com/sruon/captain/commit/4ff289e74639e4aea4c22bce7b473c33aac53467))
+
 ## [1.2.1](https://github.com/sruon/captain/compare/v1.2.0...v1.2.1) (2025-08-03)
 
 
