@@ -74,7 +74,6 @@ function copas_clients.webhook(url, data, options)
     end)
 end
 
--- Expose underlying libraries for advanced usage
 copas_clients.copas         = copas
 copas_clients.http          = copas_http_module
 copas_clients.websocket_lib = websocket

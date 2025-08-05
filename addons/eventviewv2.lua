@@ -378,7 +378,7 @@ addon.processPacket    = function(direction, id, data)
         addon.files.capture:append(string.format('[%s] %s\n%s\n\n', tstamp, logTitle, utils.dump(packet)))
     end
 
-    backend.notificationCreate('EView', title, dataFields, addon.mappings[direction][id].freeze)
+    backend.notificationCreate('EView', title, dataFields)
 end
 
 addon.onIncomingPacket = function(id, data)

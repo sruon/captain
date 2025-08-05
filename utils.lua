@@ -245,13 +245,13 @@ utils.withPerformanceMonitoring = function(name, func, threshold)
     return table.unpack(result, 1, result.n)
 end
 
-utils.humanReadableIP = function(ipAddr)
+utils.humanReadableIP           = function(ipAddr)
     local byte1 = bit.band(bit.rshift(ipAddr, 24), 0xFF)
     local byte2 = bit.band(bit.rshift(ipAddr, 16), 0xFF)
     local byte3 = bit.band(bit.rshift(ipAddr, 8), 0xFF)
     local byte4 = bit.band(ipAddr, 0xFF)
 
-    return string.format("%d.%d.%d.%d", byte1, byte2, byte3, byte4)
+    return string.format('%d.%d.%d.%d', byte1, byte2, byte3, byte4)
 end
 
 return utils

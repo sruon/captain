@@ -266,8 +266,7 @@ Then, when you have data to display:
 
 ```lua
 local data = { name = "Name", actor = 5, category = 10, id = 15, animation = 20, message = 25 }
--- Freeze: If true, will prevent the notification from being closed until another notification unfreezes it
-backend.notificationCreate(addon.template, data, false)
+backend.notificationCreate(addon.template, data)
 ```
 
 ### Storing structured data

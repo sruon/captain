@@ -274,7 +274,7 @@ local function createActionNotification(result)
         table.insert(dataFields, { 'Message', result.message })
     end
 
-    backend.notificationCreate('AView', title, dataFields, false)
+    backend.notificationCreate('AView', title, dataFields)
 end
 
 local function checkAction(data)

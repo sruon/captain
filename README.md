@@ -42,7 +42,7 @@ When evaluating options for new dependencies, keep this list order in mind:
 
 Compiled Lua libraries are unfortunately very hard to compile and integrate given everything needs to target Windows 32 bits.
 
-### Fat framework, light addons
+### Fat framework, thin addons
 Addons are intended to be lightweight to maximize maintainability, aiming for 300-400 LOCs at most.
 
 Several capture scenario will require their own addons as one-offs and that's fine. We would rather deal with 50 small addons than 3 unmaintainable God-Addons.

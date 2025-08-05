@@ -30,7 +30,8 @@ witsec.rewritePacket = function(id, data)
         local name = tostring(pcPacket.ActIndex)
         name       = name .. string.rep('\0', 16 - #name)
         data       = data:sub(1, 0x5A) ..
-        name .. data:sub(0x5B + 16)                                   -- aware this doesn't line up but targid is 4 digits at most
+          name ..
+          data:sub(0x5B + 16)       -- aware this doesn't line up but targid is 4 digits at most
         return data
     end
 

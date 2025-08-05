@@ -155,7 +155,7 @@ addon.onIncomingPacket = function(id, data)
                             utils.dump(notificationData)))
                     end
 
-                    backend.notificationCreate('KITrack', 'Obtained Key Item', notificationData, false)
+                    backend.notificationCreate('KITrack', 'Obtained Key Item', notificationData)
                 end
             end
 
@@ -180,7 +180,7 @@ addon.onIncomingPacket = function(id, data)
                             utils.dump(notificationData)))
                     end
 
-                    backend.notificationCreate('KITrack', 'Lost Key Item', notificationData, false)
+                    backend.notificationCreate('KITrack', 'Lost Key Item', notificationData)
                 end
             end
         end
