@@ -1,5 +1,24 @@
 # Changelog
 
+## [1.4.0](https://github.com/sruon/captain/compare/v1.3.0...v1.4.0) (2025-08-06)
+
+
+### Features
+
+* **addon:** Check captain version ([4ec60a6](https://github.com/sruon/captain/commit/4ec60a6c47a99a998ba7dde74638f21a1e8bcedd))
+* **addon:** ZoneDump, queries all static entities ([13820b7](https://github.com/sruon/captain/commit/13820b7af77a2c3200f0e80858e8a5ce8199755d))
+* **guildstock:** track hidden items ([2c6b1d1](https://github.com/sruon/captain/commit/2c6b1d1886cb3e89d23afafc2e54d4c33dcee260))
+
+
+### Bug Fixes
+
+* **actionview:** remove useless databases ([d361de3](https://github.com/sruon/captain/commit/d361de3006320921d3f8b72bf27bf171e0dd878d))
+* **config:** Show addons ordered ([5c1c073](https://github.com/sruon/captain/commit/5c1c073defb9224d01aa4ad7b035ba7289ada8c0))
+* **core:** only store diffs in history table ([95feb24](https://github.com/sruon/captain/commit/95feb24a494c95f0df19922a7e65a37e4da94271))
+* **core:** settings ([a2603b5](https://github.com/sruon/captain/commit/a2603b539bf285983b6f107dd500b105521c426f))
+* dont process packets until fully initialized ([e669ea5](https://github.com/sruon/captain/commit/e669ea5dd1c628d00d6409f1ff77364855ae10d6))
+* **eventview:** Wait for client to be ready before creating DB ([8ce6c0e](https://github.com/sruon/captain/commit/8ce6c0e6215f7a4c223207d11a96e444557f5f20))
+
 ## [1.3.0](https://github.com/sruon/captain/compare/v1.2.1...v1.3.0) (2025-08-05)
 
 
