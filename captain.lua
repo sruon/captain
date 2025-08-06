@@ -34,41 +34,40 @@ end
 
 -- Globals
 ---@type Ashitav4Backend
-backend                     = require('backend.backend')
-utils                       = require('utils')
-stats                       = require('stats')
+backend                       = require('backend.backend')
+utils                         = require('utils')
+stats                         = require('stats')
 ---@type table<number, ColorData>
-colors                      = require('colors')
-local notifications         = require('notifications')
-local Commands              = require('core.commands')
-local KeyBinds              = require('core.keybinds')
-local config                = require('core.config')
+colors                        = require('colors')
+local notifications           = require('notifications')
+local Commands                = require('core.commands')
+local KeyBinds                = require('core.keybinds')
+local config                  = require('core.config')
 
 -- Event handler classes
-local LoadHandler           = require('core.events.load')
-local UnloadHandler         = require('core.events.unload')
-local ClientReadyHandler    = require('core.events.client_ready')
-local PrerenderHandler      = require('core.events.prerender')
-local ZoneChangeHandler     = require('core.events.zone_change')
-local IncomingPacketHandler = require('core.events.incoming_packet')
-local OutgoingPacketHandler = require('core.events.outgoing_packet')
-local IncomingTextHandler   = require('core.events.incoming_text')
+local LoadHandler             = require('core.events.load')
+local UnloadHandler           = require('core.events.unload')
+local ClientReadyHandler      = require('core.events.client_ready')
+local PrerenderHandler        = require('core.events.prerender')
+local ZoneChangeHandler       = require('core.events.zone_change')
+local IncomingPacketHandler   = require('core.events.incoming_packet')
+local OutgoingPacketHandler   = require('core.events.outgoing_packet')
+local IncomingTextHandler     = require('core.events.incoming_text')
 
-captain                     =
+captain                       =
 {
-    addons                = {},
-    isCapturing           = false,
-    reloadSignal          = false,
-    showConfig            = false,
-    needsInitialization   = false,
-    settings              = backend.loadConfig('captain', require('settings_schema').get_defaults()),
-    notificationMgr       = notifications.new(backend.loadConfig('captain', require('settings_schema').get_defaults())
-    .notifications or {
-    }),
-    keyBinds              = KeyBinds.new(config.commandsMap),
-    commands              = Commands.new(config.commandsMap),
+    addons              = {},
+    isCapturing         = false,
+    reloadSignal        = false,
+    showConfig          = false,
+    needsInitialization = false,
+    settings            = backend.loadConfig('captain', require('settings_schema').get_defaults()),
+    notificationMgr     = nil,
+    keyBinds            = KeyBinds.new(config.commandsMap),
+    commands            = Commands.new(config.commandsMap),
 }
 
+captain.notificationMgr       = notifications.new(captain.settings.notifications or {})
 captain.loadHandler           = LoadHandler.new(captain)
 captain.unloadHandler         = UnloadHandler.new(captain)
 captain.clientReadyHandler    = ClientReadyHandler.new(captain)
@@ -82,8 +81,14 @@ captain.incomingTextHandler   = IncomingTextHandler.new(captain)
 backend.register_event_load(function() captain.loadHandler:handle() end)
 backend.register_event_unload(function() captain.unloadHandler:handle() end)
 captain.commands:register()
-backend.register_event_incoming_packet(function(id, data, size) return captain.incomingPacketHandler:handle(id, data, size) end)
-backend.register_event_outgoing_packet(function(id, data, size) return captain.outgoingPacketHandler:handle(id, data, size) end)
+backend.register_event_incoming_packet(function(id, data, size)
+    return captain.incomingPacketHandler:handle(id, data,
+        size)
+end)
+backend.register_event_outgoing_packet(function(id, data, size)
+    return captain.outgoingPacketHandler:handle(id, data,
+        size)
+end)
 backend.register_event_incoming_text(function(mode, text) captain.incomingTextHandler:handle(mode, text) end)
 backend.register_on_zone_change(function(zoneId) captain.zoneChangeHandler:handle(zoneId) end)
 backend.register_on_client_ready(function(zoneId) captain.clientReadyHandler:handle(zoneId) end)
