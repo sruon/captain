@@ -999,7 +999,7 @@ backend.configMenu            = function()
     end
 
     -- Load settings schema which contains both UI configuration and default values for captain
-    local settings_schema = require('data/settings_schema')
+    local settings_schema = require('settings_schema')
 
     -- Helper function to render settings UI for a given set of settings
     local function renderSettings(settings_list, settingsRoot, getDefaultValue, saveConfigFunc, category_id)
@@ -1302,7 +1302,7 @@ backend.configMenu            = function()
         if imgui.Button('Reset Tab', reset_size) then
             if current_tab == 'Captain' then
                 -- Reset only captain settings
-                captain.settings = require('data/settings_schema').get_defaults()
+                captain.settings = require('settings_schema').get_defaults()
                 backend.saveConfig('captain')
             elseif current_tab and captain.addons[current_tab] then
                 -- Reset only the current addon's settings

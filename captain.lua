@@ -49,7 +49,7 @@ captain                 =
     reloadSignal        = false,
     showConfig          = false,
     needsInitialization = false,
-    settings            = backend.loadConfig('captain', require('data/settings_schema').get_defaults()),
+    settings            = backend.loadConfig('captain', require('settings_schema').get_defaults()),
     notificationMgr     = nil,
 }
 
