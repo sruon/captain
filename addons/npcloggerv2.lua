@@ -334,7 +334,7 @@ addon.onPrerender      = function()
     if not addon.coroutinesSetup then
         backend.forever(function()
             local db = getCurrentDb()
-            if db and (#addon.notifications.npcCreated > 0 or #addon.notifications.npcUpdated > 0 or #addon.notifications.wsUpdated > 0) then
+            if db and (#addon.notifications.npcCreated > 0) then
                 local report = string.format('Database updated. %d NPCs (%d new, %d updates, %d WS updates)', db:count(),
                     #addon.notifications.npcCreated, #addon.notifications.npcUpdated, #addon.notifications.wsUpdated)
                 backend.msg('NPCLogger', report)
