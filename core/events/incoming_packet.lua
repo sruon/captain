@@ -22,6 +22,10 @@ end
 ---@return boolean shouldBlock Whether the packet should be blocked
 ---@return integer[]|nil modifiedPacket Modified packet data if any addon modified it
 function IncomingPacketHandler:handle(id, data, size)
+    if self.captain.needsInitialization then
+        return false, nil
+    end
+
     local shouldBlock    = false
     local modifiedPacket = nil
 

@@ -6,7 +6,7 @@ local vAddon =
     checked = false,
 }
 
-local copas  = require('libs.copas_clients')
+local copas  = require('copas_clients')
 local json   = require('json')
 
 local function parseVersion(versionStr)
