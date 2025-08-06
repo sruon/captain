@@ -41,7 +41,6 @@ stats                   = require('stats')
 colors                  = require('colors')
 local notifications     = require('notifications')
 local database          = require('ffi.sqlite3')
-local witsec            = require('witsec')
 
 captain                 =
 {
@@ -424,10 +423,6 @@ end)
 backend.register_event_incoming_packet(function(id, data, size)
     local shouldBlock = false
     local modifiedPacket = nil
-    if captain.settings.core.witsec then
-        modifiedPacket = witsec.rewritePacket(id, data)
-    end
-
     for addonName, addon in pairs(captain.addons) do
         if
           (addon.filters and addon.filters.incoming and addon.filters.incoming[id]) or

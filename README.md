@@ -76,10 +76,6 @@ Green checkmark indicates this is a legitimate retail server. Notifies if curren
 Also displayed in the chatlog
 <img width="1048" height="107" alt="image" src="https://github.com/user-attachments/assets/f5c1fd7a-94f9-4b93-a3a3-4eb003004116" />
 
-#### Witness Protection
-Not 100% implemented just yet.
-<img width="1708" height="893" alt="image" src="https://github.com/user-attachments/assets/8daa958c-a4b9-4890-9ca6-e8cfe0f985df" />
-
 ### Addons
 #### PacketLogger
 - Captures all received/emitted packets, by ID and by stream direction.
@@ -272,7 +268,6 @@ How may I help you?
 - `/cap reload` (`CTRL + Z`) to reload captain
 
 ### TODO
-- Finish Witness protection
 - EventView zone events
 
 ### Development: Addons

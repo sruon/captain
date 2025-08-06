@@ -26,19 +26,6 @@ local settings_schema =
     -- Core settings definition - everything in one place
     settings        =
     {
-        core          =
-        {
-            witsec =
-            {
-                default = false,
-                ui      =
-                {
-                    title       = 'Enable Witness Protection',
-                    type        = 'checkbox',
-                    description = 'Enable auto-randomization of player name',
-                },
-            },
-        },
         notifications =
         {
             -- Config menu items have a 'ui' field
@@ -208,10 +195,6 @@ local settings_schema =
     categories      =
     {
         {
-            id    = 'core',
-            title = 'Captain',
-        },
-        {
             id    = 'textBox',
             title = 'TextBox',
         },
@@ -253,10 +236,6 @@ local settings_schema =
         -- Define the order of UI elements for each category
         local ui_order =
         {
-            core          =
-            {
-                'witsec',
-            },
             notifications =
             {
                 'max_num',
