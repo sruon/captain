@@ -1,5 +1,5 @@
-local ffi = require('ffi')
-local json = require('json')
+local ffi             = require('ffi')
+local json            = require('json')
 
 -- Global registry to track all open databases
 local _open_databases = {}
@@ -27,7 +27,7 @@ const char *sqlite3_errmsg(sqlite3 *db);
 const char *sqlite3_libversion(void);
 ]]
 
-local sqlite = ffi.load(addon.path .. '/deps/sqlite3')
+local sqlite            = ffi.load(addon.path .. '/deps/sqlite3')
 
 ---@class Database
 ---@field db sqlite3*
@@ -38,17 +38,17 @@ local sqlite = ffi.load(addon.path .. '/deps/sqlite3')
 ---@field count fun(self): number
 ---@field find_by fun(self, path: string, expected: any): table | nil, number | nil
 ---@field close fun(self)
-local Database = {}
-Database.__index = Database
+local Database          = {}
+Database.__index        = Database
 
-Database.RESULT_NEW = 1
+Database.RESULT_NEW     = 1
 Database.RESULT_UPDATED = 2
-Database.RESULT_NOOP = 3
+Database.RESULT_NOOP    = 3
 
 -- SQLite wrapper methods
 local function sqlite_exec(db, sql)
     local errmsg_ptr = ffi.new('char*[1]')
-    local result = sqlite.sqlite3_exec(db, sql, nil, nil, errmsg_ptr)
+    local result     = sqlite.sqlite3_exec(db, sql, nil, nil, errmsg_ptr)
 
     if result ~= 0 then
         local errmsg = 'Unknown error'
@@ -62,7 +62,7 @@ end
 
 local function sqlite_prepare(db, sql)
     local stmt_ptr = ffi.new('sqlite3_stmt*[1]')
-    local result = sqlite.sqlite3_prepare_v2(db, sql, -1, stmt_ptr, nil)
+    local result   = sqlite.sqlite3_prepare_v2(db, sql, -1, stmt_ptr, nil)
 
     if result ~= 0 then
         local errmsg = ffi.string(sqlite.sqlite3_errmsg(db))
@@ -106,13 +106,13 @@ function Database.new(file, opts)
 
     local self = setmetatable(
         {
-            db = db_ptr[0],
-            ignore_updates = opts and opts.ignore_updates or {},
-            max_history = opts and opts.max_history or nil,
+            db                  = db_ptr[0],
+            ignore_updates      = opts and opts.ignore_updates or {},
+            max_history         = opts and opts.max_history or nil,
             _transaction_active = false,
             _pending_operations = 0,
-            _schema_columns = {},
-            _filename = filename,
+            _schema_columns     = {},
+            _filename           = filename,
         }, Database)
 
     -- Build schema from example object
@@ -138,11 +138,11 @@ end
 
 function Database:_build_schema_from_example(example)
     -- Flatten the example object to get all fields
-    local flat_data = self:_flatten_data(example)
+    local flat_data                    = self:_flatten_data(example)
 
     -- Build schema columns from flattened data
-    self._schema_columns['id'] = 'TEXT PRIMARY KEY'
-    self._schema_columns['version'] = 'INTEGER DEFAULT 0'
+    self._schema_columns['id']         = 'TEXT PRIMARY KEY'
+    self._schema_columns['version']    = 'INTEGER DEFAULT 0'
     self._schema_columns['created_at'] = "INTEGER DEFAULT (strftime('%s', 'now'))"
     self._schema_columns['updated_at'] = "INTEGER DEFAULT (strftime('%s', 'now'))"
 
@@ -153,7 +153,7 @@ end
 
 function Database:_init_schema()
     -- Build CREATE TABLE statement with columns in specific order
-    local columns = {}
+    local columns        = {}
 
     -- Add system columns first in desired order
     local system_columns = { 'id', 'version', 'created_at', 'updated_at' }
@@ -198,6 +198,7 @@ function Database:_init_schema()
         CREATE TABLE IF NOT EXISTS history (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             entry_id TEXT,
+            version INTEGER,
             time INTEGER,
             delta JSON,
             FOREIGN KEY (entry_id) REFERENCES entries(id) ON DELETE CASCADE
@@ -244,7 +245,7 @@ function Database:_infer_sql_type(value)
 end
 
 function Database:_flatten_data(data, prefix)
-    prefix = prefix or ''
+    prefix       = prefix or ''
     local result = {}
 
     for key, value in pairs(data) do
@@ -262,6 +263,31 @@ function Database:_flatten_data(data, prefix)
     end
 
     return result
+end
+
+function Database:_compute_diff(old_data, new_data)
+    local diff = {}
+
+    if not old_data then
+        return new_data -- First time, return everything
+    end
+
+    -- Check for changed/new fields
+    for key, new_value in pairs(new_data) do
+        local old_value = old_data[key]
+        if old_value ~= new_value then
+            diff[key] = new_value
+        end
+    end
+
+    -- Check for removed fields (set to null in diff)
+    for key, old_value in pairs(old_data) do
+        if new_data[key] == nil then
+            diff[key] = nil
+        end
+    end
+
+    return diff
 end
 
 function Database:begin_transaction()
@@ -284,31 +310,34 @@ function Database:add_or_update(id, fragment)
     -- Auto-begin transaction for batching
     self:begin_transaction()
 
-    local id_str = tostring(id)
+    local id_str        = tostring(id)
     local fragment_json = json.encode(fragment)
 
     -- Flatten nested data (schema already exists)
-    local flat_data = self:_flatten_data(fragment)
+    local flat_data     = self:_flatten_data(fragment)
 
-    -- Check if entry exists and get current version
-    local stmt = sqlite_prepare(self.db, 'SELECT version FROM entries WHERE id = ?')
+    -- Check if entry exists and get current version + current data
+    local stmt          = sqlite_prepare(self.db, 'SELECT version FROM entries WHERE id = ?')
     sqlite.sqlite3_bind_text(stmt, 1, id_str, -1, nil)
 
-    local version = 0
-    local is_new = true
+    local version  = 0
+    local is_new   = true
+    local old_data = nil
 
     if sqlite.sqlite3_step(stmt) == 100 then -- SQLITE_ROW
-        is_new = false
-        version = sqlite.sqlite3_column_int(stmt, 0)
+        is_new   = false
+        version  = sqlite.sqlite3_column_int(stmt, 0)
+        -- Get current data for diff calculation
+        old_data = self:get(id)
     end
     sqlite.sqlite3_finalize(stmt)
 
-    version = version + 1
+    version            = version + 1
 
     -- Build dynamic SQL for INSERT/UPDATE with all columns
-    local columns = {}
+    local columns      = {}
     local placeholders = {}
-    local values = {}
+    local values       = {}
 
     -- Always include these base columns (skip _id since it's autoincrement)
     table.insert(columns, 'id')
@@ -337,10 +366,10 @@ function Database:add_or_update(id, fragment)
     if is_new then
         local sql = string.format('INSERT INTO entries (%s) VALUES (%s)',
             table.concat(columns, ', '), table.concat(placeholders, ', '))
-        stmt = sqlite_prepare(self.db, sql)
+        stmt      = sqlite_prepare(self.db, sql)
     else
         -- For updates, set updated_at and build SET clause
-        local set_clauses = { 'version = ?', "updated_at = strftime('%s', 'now')" }
+        local set_clauses   = { 'version = ?', "updated_at = strftime('%s', 'now')" }
         local update_values = { version }
 
         for i = 3, #columns do -- Skip id and version
@@ -349,7 +378,7 @@ function Database:add_or_update(id, fragment)
         end
 
         local sql = string.format('UPDATE entries SET %s WHERE id = ?', table.concat(set_clauses, ', '))
-        stmt = sqlite_prepare(self.db, sql)
+        stmt      = sqlite_prepare(self.db, sql)
 
         -- Bind update values + id at the end
         for i, value in ipairs(update_values) do
@@ -364,13 +393,18 @@ function Database:add_or_update(id, fragment)
         sqlite.sqlite3_step(stmt)
         sqlite.sqlite3_finalize(stmt)
 
-        -- Add history entry (delta only)
-        stmt = sqlite_prepare(self.db, 'INSERT INTO history (entry_id, time, delta) VALUES (?, ?, json(?))')
-        sqlite.sqlite3_bind_text(stmt, 1, id_str, -1, nil)
-        sqlite.sqlite3_bind_int(stmt, 2, os.time())
-        sqlite.sqlite3_bind_text(stmt, 3, fragment_json, -1, nil)
-        sqlite.sqlite3_step(stmt)
-        sqlite.sqlite3_finalize(stmt)
+        -- Compute diff between old and new data
+        local diff = self:_compute_diff(old_data, flat_data)
+        if next(diff) then -- Only store if there are actual changes
+            stmt = sqlite_prepare(self.db,
+                'INSERT INTO history (entry_id, version, time, delta) VALUES (?, ?, ?, json(?))')
+            sqlite.sqlite3_bind_text(stmt, 1, id_str, -1, nil)
+            sqlite.sqlite3_bind_int(stmt, 2, version)
+            sqlite.sqlite3_bind_int(stmt, 3, os.time())
+            sqlite.sqlite3_bind_text(stmt, 4, json.encode(diff), -1, nil)
+            sqlite.sqlite3_step(stmt)
+            sqlite.sqlite3_finalize(stmt)
+        end
 
         -- Auto-commit every 50 operations for maximum batching
         self._pending_operations = self._pending_operations + 1
@@ -393,25 +427,23 @@ function Database:add_or_update(id, fragment)
     sqlite.sqlite3_step(stmt)
     sqlite.sqlite3_finalize(stmt)
 
-    -- Add history entry with delta only
-    stmt = sqlite_prepare(self.db, [[
-        INSERT INTO history (entry_id, time, delta)
-        VALUES (?, ?, json(?))
-    ]])
+    -- For INSERT, store the complete data as the initial delta
+    stmt = sqlite_prepare(self.db, 'INSERT INTO history (entry_id, version, time, delta) VALUES (?, ?, ?, json(?))')
     sqlite.sqlite3_bind_text(stmt, 1, id_str, -1, nil)
-    sqlite.sqlite3_bind_int(stmt, 2, os.time())
-    sqlite.sqlite3_bind_text(stmt, 3, fragment_json, -1, nil)
+    sqlite.sqlite3_bind_int(stmt, 2, version)
+    sqlite.sqlite3_bind_int(stmt, 3, os.time())
+    sqlite.sqlite3_bind_text(stmt, 4, json.encode(flat_data), -1, nil)
     sqlite.sqlite3_step(stmt)
     sqlite.sqlite3_finalize(stmt)
 
-    -- Enforce history limit using SQLite
+    -- Enforce history limit using SQLite (if configured)
     if self.max_history then
         stmt = sqlite_prepare(self.db, [[
             DELETE FROM history
             WHERE entry_id = ? AND id NOT IN (
                 SELECT id FROM history
                 WHERE entry_id = ?
-                ORDER BY time DESC
+                ORDER BY version DESC
                 LIMIT ?
             )
         ]])
@@ -428,11 +460,11 @@ function Database:add_or_update(id, fragment)
         self:commit_transaction()
     end
 
-    return is_new and Database.RESULT_NEW or Database.RESULT_UPDATED
+    return Database.RESULT_NEW
 end
 
 function Database:get(id)
-    local id_str = tostring(id)
+    local id_str  = tostring(id)
 
     -- Get all data columns from schema (exclude internal columns)
     local columns = {}
@@ -446,7 +478,7 @@ function Database:get(id)
         return nil -- No data columns exist
     end
 
-    local sql = string.format('SELECT %s FROM entries WHERE id = ?', table.concat(columns, ', '))
+    local sql  = string.format('SELECT %s FROM entries WHERE id = ?', table.concat(columns, ', '))
     local stmt = sqlite_prepare(self.db, sql)
     sqlite.sqlite3_bind_text(stmt, 1, id_str, -1, nil)
 
@@ -455,10 +487,10 @@ function Database:get(id)
         result = {}
         for i, col_name in ipairs(columns) do
             local clean_name = col_name:gsub('"', '') -- Remove quotes
-            local col_index = i - 1                   -- SQLite uses 0-based indexing
+            local col_index  = i - 1                  -- SQLite uses 0-based indexing
 
             -- Get value based on column type
-            local col_type = self._schema_columns[clean_name]
+            local col_type   = self._schema_columns[clean_name]
             if col_type == 'INTEGER' then
                 result[clean_name] = sqlite.sqlite3_column_int(stmt, col_index)
             elseif col_type == 'REAL' then
@@ -485,7 +517,7 @@ function Database:count()
         return 0 -- Return 0 if database is closed
     end
 
-    local stmt = sqlite_prepare(self.db, 'SELECT COUNT(*) FROM entries')
+    local stmt  = sqlite_prepare(self.db, 'SELECT COUNT(*) FROM entries')
     local count = 0
 
     if sqlite.sqlite3_step(stmt) == 100 then -- SQLITE_ROW
@@ -562,7 +594,7 @@ function Database:__gc()
 end
 
 -- Force close any existing connections to a specific file
-Database._force_close_file = function(filename)
+Database._force_close_file           = function(filename)
     if _databases_by_file[filename] then
         for i = #_databases_by_file[filename], 1, -1 do
             local db = _databases_by_file[filename][i]
@@ -575,7 +607,7 @@ Database._force_close_file = function(filename)
 end
 
 -- Global cleanup function to close all open databases
-Database.close_all = function()
+Database.close_all                   = function()
     for i = #_open_databases, 1, -1 do
         local db = _open_databases[i]
         if db and db.db then
@@ -596,7 +628,7 @@ Database.force_close_all_connections = function()
     collectgarbage('collect') -- Run twice to be thorough
 
     -- Clear all our tracking
-    _open_databases = {}
+    _open_databases    = {}
     _databases_by_file = {}
 end
 
