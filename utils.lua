@@ -150,6 +150,7 @@ utils.getTableKeys              = function(tab)
     for k, v in pairs(tab) do
         keyset[#keyset+1] = k
     end
+    table.sort(keyset)
     return keyset
 end
 

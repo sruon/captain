@@ -1,5 +1,5 @@
 -- Credits: zach2good
--- Displays a floating text box with the player's job levels, coordinates, rotation, zone ID, capture state and server IP.
+-- Displays a floating text box with the player's job levels, coordinates, rotation, zone ID, capture state, retail state
 ---@class PlayerInfoAddon : AddonInterface
 ---@field playerInfo TextBox?
 ---@field server { ip: string, port: number }

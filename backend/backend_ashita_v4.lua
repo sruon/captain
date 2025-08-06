@@ -1230,7 +1230,9 @@ backend.configMenu            = function()
             end
 
             -- Addon settings
-            for addonName, addon in pairs(captain.addons) do
+            local addonNames = utils.getTableKeys(captain.addons)
+            for _, addonName in ipairs(addonNames) do
+                local addon = captain.addons[addonName]
                 -- Check if addon has a config menu
                 if type(addon.onConfigMenu) == 'function' then
                     local addonConfig = addon.onConfigMenu()
