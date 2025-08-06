@@ -307,7 +307,7 @@ local addon            =
     },
 }
 
-addon.onZoneChange     = function(zoneId)
+addon.onClientReady     = function(zoneId)
     addon.files.simple = backend.fileOpen(string.format('%s/%s/%s.log', addon.rootDir, backend.player_name(),
         backend.zone_name(zoneId)))
     if addon.files.capture then
