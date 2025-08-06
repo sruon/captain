@@ -88,13 +88,6 @@ backend.register_on_zone_change        = function(func)
             local zonePacket = backend.parsePacket('incoming', e.data)
             func(zonePacket.ZoneNo)
         end
-
-        -- Track the IP on zone out packet, so we can check if we're on retail.
-        if (e.id == PacketId.GP_SERV_COMMAND_LOGOUT) then
-            ---@type GP_SERV_COMMAND_LOGOUT
-            local zoneOutPacket = backend.parsePacket('incoming', e.data)
-            serverIp            = zoneOutPacket.GP_SERV_LOGOUTSUB.ip
-        end
     end
 
     ashita.events.register('packet_in', 'packet_in_zone_cb', incomingAdaptor)

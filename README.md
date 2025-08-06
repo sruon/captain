@@ -79,7 +79,7 @@ Also displayed in the chatlog
 ### Addons
 #### PacketLogger
 - Captures all received/emitted packets, by ID and by stream direction.
-- Format is compatible with PVLP/VieweD.
+- Format is compatible with PVLV/VieweD.
 
 #### PacketBridge
 Re-emits all received/emitted packets to any UDP port.

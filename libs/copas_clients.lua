@@ -47,10 +47,28 @@ function copas_clients.websocket_connect(host, port, path)
     return ws
 end
 
-function copas_clients.http_request(url, body)
+function copas_clients.http_request(url, body, options)
     ensure_copas_processing()
-    return copas.addthread(function()
-        return copas_http_module.request(url, body)
+    
+    if not options then
+        return copas.addthread(function()
+            return copas_http_module.request(url, body)
+        end)
+    end
+    
+    -- Async version with callbacks
+    copas.addthread(function()
+        local success, response_body, status_code, headers = pcall(copas_http_module.request, url, body)
+        
+        if success and status_code >= 200 and status_code < 300 then
+            if options.on_success then
+                options.on_success(response_body, status_code, headers)
+            end
+        else
+            if options.on_error then
+                options.on_error(response_body or "Request failed", status_code, headers)
+            end
+        end
     end)
 end
 

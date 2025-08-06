@@ -2,10 +2,9 @@
 -- Displays a floating text box with the player's job levels, coordinates, rotation, zone ID, capture state, retail state
 ---@class PlayerInfoAddon : AddonInterface
 ---@field playerInfo TextBox?
----@field server { ip: string, port: number }
 ---@field databases { global: Database?, capture: Database? }
 
-local addon         =
+local addon        =
 {
     name            = 'PlayerInfo',
     playerInfo      = nil,
@@ -13,10 +12,6 @@ local addon         =
     frame           = 0,
     filters         =
     {
-    },
-    server          =
-    {
-        ip = 0,
     },
     settings        = {},
     defaultSettings =
@@ -28,7 +23,7 @@ local addon         =
     },
 }
 
-addon.onPrerender   = function()
+addon.onPrerender  = function()
     addon.frame      = addon.frame + 1
     local playerData = backend.get_player_entity_data()
     if playerData == nil then
@@ -52,7 +47,7 @@ addon.onPrerender   = function()
     {
         {
             text  = string.format('%s[%d/%d] %s',
-                playerData.name, captain.settings.core.witsec and 0 or playerData.serverId, playerData.targIndex, playerJobString),
+                playerData.name, playerData.serverId, playerData.targIndex, playerJobString),
             color = { 1.0, 0.65, 0.26, 1.0 },
         },
         retailCheck,
@@ -77,7 +72,7 @@ addon.onPrerender   = function()
     end
 end
 
-addon.onInitialize  = function(rootDir)
+addon.onInitialize = function(rootDir)
     addon.isRetail   = backend.is_retail()
     addon.playerInfo = backend.textBox('playerinfo')
 end

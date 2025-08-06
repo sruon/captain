@@ -39,16 +39,4 @@ addon.onInitialize   = function(rootDir)
     addon.logs.global = backend.fileOpen(rootDir .. backend.player_name() .. '.log')
 end
 
-addon.onCommand      = function(_)
-end
-
-local commands       =
-{
-    { cmd = 'test', desc = 'Test command', keybind = { key = 'p', ctrl = true, down = true } },
-}
-
-addon.onHelp         = function()
-    return commands
-end
-
 return addon
