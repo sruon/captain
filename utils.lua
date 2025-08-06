@@ -1,6 +1,6 @@
 ---@diagnostic disable: deprecated
 
-local backend  = require('backend/backend')
+local backend  = require('backend.backend')
 local serpent  = require('serpent')
 
 local utils    = {}

@@ -146,7 +146,7 @@ backend.notificationCreate = function(emitter, title, dataFields)
             else
                 value_str = tostring(field[2])
             end
-            
+
             fieldMsg = fieldMsg .. string.format('%s: %s',
                 colors[captain.settings.notifications.colors.key].chatColorCode .. field[1],
                 colors[captain.settings.notifications.colors.value].chatColorCode .. value_str)

@@ -127,7 +127,7 @@ end
 ---@param layout table  -- The layout to parse
 ---@param context table -- The context for the layout
 ---@param header table  -- The packet header
----@param data table    -- The raw packet data
+---@param data integer[]    -- The raw packet data
 ---@return any -- The parsed packet data
 parse_layout              = function(reader, layout, context, header, data)
     local result = {}
@@ -165,9 +165,9 @@ parse_layout              = function(reader, layout, context, header, data)
     return result
 end
 
----@param dir string               -- 'outgoing' or 'incoming'
----@param packet string | number[] -- The raw packet data
----@return any | nil               -- The parsed packet data or nil if the packet is not recognized
+---@param dir string       -- 'outgoing' or 'incoming'
+---@param packet integer[] -- The raw packet data
+---@return any | nil       -- The parsed packet data or nil if the packet is not recognized
 parser.parse              = function(dir, packet)
     local reader = breader:new()
     reader:set_data(packet)

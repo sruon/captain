@@ -30,10 +30,12 @@ local sqlite            = ffi.load(addon.path .. '/deps/sqlite3')
 ---@field db sqlite3*
 ---@field ignore_updates table
 ---@field max_history number
----@field add_or_update fun(self, id: any, fragment: table): number
+---@field _schema_columns table
+---@field _filename string
+---@field add_or_update fun(self, id: any, fragment: table): integer
 ---@field get fun(self, id: any): table | nil
----@field count fun(self): number
----@field find_by fun(self, path: string, expected: any): table | nil, number | nil
+---@field count fun(self): integer
+---@field find_by fun(self, path: string, expected: any): table | nil, string | nil
 ---@field close fun(self)
 local Database          = {}
 Database.__index        = Database
@@ -105,14 +107,14 @@ function Database.new(file, opts)
     end
 
     local self = setmetatable(
-    {
-        db                  = db_ptr[0],
-        max_history         = opts and opts.max_history or nil,
-        _transaction_active = false,
-        _pending_operations = 0,
-        _schema_columns     = {},
-        _filename           = filename,
-    }, Database)
+        {
+            db                  = db_ptr[0],
+            max_history         = opts and opts.max_history or nil,
+            _transaction_active = false,
+            _pending_operations = 0,
+            _schema_columns     = {},
+            _filename           = filename,
+        }, Database)
 
     self:_build_schema_from_example(opts.schema)
     self:_init_schema()

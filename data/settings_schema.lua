@@ -20,32 +20,6 @@
 --   {
 --     default = <value>      -- Just specify the default value
 --   }
---
--- For addon integration:
--- Addons can define their own settings in the same format.
--- To extend captain with addon settings:
---
--- 1. Create a settings_schema.lua file in the addon folder with the same structure
--- 2. Register the addon settings by extending this schema:
---
---   local captain_schema = require('data/settings_schema')
---
---   -- Register addon settings
---   if not captain_schema.addons then
---     captain_schema.addons = {}
---   end
---
---   captain_schema.addons.my_addon = {
---     settings = {
---       -- addon settings here following the same pattern
---     },
---     -- Add UI category
---     category = {
---       id = "my_addon",
---       title = "My Addon Name"
---     }
---   }
---
 
 local settings_schema =
 {
