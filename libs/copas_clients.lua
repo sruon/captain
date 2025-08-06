@@ -10,11 +10,17 @@ local websocket         = require('websocket')
 local copas_http_module = require('copas.http')
 local json              = require('json')
 
+---@class copas_clients
+---@field copas table The copas library instance
+---@field http table The copas HTTP module instance
+---@field websocket_lib table The websocket library instance
 local copas_clients     = {}
 
 -- Centralized copas event loop management
 local copas_started     = false
 
+---Ensures that copas event loop processing is active
+---Sets up a recurring timer to process copas coroutines if not already started
 local function ensure_copas_processing()
     if not copas_started then
         copas_started = true
@@ -30,12 +36,20 @@ local function ensure_copas_processing()
     end
 end
 
--- WebSocket client factory
+---WebSocket client factory
+---Creates a new websocket client using copas coroutines
+---@return table websocket_client A new websocket client instance
 function copas_clients.websocket()
     ensure_copas_processing()
     return websocket.client.copas()
 end
 
+---Connect to a WebSocket server
+---@param host string The hostname or IP address to connect to
+---@param port number The port number to connect to
+---@param path string|nil The WebSocket path (default: "/")
+---@return table|nil websocket Connected websocket client or nil on failure
+---@return string|nil error Error message if connection failed
 function copas_clients.websocket_connect(host, port, path)
     path          = path or '/'
     local ws      = copas_clients.websocket()
@@ -47,6 +61,11 @@ function copas_clients.websocket_connect(host, port, path)
     return ws
 end
 
+---Make an HTTP request using copas
+---@param url string The URL to request
+---@param body string|nil The request body (for POST requests)
+---@param options table|nil Optional callback configuration with on_success/on_error functions
+---@return any result Returns coroutine handle if no options provided, otherwise executes async
 function copas_clients.http_request(url, body, options)
     ensure_copas_processing()
     
@@ -72,6 +91,10 @@ function copas_clients.http_request(url, body, options)
     end)
 end
 
+---Send data to a webhook endpoint as JSON
+---@param url string The webhook URL to send data to
+---@param data table The data to encode as JSON and send
+---@param options table|nil Optional callback configuration with on_success/on_error functions
 function copas_clients.webhook(url, data, options)
     ensure_copas_processing()
     options = options or {}

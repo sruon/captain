@@ -1,13 +1,13 @@
 -- Reports if a new captain version is available.
 ---@class VersCheckAddon : AddonInterface
-local copas  = require('libs.copas_clients')
-local json   = require('json')
-
 local vAddon =
 {
     name    = 'VersCheck',
     checked = false,
 }
+
+local copas  = require('libs.copas_clients')
+local json   = require('json')
 
 local function parseVersion(versionStr)
     local major, minor, patch = versionStr:match('(%d+)%.(%d+)%.(%d+)')

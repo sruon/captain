@@ -5,7 +5,9 @@ local serpent  = require('serpent')
 
 local utils    = {}
 
--- Deep copy function for tables
+---Deep copy function for tables
+---@param orig any The original value to copy
+---@return any copy Deep copy of the original value
 utils.deepcopy = function(orig)
     local copy
     if type(orig) == 'table' then
@@ -18,36 +20,6 @@ utils.deepcopy = function(orig)
         copy = orig
     end
     return copy
-end
-
--- Create a file name based on the current date and time
-local date     = os.date('*t')
-local name     = string.format('packets_%d_%d_%d_%d_%d_%d.txt', date['year'], date['month'], date['day'], date['hour'],
-    date['min'], date['sec'])
-local filename = backend.script_path() .. 'captures/' .. name
-
-utils.log      = function(str, ...)
-    backend.file_append(filename, str)
-end
-
-utils.hexdump  = function(str, align, indent)
-    local ret = ''
-
-    -- Loop the data string in steps..
-    for x = 1, #str, align do
-        local data = str:sub(x, x + 15)
-        ret        = ret .. string.rep(' ', indent)
-        ret        = ret .. data:gsub('.', function(c) return string.format('%02X ', string.byte(c)) end)
-        ret        = ret .. string.rep(' ', 3 * (16 - #data))
-        ret        = ret .. ' ' .. data:gsub('%c', '.')
-        ret        = ret .. '\n'
-    end
-
-    -- Fix percents from breaking string.format..
-    ret = string.gsub(ret, '%%', '%%%%')
-    ret = ret .. '\n'
-
-    return ret
 end
 
 do
@@ -115,7 +87,10 @@ do
     end
 end
 
--- Rounds to prec decimal digits. Accepts negative numbers for precision.
+---Rounds to prec decimal digits. Accepts negative numbers for precision.
+---@param num number The number to round
+---@param prec number|nil Number of decimal places (default: 0)
+---@return number rounded The rounded number
 function math.round(num, prec)
     local mult = 10 ^ (prec or 0)
     return math.floor(num * mult + 0.5) / mult
@@ -123,6 +98,9 @@ end
 
 utils.round                 = math.round
 
+---Converts a heading angle to byte rotation value
+---@param oldHeading number The heading angle in radians
+---@return number rotation The byte rotation value (0-256)
 utils.headingToByteRotation = function(oldHeading)
     local newHeading = oldHeading
     if newHeading < 0 then
@@ -131,6 +109,9 @@ utils.headingToByteRotation = function(oldHeading)
     return math.round((newHeading / (math.pi * 2)) * 256)
 end
 
+---Converts hexadecimal string to binary string
+---@param str string|nil The hex string to convert
+---@return string binary The binary string representation
 function string.fromhex(str)
     if str == nil then return '' end
     return (str:gsub('..', function(cc)
@@ -138,6 +119,9 @@ function string.fromhex(str)
     end))
 end
 
+---Converts binary string to hexadecimal representation
+---@param str string|nil The binary string to convert
+---@return string hex The hexadecimal string representation
 function string.tohex(str)
     if str == nil then return '' end
     return (str:gsub('.', function(c)
@@ -145,6 +129,9 @@ function string.tohex(str)
     end))
 end
 
+---Gets all keys from a table and returns them sorted
+---@param tab table The table to get keys from
+---@return string[] keys Array of sorted keys
 utils.getTableKeys              = function(tab)
     local keyset = {}
     for k, v in pairs(tab) do
@@ -154,6 +141,35 @@ utils.getTableKeys              = function(tab)
     return keyset
 end
 
+---Safely calls a function with error handling and traceback
+---@param name string Name for error reporting
+---@param func function The function to call
+---@param ... any Arguments to pass to the function
+---@return boolean ok Whether the call succeeded
+---@return any result The function result or error message
+utils.safe_call                 = function(name, func, ...)
+    ---@diagnostic disable-next-line: deprecated
+    local unpack = unpack or table.unpack
+    local args   = table.pack(...)
+    local function handler(err)
+        return debug.traceback(string.format('[%s] %s', name, tostring(err)), 2)
+    end
+
+    local ok, result = xpcall(function()
+        return func(unpack(args, 1, args.n))
+    end, handler)
+
+    if not ok then
+        backend.errMsg('captain', result)
+    end
+
+    return ok, result
+end
+
+---Dumps a value to a formatted string using serpent
+---@param o any The value to dump
+---@param print boolean|nil Whether to print the result (default: false)
+---@return string formatted The formatted string representation
 utils.dump                      = function(o, print)
     local d = serpent.block(o, { comment = false, sortkeys = true })
 
@@ -164,6 +180,9 @@ utils.dump                      = function(o, print)
     return d
 end
 
+---Converts a keybind table to a human-readable string
+---@param keyBind table Keybind table with ctrl, alt, shift, win, key fields
+---@return string readable Human-readable keybind string (e.g. "Ctrl+Alt+C")
 utils.keyBindToString           = function(keyBind)
     local res = ''
     if keyBind.ctrl then
@@ -184,6 +203,9 @@ utils.keyBindToString           = function(keyBind)
     return res
 end
 
+---Deep copy function for tables (alternative implementation)
+---@param original any The original value to copy
+---@return any copy Deep copy of the original value
 utils.deepCopy                  = function(original)
     local copy
 
@@ -203,6 +225,9 @@ utils.deepCopy                  = function(original)
     return copy
 end
 
+---Gets process path and active window information using Windows API
+---@return string process_path Full path to the current process executable
+---@return string window_name Title of the active window
 utils.getProcessInfo            = function()
     local ffi = require('ffi')
 
@@ -226,9 +251,12 @@ utils.getProcessInfo            = function()
     return process_path, window_name
 end
 
--- Performance monitoring wrapper
--- Wraps a function call and warns if execution takes longer than threshold
--- Returns: all function results..., elapsed_time
+---Performance monitoring wrapper that warns if execution exceeds threshold
+---Wraps a function call and warns if execution takes longer than threshold
+---@param name string Name for performance reporting
+---@param func function The function to monitor
+---@param threshold number|nil Warning threshold in seconds (default: 0.10)
+---@return any ... All function results plus elapsed_time as last return value
 utils.withPerformanceMonitoring = function(name, func, threshold)
     threshold        = threshold or 0.10 -- Default 100ms
     local start_time = os.clock()
@@ -246,6 +274,9 @@ utils.withPerformanceMonitoring = function(name, func, threshold)
     return table.unpack(result, 1, result.n)
 end
 
+---Converts a 32-bit integer IP address to human-readable dotted decimal format
+---@param ipAddr number 32-bit integer IP address
+---@return string ip Human-readable IP address (e.g. "192.168.1.1")
 utils.humanReadableIP           = function(ipAddr)
     local byte1 = bit.band(bit.rshift(ipAddr, 24), 0xFF)
     local byte2 = bit.band(bit.rshift(ipAddr, 16), 0xFF)

@@ -291,10 +291,8 @@ local settings_schema =
     end,
 }
 
--- Build the default settings when this module is required
 local module          = settings_schema
 
--- Add a function to explicitly get defaults
 module.get_defaults   = function()
     return module:build_defaults()
 end
