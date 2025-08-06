@@ -55,6 +55,7 @@ local makeDatabases  = function(baseDir)
                 ItemName    = '',
                 Count       = 1,
                 Max         = 1,
+                Hidden      = true,
                 Price       = 1,
             },
         })
@@ -70,6 +71,7 @@ local makeDatabases  = function(baseDir)
                 ItemName    = '',
                 Count       = 1,
                 Max         = 1,
+                Hidden      = true,
                 Price       = 1,
             },
         })
@@ -157,7 +159,8 @@ addon.onIncomingPacket = function(id, data)
                 ItemName    = backend.get_item_name(itemEntry.ItemNo),
                 Count       = itemEntry.Count,
                 Max         = itemEntry.Max,
-                Price       = itemEntry.Price,
+                Hidden      = bit.band(itemEntry.Price, 0x80000000) ~= 0, -- items with MSB set
+                Price       = bit.band(itemEntry.Price, 0x3FFFFFFF),
             }
             if addon.databases.global.buyList then
                 addon.databases.global.buyList:add_or_update(itemKey, dbEntry)
@@ -192,7 +195,8 @@ addon.onIncomingPacket = function(id, data)
                 ItemName    = backend.get_item_name(itemEntry.ItemNo),
                 Count       = itemEntry.Count,
                 Max         = itemEntry.Max,
-                Price       = itemEntry.Price,
+                Hidden      = bit.band(itemEntry.Price, 0x80000000) ~= 0, -- items with MSB set
+                Price       = bit.band(itemEntry.Price, 0x3FFFFFFF),
             }
 
             if addon.databases.global.sellList then

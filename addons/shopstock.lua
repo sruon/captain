@@ -197,6 +197,10 @@ addon.onIncomingPacket = function(id, data)
         ---@type GP_SERV_COMMAND_SHOP_LIST
         local buyListPacket = backend.parsePacket('incoming', data)
         for _, item in ipairs(buyListPacket.ShopItemTbl) do
+            if bit.band(item.ItemPrice, 0x80000000) ~= 0 then
+                backend.msg('ShopStock', string.format('Item %s has MSB set - Unknown meaning.', backend.get_item_name(item.ItemNo)))
+            end
+
             local itemKey   = string.format('%s-%d', addon.shopNpc.Name, item.ItemNo)
             local itemEntry =
             {
@@ -206,7 +210,7 @@ addon.onIncomingPacket = function(id, data)
                 GuildInfo   = item.GuildInfo,
                 ItemNo      = item.ItemNo,
                 ItemName    = backend.get_item_name(item.ItemNo),
-                ItemPrice   = item.ItemPrice,
+                ItemPrice   = bit.band(item.ItemPrice, 0x3FFFFFFF), -- Not sure if MSB can be set in shop packets but just in case
                 ShopIndex   = item.ShopIndex,
                 Skill       = item.Skill,
             }
@@ -244,7 +248,7 @@ addon.onIncomingPacket = function(id, data)
                 NpcZone     = backend.zone_name(),
                 ItemNo      = invItem.Id,
                 ItemName    = backend.get_item_name(invItem.Id),
-                Price       = sellPacket.Price,
+                Price       = bit.band(sellPacket.Price, 0x3FFFFFFF), -- Not sure if MSB can be set in shop packets but just in case
             }
             if addon.databases.global.sellList then
                 addon.databases.global.sellList:add_or_update(itemKey, itemEntry)
