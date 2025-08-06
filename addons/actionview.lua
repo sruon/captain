@@ -59,16 +59,8 @@ local addon =
     },
     databases       =
     {
-        global  =
-        {
-            zone    = nil,
-            actions = nil,
-        },
-        capture =
-        {
-            zone    = nil,
-            actions = nil,
-        },
+        global  = nil,
+        capture = nil,
     },
 
     -- Action schema based on actual data structure
@@ -122,7 +114,8 @@ end
 -- Checks if a mob ID belongs to a "mob" based on the current zone
 ---------------------------------------------------------------------
 local function isMob(id)
-    return (id >= addon.vars.zone_start) and (id <= addon.vars.zone_end)
+    local zStart = bit.lshift(backend.zone(), 12) + 0x1000000
+    return (id >= zStart) and (id <= zStart + 1024)
 end
 
 local function parseAction(action)
@@ -219,33 +212,25 @@ end
 
 -- Inserts an action into a zone mob DB
 ---------------------------------------------------------------------
-local function addActionToMobList(db, result)
-    local zone_db = db.zone
-    if not zone_db then
-        return false
-    end
-
+local function addActionToMobList(result)
     local mob_key = string.format('%08d-%03d', result.actor, result.id)
-    zone_db:add_or_update(mob_key, result)
-
-    -- Also add to the single actions database
-    if db.actions then
-        local mt = getmetatable(db.actions)
-        local r  = db.actions:add_or_update(mob_key, result)
-        return r == mt.RESULT_NEW
+    if addon.databases.global then
+        addon.databases.global:add_or_update(mob_key, result)
     end
 
-    return false
+    if addon.databases.capture then
+        addon.databases.capture:add_or_update(mob_key, result)
+    end
 end
 
 local function recordAction(result, str_info)
-    local new_mob_ability = addActionToMobList(addon.databases.global, result)
+    addActionToMobList(result)
 
-    local simple_string   = buildSimpleString(str_info)
+    local simple_string = buildSimpleString(str_info)
     addon.files.simple:append(simple_string .. '\n\n')
 
     if addon.captureDir then
-        new_mob_ability = addActionToMobList(addon.databases.capture, result)
+        addActionToMobList(result)
         addon.files.capture.simple:append(simple_string .. '\n\n')
     end
 end
@@ -297,36 +282,12 @@ local function checkAction(data)
 end
 
 
--- Loads a zone database into memory
---------------------------------------------------
-local function prepareZoneDatabase(zone)
-    local path                  = string.format('%s/zone/%s.db', addon.rootDir, backend.zone_name(zone))
-    addon.databases.global.zone = backend.databaseOpen(path,
-        {
-            schema      = addon.schema,
-            max_history = addon.settings.database and addon.settings.database.max_history,
-        })
-
-    if captain.isCapturing then
-        local capture_path           = string.format('%s/zone/%s.db', addon.captureDir, backend.zone_name(zone))
-        addon.databases.capture.zone = backend.databaseOpen(capture_path,
-            {
-                schema      = addon.schema,
-                max_history = addon.settings.database and addon.settings.database.max_history,
-            })
-    end
-end
-
 -- Sets up tables and files for use in the current zone
 --------------------------------------------------
 local function setupZone(zone)
     local current_zone = backend.zone_name()
-    prepareZoneDatabase(zone)
 
-    addon.vars.zone_start = bit.lshift(zone, 12) + 0x1000000
-    addon.vars.zone_end   = addon.vars.zone_start + 1024 -- Full block of NPCs and mobs
-
-    addon.files.simple    = backend.fileOpen(addon.rootDir .. 'simple/' .. current_zone .. '.log')
+    addon.files.simple = backend.fileOpen(addon.rootDir .. 'simple/' .. current_zone .. '.log')
 
     if captain.isCapturing then
         addon.files.capture.simple = backend.fileOpen(addon.captureDir .. 'simple/' .. current_zone .. '.log')
@@ -341,9 +302,9 @@ local function initialize(rootDir)
     -- DISPLAY COLORS AND LOG HEADERS
     ---------------------------------------------------------------------------------
 
-    addon.rootDir                  = rootDir
-    addon.color                    = {}
-    addon.color.log                =
+    addon.rootDir            = rootDir
+    addon.color              = {}
+    addon.color.log          =
     { -- Preformatted character codes for log colors.
         ID        = colors[addon.settings.color.id].chatColorCode,
         NAME      = colors[addon.settings.color.name].chatColorCode,
@@ -353,7 +314,7 @@ local function initialize(rootDir)
         MESSAGE   = colors[addon.settings.color.message].chatColorCode,
         SYSTEM    = colors[addon.settings.color.system].chatColorCode,
     }
-    addon.color.notification       =
+    addon.color.notification =
     { -- \\cs(#,#,#) values for Windower text boxes
         SYSTEM    = colors[addon.settings.color.system].rgb,
         NAME      = colors[addon.settings.color.name].rgb,
@@ -364,7 +325,7 @@ local function initialize(rootDir)
         MESSAGE   = colors[addon.settings.color.message].rgb,
     }
 
-    addon.h                        =
+    addon.h                  =
     { -- Headers for log string. ex: NPC:
         id        = addon.color.log.SYSTEM .. 'ID: ' .. addon.color.log.ID,
         name      = addon.color.log.NAME .. '%s' .. addon.color.log.SYSTEM .. ' > ',
@@ -377,15 +338,15 @@ local function initialize(rootDir)
     -- VARIABLES AND TEMPLATES
     ---------------------------------------------------------------------------------
 
-    addon.vars                     = {}
+    addon.vars               = {}
 
-    addon.files                    = {}
-    addon.files.capture            = {}
-    addon.files.simple             = backend.fileOpen(addon.rootDir .. backend.player_name() .. '/logs/simple.log')
+    addon.files              = {}
+    addon.files.capture      = {}
+    addon.files.simple       = backend.fileOpen(addon.rootDir .. backend.player_name() .. '/logs/simple.log')
 
     -- Create single actions database instead of 15 category databases
-    local actions_path             = string.format('%s/actions.db', addon.rootDir)
-    addon.databases.global.actions = backend.databaseOpen(actions_path,
+    local actions_path       = string.format('%s/%s/Actions.db', addon.rootDir, backend.player_name())
+    addon.databases.global   = backend.databaseOpen(actions_path,
         {
             schema      = addon.schema,
             max_history = addon.settings.database and addon.settings.database.max_history,
@@ -401,11 +362,11 @@ addon.onIncomingPacket = function(id, data)
 end
 
 addon.onCaptureStart   = function(captureDir)
-    addon.captureDir                = captureDir
+    addon.captureDir           = captureDir
 
     -- Create single actions database for capture instead of 15 category databases
-    local capture_actions_path      = string.format('%s/actions.db', captureDir)
-    addon.databases.capture.actions = backend.databaseOpen(capture_actions_path,
+    local capture_actions_path = string.format('%s/%s/Actions.db', captureDir, backend.player_name())
+    addon.databases.capture    = backend.databaseOpen(capture_actions_path,
         {
             schema      = addon.schema,
             max_history = addon.settings.database and addon.settings.database.max_history,
@@ -417,14 +378,15 @@ end
 addon.onCaptureStop    = function()
     addon.captureDir = nil
 
-    if addon.databases.capture.actions then
-        addon.databases.capture.actions:close()
-        addon.databases.capture.actions = nil
+    if addon.databases.capture then
+        addon.databases.capture:close()
+        addon.databases.capture = nil
     end
-    if addon.databases.capture.zone then
-        addon.databases.capture.zone:close()
-        addon.databases.capture.zone = nil
-    end
+end
+
+addon.onUnload         = function()
+    addon.onCaptureStop()
+    addon.databases.global:close()
 end
 
 addon.onInitialize     = initialize
