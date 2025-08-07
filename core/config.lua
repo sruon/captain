@@ -7,6 +7,8 @@ config.commandsMap =
     { cmd = '',       desc = 'Open configuration menu' },
     {
         cmd     = 'start',
+        args    = { { name = 'capture_name', optional = true } },
+        varargs = true,
         desc    = 'Start capturing',
         keybind =
         {

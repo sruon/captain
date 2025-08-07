@@ -160,6 +160,16 @@ addon.onCaptureStart = function(captureDir)
     end
 
     if success then
+        local response, err = addon.client:SetProfileParameter('Output', 'FilenameFormatting', captain.captureName)
+        if response then
+            backend.msg('OBS', 'Recording file name set to: ' .. captain.captureName)
+        else
+            backend.msg('OBS', 'Error setting recording file name: ' .. (err or 'unknown error'))
+            success = false
+        end
+    end
+
+    if success then
         StartRecord()
     end
 end

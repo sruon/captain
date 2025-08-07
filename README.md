@@ -261,7 +261,8 @@ How may I help you?
 ### General
 
 - `/cap` to show the configuration menu
-- `/cap start` (`CTRL + ALT + C`) to begin a capture
+- `/cap help` to show all available commands (incl. addon commands)
+- `/cap start [capture_name]` (`CTRL + ALT + C`) to begin a capture (optional capture name)
 - `/cap stop` (`CTRL + ALT + V`) to end a capture
 - `/cap toggle` (`CTRL + X`) to toggle recording
 - `/cap split` to roll over to a new capture

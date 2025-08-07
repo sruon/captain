@@ -61,6 +61,7 @@ captain                       =
     reloadSignal        = false,
     showConfig          = false,
     needsInitialization = false,
+    captureName         = nil,
     settings            = backend.loadConfig('captain', require('settings_schema').get_defaults()),
     notificationMgr     = nil,
     keyBinds            = KeyBinds.new(config.commandsMap),

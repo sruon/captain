@@ -2,14 +2,14 @@
 
 ---@class Commands
 ---@field commandsMap table[] Array of command configuration entries
-local Commands = {}
+local Commands   = {}
 Commands.__index = Commands
 
 ---Create a new Commands instance
 ---@param commandsMap table[]|nil Array of command configuration entries
 ---@return Commands commands The new Commands instance
 function Commands.new(commandsMap)
-    local self = setmetatable({}, Commands)
+    local self       = setmetatable({}, Commands)
     self.commandsMap = commandsMap or {}
     return self
 end
@@ -45,7 +45,8 @@ end
 
 ---Notify addons of a capture starting and set up capture directory
 ---Creates timestamped capture directory and calls onCaptureStart for all addons
-function Commands:startCapture()
+---@param args string[]|nil Optional command arguments array
+function Commands:startCapture(args)
     if captain.isCapturing then
         backend.msg('captain', 'Already capturing')
         return
@@ -54,7 +55,16 @@ function Commands:startCapture()
     local date       = os.date('*t')
     local foldername = string.format('%d-%d-%d_%d_%d', date['year'], date['month'], date['day'], date['hour'],
         date['min'])
-    local charname   = backend.player_name()
+
+    -- Prepend args if provided
+    if args and #args > 0 then
+        local argsPrefix = table.concat(args, '_')
+        foldername       = argsPrefix .. '_' .. foldername
+    end
+
+    captain.captureName = foldername
+
+    local charname      = backend.player_name()
     if charname then
         local baseDir = string.format('captures/%s/%s/', foldername, charname)
 
@@ -92,6 +102,30 @@ function Commands:stopCapture()
     end
 
     captain.isCapturing = false
+    captain.captureName = nil
+end
+
+---Build argument string for command help display
+---@param entry table Command entry with optional args and varargs
+---@return string argString Formatted argument string
+local function buildArgString(entry)
+    local argParts = {}
+    
+    if entry.args then
+        for _, arg in ipairs(entry.args) do
+            if arg.optional then
+                table.insert(argParts, '[' .. arg.name .. ']')
+            else
+                table.insert(argParts, '<' .. arg.name .. '>')
+            end
+        end
+    end
+    
+    if entry.varargs then
+        table.insert(argParts, '[...]')
+    end
+    
+    return #argParts > 0 and (' ' .. table.concat(argParts, ' ')) or ''
 end
 
 ---Display help information for all captain and addon commands
@@ -99,9 +133,10 @@ end
 function Commands:showHelp()
     backend.msg('captain', colors[ColorEnum.Purple].chatColorCode .. 'Packet capture and analysis')
     for _, entry in pairs(self.commandsMap) do
+        local argString = buildArgString(entry)
         backend.msg('captain',
-            string.format('/%s %s %s [%s]', addon.command, colors[ColorEnum.Green].chatColorCode .. entry.cmd,
-                colors[ColorEnum.Purple].chatColorCode .. entry.desc,
+            string.format('/%s %s%s %s [%s]', addon.command, colors[ColorEnum.Green].chatColorCode .. entry.cmd,
+                argString, colors[ColorEnum.Purple].chatColorCode .. entry.desc,
                 entry.keybind and utils.keyBindToString(entry.keybind) or 'No bind'))
     end
 
@@ -150,7 +185,8 @@ function Commands:handleCommand(args)
     if args[1] == 'help' then
         self:showHelp()
     elseif args[1] == 'start' then
-        self:startCapture()
+        local startArgs = { table.unpack(args, 2) }
+        self:startCapture(startArgs)
     elseif args[1] == 'stop' then
         self:stopCapture()
     elseif args[1] == 'toggle' then

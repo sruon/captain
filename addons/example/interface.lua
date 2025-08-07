@@ -2,9 +2,14 @@
 ---@field incoming? table<number, boolean>                 # Incoming packet filters
 ---@field outgoing? table<number, boolean>                 # Outgoing packet filters
 
+---@class CommandArg
+---@field name string The argument name
+---@field optional? boolean Whether this argument is optional (default: false)
+
 ---@class Command
 ---@field cmd string
----@field args? string[]
+---@field args? CommandArg[] Array of argument definitions (1 to N arguments)
+---@field varargs? boolean Whether this command accepts variable arguments beyond defined args
 ---@field desc string
 ---@field keybind? KeybindParams
 
