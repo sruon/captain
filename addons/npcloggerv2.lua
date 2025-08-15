@@ -167,8 +167,8 @@ local function parseNpcUpdate(data)
         npc.x         = packet.x
         npc.y         = packet.z -- Backward compatibility, this should be y!
         npc.z         = packet.y -- Backward compatibility, this should be z!
-        npc.Flags0    = packet.Flags0
-        npc.Flags1    = packet.Flags1
+        npc.Flags0    = packet.Flags0_num
+        npc.Flags1    = packet.Flags1_num
         npc.Speed     = packet.Speed
         npc.SpeedBase = packet.SpeedBase
     end
@@ -176,9 +176,9 @@ local function parseNpcUpdate(data)
     if packet.SendFlg.General then
         npc.Hpp           = packet.Hpp
         npc.server_status = packet.server_status
-        npc.Flags1        = packet.Flags1
-        npc.Flags2        = packet.Flags2
-        npc.Flags3        = packet.Flags3
+        npc.Flags1        = packet.Flags1_num
+        npc.Flags2        = packet.Flags2_num
+        npc.Flags3        = packet.Flags3_num
         npc.SubAnimation  = packet.SubAnimation
     end
 
