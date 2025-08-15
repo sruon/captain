@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.5.1](https://github.com/sruon/captain/compare/v1.5.0...v1.5.1) (2025-08-15)
+
+
+### Bug Fixes
+
+* **npclogger:** Fix Flags0/1/2/3 being written as zeroes to the db ([#10](https://github.com/sruon/captain/issues/10)) ([51b258d](https://github.com/sruon/captain/commit/51b258d1a4d9437f3461761cc7971f281ecb2f92))
+
 ## [1.5.0](https://github.com/sruon/captain/compare/v1.4.0...v1.5.0) (2025-08-07)
 
 
