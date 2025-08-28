@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.5.2](https://github.com/sruon/captain/compare/v1.5.1...v1.5.2) (2025-08-28)
+
+
+### Bug Fixes
+
+* Strip MSB on Message IDs ([f298c62](https://github.com/sruon/captain/commit/f298c62e0a5bf67627130b1db1e0155b00ae4d0b))
+
 ## [1.5.1](https://github.com/sruon/captain/compare/v1.5.0...v1.5.1) (2025-08-15)
 
 
