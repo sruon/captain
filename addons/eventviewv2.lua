@@ -307,7 +307,7 @@ local addon            =
     },
 }
 
-addon.onClientReady     = function(zoneId)
+addon.onClientReady    = function(zoneId)
     addon.files.simple = backend.fileOpen(string.format('%s/%s/%s.log', addon.rootDir, backend.player_name(),
         backend.zone_name(zoneId)))
     if addon.files.capture then
@@ -360,6 +360,12 @@ addon.processPacket    = function(direction, id, data)
                     if mob and mob.name then
                         value = string.format('%d (%s)', packet[fieldName], mob.name)
                     end
+                elseif
+                  fieldName == 'MesNum' or
+                  fieldName == 'MessageNumber'
+                then
+                    -- Strip MSB for message IDs
+                    value = bit.band(packet[fieldName], 0x7FFF)
                 end
 
                 table.insert(dataFields, { fieldName, value })
