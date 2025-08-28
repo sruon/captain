@@ -495,7 +495,13 @@ backend.get_target_entity_data   = function()
 end
 
 backend.get_monster_ability_name = function(id)
-    return AshitaCore:GetResourceManager():GetString('monsters.abilities', id - 256):gsub('%z', '')
+    local mobAbility = AshitaCore:GetResourceManager():GetString('monsters.abilities', id - 256)
+    if mobAbility then
+        return mobAbility:gsub('%z', '')
+    end
+
+    -- Some mobs use player weaponskills
+    return backend.get_weapon_skill_name(id) or 'Unknown mob skill'
 end
 
 backend.get_job_ability_name     = function(id)
