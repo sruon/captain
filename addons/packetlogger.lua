@@ -45,8 +45,8 @@ addon.onIncomingPacket = function(id, data, size)
         end
 
         if addon.files.incomingPerId[id] == nil then
-            addon.files.incomingPerId[id] = backend.fileOpen(addon.captureDir ..
-                'incoming/' .. hexidstr .. '.log')
+            addon.files.incomingPerId[id] = backend.fileOpen(string.format('%s/incoming/%s.log',
+                addon.captureDir, hexidstr))
         end
 
         addon.files.incomingPerId[id]:append(string.format('[%s] Packet %s\n', timestr, hexidstr))
@@ -70,8 +70,8 @@ addon.onOutgoingPacket = function(id, data, size)
         end
 
         if addon.files.outgoingPerId[id] == nil then
-            addon.files.outgoingPerId[id] = backend.fileOpen(addon.captureDir ..
-                'outgoing/' .. hexidstr .. '.log')
+            addon.files.outgoingPerId[id] = backend.fileOpen(string.format('%s/outgoing/%s.log',
+                addon.captureDir, hexidstr))
         end
 
         addon.files.outgoingPerId[id]:append(string.format('[%s] Packet %s\n', timestr, hexidstr))
@@ -80,16 +80,25 @@ addon.onOutgoingPacket = function(id, data, size)
 end
 
 addon.onCaptureStart   = function(captureDir)
-    addon.captureDir        = captureDir
-    addon.files.incomingAll = backend.fileOpen(addon.captureDir .. 'incoming.log')
-    addon.files.outgoingAll = backend.fileOpen(addon.captureDir .. 'outgoing.log')
-    addon.files.bothAll     = backend.fileOpen(addon.captureDir .. 'full.log')
+    addon.captureDir          = captureDir
+
+    -- Clear any existing per-ID file handles from previous capture
+    addon.files.incomingPerId = {}
+    addon.files.outgoingPerId = {}
+
+    addon.files.incomingAll   = backend.fileOpen(string.format('%s/incoming.log', addon.captureDir))
+    addon.files.outgoingAll   = backend.fileOpen(string.format('%s/outgoing.log', addon.captureDir))
+    addon.files.bothAll       = backend.fileOpen(string.format('%s/full.log', addon.captureDir))
 end
 
 addon.onCaptureStop    = function()
-    addon.files.incomingAll = nil
-    addon.files.outgoingAll = nil
-    addon.files.bothAll     = nil
+    addon.files.incomingAll   = nil
+    addon.files.outgoingAll   = nil
+    addon.files.bothAll       = nil
+
+    -- Clear per-ID file handles
+    addon.files.incomingPerId = {}
+    addon.files.outgoingPerId = {}
 end
 
 return addon
