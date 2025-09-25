@@ -25,8 +25,24 @@ local addon =
     mobs            = {},
     files           =
     {
-        global  = nil,
-        capture = nil,
+        globalCsv  = nil,
+        captureCsv = nil,
+    },
+    csvSchema       =
+    {
+        'MobName',
+        'UniqueNo',
+        'DefeatedAt',
+        'DespawnedAt',
+        'SpawnedAt',
+        'DefeatToSpawnDiff',
+        'DespawnToSpawnDiff',
+        'XDefeated',
+        'YDefeated',
+        'ZDefeated',
+        'XSpawn',
+        'YSpawn',
+        'ZSpawn',
     },
 }
 
@@ -101,14 +117,6 @@ addon.onIncomingPacket = function(id, data, size)
             if mob then
                 backend.msg('SpawnTrack', log_string)
 
-                if addon.files.global then
-                    addon.files.global:append(log_string .. '\n')
-                end
-
-                if addon.files.capture then
-                    addon.files.capture:append(log_string .. '\n')
-                end
-
                 addon.mobs[defeatedId] =
                 {
                     defeatedTime = defeatedTime,
@@ -158,6 +166,34 @@ addon.onIncomingPacket = function(id, data, size)
                 backend.msg('SpawnTrack', line)
             end
 
+            -- Write to CSV
+            local csvRow =
+            {
+                MobName            = addon.mobs[packet.UniqueNo].name,
+                UniqueNo           = packet.UniqueNo,
+                DefeatedAt         = os.date('%Y-%m-%d %H:%M:%S', defeatedTime),
+                DespawnedAt        = os.date('%Y-%m-%d %H:%M:%S', despawnTime),
+                SpawnedAt          = os.date('%Y-%m-%d %H:%M:%S', spawnTime),
+                DefeatToSpawnDiff  = defeatedTimeDiff,
+                DespawnToSpawnDiff = despawnTimeDiff,
+                XDefeated          = addon.mobs[packet.UniqueNo].x,
+                YDefeated          = addon.mobs[packet.UniqueNo].y,
+                ZDefeated          = addon.mobs[packet.UniqueNo].z,
+                XSpawn             = packet.x,
+                YSpawn             = packet.y,
+                ZSpawn             = packet.z,
+            }
+
+            if addon.files.globalCsv then
+                addon.files.globalCsv:add_entry(csvRow)
+                addon.files.globalCsv:save()
+            end
+
+            if addon.files.captureCsv then
+                addon.files.captureCsv:add_entry(csvRow)
+                addon.files.captureCsv:save()
+            end
+
             addon.mobs[packet.UniqueNo] = nil
         end
     elseif id == PacketId.GP_SERV_COMMAND_SCHEDULOR then
@@ -178,43 +214,47 @@ addon.onIncomingPacket = function(id, data, size)
 end
 
 addon.onCaptureStart   = function(captureDir)
-    addon.captureDir    = captureDir
-    addon.files.capture = backend.fileOpen(
-        string.format('%s/%s.log',
+    addon.captureDir       = captureDir
+    addon.files.captureCsv = backend.csvOpen(
+        string.format('%s/%s.csv',
             captureDir,
-            backend.zone_name())
+            backend.zone_name()),
+        addon.csvSchema
     )
 end
 
 addon.onCaptureStop    = function()
-    addon.captureDir    = nil
-    addon.files.capture = nil
+    addon.captureDir       = nil
+    addon.files.captureCsv = nil
 end
 
 addon.onInitialize     = function(rootDir)
-    addon.rootDir      = rootDir
-    addon.files.global = backend.fileOpen(
-        string.format('%s/%s/%s.log',
+    addon.rootDir         = rootDir
+    addon.files.globalCsv = backend.csvOpen(
+        string.format('%s/%s/%s.csv',
             rootDir,
             backend.player_name(),
-            backend.zone_name())
+            backend.zone_name()),
+        addon.csvSchema
     )
 end
 
 addon.onClientReady    = function(zoneId)
-    addon.mobs         = {}
-    addon.files.global = backend.fileOpen(
-        string.format('%s/%s/%s.log',
+    addon.mobs            = {}
+    addon.files.globalCsv = backend.csvOpen(
+        string.format('%s/%s/%s.csv',
             addon.rootDir,
             backend.player_name(),
-            backend.zone_name())
+            backend.zone_name()),
+        addon.csvSchema
     )
 
-    if addon.files.capture then
-        addon.files.capture = backend.fileOpen(
-            string.format('%s/%s.log',
+    if addon.captureDir then
+        addon.files.captureCsv = backend.csvOpen(
+            string.format('%s/%s.csv',
                 addon.captureDir,
-                backend.zone_name())
+                backend.zone_name()),
+            addon.csvSchema
         )
     end
 end
