@@ -115,7 +115,8 @@ addon.onIncomingPacket = function(id, data, size)
         end
     elseif id == PacketId.GP_SERV_COMMAND_BATTLE_MESSAGE then
         -- Mob has been defeated, print and log the results
-        if packet and packet.MessageNum == 6 and packet.UniqueNoTar then
+        -- 6 = defeated, 20 = falls to the ground
+        if packet and (packet.MessageNum == 6 or packet.MessageNum == 20) and packet.UniqueNoTar then
             local defeatedId = packet.UniqueNoTar
             local trackedMob = addon.mobs[defeatedId]
 
