@@ -1,5 +1,24 @@
 # Changelog
 
+## [1.6.0](https://github.com/sruon/captain/compare/v1.5.2...v1.6.0) (2025-09-25)
+
+
+### Features
+
+* **addon:** /checkparam ([2303f37](https://github.com/sruon/captain/commit/2303f374ddd8a7cb59fa5b53980920ee7c1431b6))
+* **addon:** CraftTrack - log crafting results ([117e066](https://github.com/sruon/captain/commit/117e066ac0cb2acc3f35e4fac5f8a0a0d16dd328))
+* **addon:** LevelRangeTrack - capture min/max level per unique mob ([fc81bfe](https://github.com/sruon/captain/commit/fc81bfeb9cdf03165eabb7b491f2624451664b92))
+* **addon:** SpawnTrack ([744e1cd](https://github.com/sruon/captain/commit/744e1cd2d93eb507190b88bfd35629a90ab8b674))
+* **attackdelay:** Calculate hits per slot / kick attacks ([23e19e8](https://github.com/sruon/captain/commit/23e19e829737e5c462ad8805c7737e21feb7901f))
+* **spawntrack:** Save to CSV ([d30f790](https://github.com/sruon/captain/commit/d30f790e75350e0def293ff8f484fc99a20ddb5d))
+
+
+### Bug Fixes
+
+* **attackdelay:** Detect mobs falling to the ground ([c2fdb50](https://github.com/sruon/captain/commit/c2fdb50b030fedffa04445df463f44832b224824))
+* **hptrack:** Detect mobs falling to the ground ([fae7520](https://github.com/sruon/captain/commit/fae752096040a7a66a412d9277f9754ee0632c68))
+* **packetlogger:** Clear per-ID file handles in between captures ([49ce207](https://github.com/sruon/captain/commit/49ce2073b0524f92a0e674484afadd050aaf75eb))
+
 ## [1.5.2](https://github.com/sruon/captain/compare/v1.5.1...v1.5.2) (2025-08-28)
 
 
