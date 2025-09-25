@@ -7,7 +7,7 @@ local TrackingListTbl_Type =
     ENEMY    = 2,
 }
 
-GP_TRACKING_STATE =
+GP_TRACKING_STATE          =
 {
     GP_TRACKING_STATE_NONE       = 0x00,
     GP_TRACKING_STATE_LIST_START = 0x01,
@@ -43,25 +43,25 @@ GP_TRACKING_STATE =
 ---@field outgoing table<PacketId, PacketLayout>
 
 ---@type PacketDefinitions
-local definitions =
+local definitions          =
 {
     incoming =
     {
-        [PacketId.GP_SERV_COMMAND_SCENARIOITEM] =
+        [PacketId.GP_SERV_COMMAND_SCENARIOITEM]      =
         {
             {
-                name = 'GetItemFlag', -- offset: 0x05-0x44 The clients obtained key item bit data.
-                type = 'array',
-                count = 16,
+                name   = 'GetItemFlag', -- offset: 0x05-0x44 The clients obtained key item bit data.
+                type   = 'array',
+                count  = 16,
                 layout =
                 {
                     { name = 'value', bits = 32 },
                 },
             },
             {
-                name = 'LookItemFlag', -- offset: 0x45-0x84 The clients viewed key item bit data.
-                type = 'array',
-                count = 16,
+                name   = 'LookItemFlag', -- offset: 0x45-0x84 The clients viewed key item bit data.
+                type   = 'array',
+                count  = 16,
                 layout =
                 {
                     { name = 'value', bits = 32 },
@@ -70,32 +70,32 @@ local definitions =
             { name = 'TableIndex', bits = 16 }, -- offset: 0x85-0x86 The key item table index this data will populate.
             { name = 'padding00',  bits = 16 }, -- offset: 0x87-0x88 Padding; unused.
         },
-        [PacketId.GP_SERV_COMMAND_PACKETCONTROL] =
+        [PacketId.GP_SERV_COMMAND_PACKETCONTROL]     =
         {
             { name = 'PacketCnt', bits = 32 }, -- 0x04
             {
-                name = 'padding00',            -- 0x08 - 0x18
-                type = 'array',
-                count = 5,
+                name   = 'padding00',          -- 0x08 - 0x18
+                type   = 'array',
+                count  = 5,
                 layout =
                 {
                     { name = 'value', bits = 32 },
                 },
             },
         },
-        [PacketId.GP_SERV_COMMAND_ENTERZONE] =
+        [PacketId.GP_SERV_COMMAND_ENTERZONE]         =
         {
             {
-                name = 'EnterZoneTbl', -- 0x04 - 0x33
-                type = 'array',
-                count = 48,
+                name   = 'EnterZoneTbl', -- 0x04 - 0x33
+                type   = 'array',
+                count  = 48,
                 layout =
                 {
                     { name = 'value', bits = 8 },
                 },
             },
         },
-        [PacketId.GP_SERV_COMMAND_MESSAGE] =
+        [PacketId.GP_SERV_COMMAND_MESSAGE]           =
         {
             { name = 'UniqueNo', bits = 32 }, -- 0x04
             { name = 'ActIndex', bits = 16 }, -- 0x08
@@ -103,11 +103,11 @@ local definitions =
             { name = 'Attr',     bits = 8 },  -- 0x0C
             -- TODO: Data field is a variable-length array
         },
-        [PacketId.GP_SERV_COMMAND_LOGIN] =
+        [PacketId.GP_SERV_COMMAND_LOGIN]             =
         {
             {
-                name = 'PosHead',
-                type = 'struct',
+                name   = 'PosHead',
+                type   = 'struct',
                 layout =
                 {
                     { name = 'UniqueNo',      bits = 32 },                 -- 0x04-0x07
@@ -135,42 +135,42 @@ local definitions =
             { name = 'EventNo',   bits = 16 }, -- 0x40-0x41
             { name = 'MapNumber', bits = 16 }, -- 0x42-0x43
             {
-                name = 'GrapIDTbl',
-                type = 'array',
-                count = 9,
+                name   = 'GrapIDTbl',
+                type   = 'array',
+                count  = 9,
                 layout =
                 {
                     { name = 'value', bits = 16 },
                 },
             }, -- 0x44-0x55
             {
-                name = 'MusicNum',
-                type = 'array',
-                count = 5,
+                name   = 'MusicNum',
+                type   = 'array',
+                count  = 5,
                 layout =
                 {
                     { name = 'value', bits = 16 },
                 },
-            },                                                          -- 0x56-0x5F
-            { name = 'SubMapNumber',       bits = 16 },                 -- 0x60-0x61
-            { name = 'EventNum',           bits = 16 },                 -- 0x62-0x63
-            { name = 'EventPara',          bits = 16 },                 -- 0x64-0x65
-            { name = 'EventMode',          bits = 16 },                 -- 0x66-0x67
-            { name = 'WeatherNumber',      bits = 16 },                 -- 0x68-0x69
-            { name = 'WeatherNumber2',     bits = 16 },                 -- 0x6A-0x6B
-            { name = 'WeatherTime',        bits = 32 },                 -- 0x6C-0x6F
-            { name = 'WeatherTime2',       bits = 32 },                 -- 0x70-0x73
-            { name = 'WeatherOffsetTime',  bits = 16 },                 -- 0x74-0x77
-            { name = 'WeatherOffsetTime2', bits = 16 },                 -- 0x74-0x77
-            { name = 'ShipStart',          bits = 32 },                 -- 0x78-0x7B
-            { name = 'ShipEnd',            bits = 16 },                 -- 0x7C-0x7D
-            { name = 'IsMonstrosity',      bits = 16 },                 -- 0x7E-0x7F
-            { name = 'LoginState',         bits = 32 },                 -- 0x80-0x83
+            },                                                           -- 0x56-0x5F
+            { name = 'SubMapNumber',       bits = 16 },                  -- 0x60-0x61
+            { name = 'EventNum',           bits = 16 },                  -- 0x62-0x63
+            { name = 'EventPara',          bits = 16 },                  -- 0x64-0x65
+            { name = 'EventMode',          bits = 16 },                  -- 0x66-0x67
+            { name = 'WeatherNumber',      bits = 16 },                  -- 0x68-0x69
+            { name = 'WeatherNumber2',     bits = 16 },                  -- 0x6A-0x6B
+            { name = 'WeatherTime',        bits = 32 },                  -- 0x6C-0x6F
+            { name = 'WeatherTime2',       bits = 32 },                  -- 0x70-0x73
+            { name = 'WeatherOffsetTime',  bits = 16 },                  -- 0x74-0x77
+            { name = 'WeatherOffsetTime2', bits = 16 },                  -- 0x74-0x77
+            { name = 'ShipStart',          bits = 32 },                  -- 0x78-0x7B
+            { name = 'ShipEnd',            bits = 16 },                  -- 0x7C-0x7D
+            { name = 'IsMonstrosity',      bits = 16 },                  -- 0x7E-0x7F
+            { name = 'LoginState',         bits = 32 },                  -- 0x80-0x83
             { name = 'name',               type = 'string', size = 16 }, -- 0x84-0x93
             {
-                name = 'certificate',
-                type = 'array',
-                count = 2,
+                name   = 'certificate',
+                type   = 'array',
+                count  = 2,
                 layout =
                 {
                     { name = 'value', bits = 32 },
@@ -190,14 +190,14 @@ local definitions =
             { name = 'ConfData',           type = 'raw', size = 12 }, -- 0x100-0x10B
             { name = 'Ex',                 bits = 32 },               -- 0x10C-0x10F
         },
-        [PacketId.GP_SERV_COMMAND_LOGOUT] =
+        [PacketId.GP_SERV_COMMAND_LOGOUT]            =
         {
             { name = 'LogoutState', bits = 32 }, -- 0x04-0x07
 
             {
-                name = 'Iwasaki', -- 0x08-0x17
-                type = 'array',
-                count = 16,
+                name   = 'Iwasaki', -- 0x08-0x17
+                type   = 'array',
+                count  = 16,
                 layout =
                 {
                     { name = 'byte', bits = 8 },
@@ -213,7 +213,7 @@ local definitions =
                     end
                     return
                     {
-                        ip = string.format('%d.%d.%d.%d', i[1] or 0, i[2] or 0, i[3] or 0, i[4] or 0),
+                        ip   = string.format('%d.%d.%d.%d', i[1] or 0, i[2] or 0, i[3] or 0, i[4] or 0),
                         port = (i[8] or 0) * 0x1000000 +
                           (i[7] or 0) * 0x10000 +
                           (i[6] or 0) * 0x100 +
@@ -223,7 +223,7 @@ local definitions =
             },
             { name = 'cliErrCode',  bits = 32 }, -- 0x18-0x1B
         },
-        [PacketId.GP_SERV_COMMAND_TALKNUMWORK2] =
+        [PacketId.GP_SERV_COMMAND_TALKNUMWORK2]      =
         {
             { name = 'UniqueNo',  bits = 32 }, -- 0x04
             { name = 'ActIndex',  bits = 16 }, -- 0x08
@@ -232,9 +232,9 @@ local definitions =
             { name = 'Flags',     bits = 8 },  -- 0x0E
             { name = 'padding00', bits = 8 },  -- 0x0F
             {
-                name = 'Num1',
-                type = 'array',
-                count = 4,
+                name   = 'Num1',
+                type   = 'array',
+                count  = 4,
                 layout =
                 {
                     { name = 'value', bits = 32 },
@@ -243,9 +243,9 @@ local definitions =
             { name = 'String1', type = 'string', size = 32 }, -- 0x20-0x3F
             { name = 'String2', type = 'string', size = 16 }, -- 0x40-0x4F
             {
-                name = 'Num2',
-                type = 'array',
-                count = 8,
+                name   = 'Num2',
+                type   = 'array',
+                count  = 8,
                 layout =
                 {
                     { bits = 32 },
@@ -289,13 +289,13 @@ local definitions =
                 end,
             },
         },
-        [PacketId.GP_SERV_COMMAND_TALKNUMWORK] =
+        [PacketId.GP_SERV_COMMAND_TALKNUMWORK]       =
         {
             { name = 'UniqueNo', bits = 32 }, -- 0x04 - The message entity server id
             {
-                name = 'num',                 -- 0x08 - 0x17 - The message number parameters
-                type = 'array',
-                count = 4,
+                name   = 'num',               -- 0x08 - 0x17 - The message number parameters
+                type   = 'array',
+                count  = 4,
                 layout =
                 {
                     { name = 'value', bits = 32, signed = true },
@@ -367,7 +367,7 @@ local definitions =
                 end,
             },
         },
-        [PacketId.GP_SERV_COMMAND_TALKNUM] =
+        [PacketId.GP_SERV_COMMAND_TALKNUM]           =
         {
             { name = 'UniqueNo',  bits = 32 }, -- 0x04
             { name = 'ActIndex',  bits = 16 }, -- 0x08
@@ -376,25 +376,25 @@ local definitions =
             { name = 'padding00', bits = 8 },  -- 0x0D
             { name = 'padding01', bits = 16 }, -- 0x0E
         },
-        [PacketId.GP_SERV_COMMAND_PENDINGNUM] =
+        [PacketId.GP_SERV_COMMAND_PENDINGNUM]        =
         {
             {
-                name = 'num', -- 0x04 - 0x23
-                type = 'array',
-                count = 8,
+                name   = 'num', -- 0x04 - 0x23
+                type   = 'array',
+                count  = 8,
                 layout =
                 {
                     { name = 'value', bits = 32, signed = true },
                 },
             },
         },
-        [PacketId.GP_SERV_COMMAND_EVENTNUM] =
+        [PacketId.GP_SERV_COMMAND_EVENTNUM]          =
         {
             { name = 'UniqueNo',   bits = 32 }, -- 0x04
             {
-                name = 'num',                   -- 0x08 - 0x27
-                type = 'array',
-                count = 8,
+                name   = 'num',                 -- 0x08 - 0x27
+                type   = 'array',
+                count  = 8,
                 layout =
                 {
                     { name = 'value', bits = 32, signed = true },
@@ -407,7 +407,7 @@ local definitions =
             { name = 'EventNum2',  bits = 16 }, -- 0x30
             { name = 'EventPara2', bits = 16 }, -- 0x32
         },
-        [PacketId.GP_SERV_COMMAND_WPOS] =
+        [PacketId.GP_SERV_COMMAND_WPOS]              =
         {
             { name = 'x',         bits = 32, type = 'float' }, -- 0x04
             { name = 'y',         bits = 32, type = 'float' }, -- 0x08
@@ -418,7 +418,7 @@ local definitions =
             { name = 'dir',       bits = 8,  signed = true },  -- 0x17
             { name = 'padding00', bits = 32 },                 -- 0x18
         },
-        [PacketId.GP_SERV_COMMAND_EVENT] =
+        [PacketId.GP_SERV_COMMAND_EVENT]             =
         {
             { name = 'UniqueNo',   bits = 32 }, -- 0x04
             { name = 'ActIndex',   bits = 16 }, -- 0x08
@@ -428,7 +428,7 @@ local definitions =
             { name = 'EventNum2',  bits = 16 }, -- 0x10
             { name = 'EventPara2', bits = 16 }, -- 0x12
         },
-        [PacketId.GP_SERV_COMMAND_EVENTSTR] =
+        [PacketId.GP_SERV_COMMAND_EVENTSTR]          =
         {
             { name = 'UniqueNo',  bits = 32 }, -- 0x04 - The event entity server id
             { name = 'ActIndex',  bits = 16 }, -- 0x08 - The event entity target index
@@ -436,25 +436,25 @@ local definitions =
             { name = 'EventPara', bits = 16 }, -- 0x0C - The event param
             { name = 'Mode',      bits = 16 }, -- 0x0E - The event mode
             {
-                name = 'String',               -- 0x10 - 0x4F - The event string parameters
-                type = 'array',
-                count = 4,
+                name   = 'String',             -- 0x10 - 0x4F - The event string parameters
+                type   = 'array',
+                count  = 4,
                 layout =
                 {
                     { name = 'value', type = 'string', size = 16 },
                 },
             },
             {
-                name = 'Data', -- 0x50 - 0x6F - The event data
-                type = 'array',
-                count = 8,
+                name   = 'Data', -- 0x50 - 0x6F - The event data
+                type   = 'array',
+                count  = 8,
                 layout =
                 {
                     { name = 'value', bits = 32 },
                 },
             },
         },
-        [PacketId.GP_SERV_COMMAND_SCHEDULOR] =
+        [PacketId.GP_SERV_COMMAND_SCHEDULOR]         =
         {
             { name = 'UniqueNoCas',  bits = 32 }, -- 0x04 - The caster entity server id
             { name = 'UniqueNoTar',  bits = 32 }, -- 0x08 - The target entity server id
@@ -476,7 +476,7 @@ local definitions =
                 end,
             },
         },
-        [PacketId.GP_SERV_COMMAND_MAPSCHEDULOR] =
+        [PacketId.GP_SERV_COMMAND_MAPSCHEDULOR]      =
         {
             { name = 'UniqueNoCas',  bits = 32 }, -- 0x04 - The caster entity server id
             { name = 'UniqueNoTar',  bits = 32 }, -- 0x08 - The target entity server id
@@ -498,7 +498,7 @@ local definitions =
                 end,
             },
         },
-        [PacketId.GP_SERV_COMMAND_MAGICSCHEDULOR] =
+        [PacketId.GP_SERV_COMMAND_MAGICSCHEDULOR]    =
         {
             { name = 'UniqueNoCas',  bits = 32 }, -- 0x04 - The caster entity server id
             { name = 'UniqueNoTar',  bits = 32 }, -- 0x08 - The target entity server id
@@ -535,7 +535,7 @@ local definitions =
                 end,
             },
         },
-        [PacketId.GP_SERV_COMMAND_EVENTMES] =
+        [PacketId.GP_SERV_COMMAND_EVENTMES]          =
         {
             { name = 'UniqueNo', bits = 32 }, -- 0x04 - The message entities server id
             { name = 'ActIndex', bits = 16 }, -- 0x08 - The message entities target index
@@ -553,7 +553,7 @@ local definitions =
                 end,
             },
         },
-        [PacketId.GP_SERV_COMMAND_TALKNUMNAME] =
+        [PacketId.GP_SERV_COMMAND_TALKNUMNAME]       =
         {
             { name = 'UniqueNo',  bits = 32 },                  -- 0x04 - The message entity server id
             { name = 'ActIndex',  bits = 16 },                  -- 0x08 - The message entity target index
@@ -597,7 +597,7 @@ local definitions =
                 end,
             },
         },
-        [PacketId.GP_SERV_COMMAND_CHAR_PC] =
+        [PacketId.GP_SERV_COMMAND_CHAR_PC]           =
         {
             { name = 'UniqueNo', bits = 32 }, -- 0x04-0x07
             { name = 'ActIndex', bits = 16 }, -- 0x08-0x09
@@ -788,9 +788,9 @@ local definitions =
             },
 
             {
-                name = 'CustomProperties', -- 0x34-0x3B
-                type = 'array',
-                count = 2,
+                name   = 'CustomProperties', -- 0x34-0x3B
+                type   = 'array',
+                count  = 2,
                 layout =
                 {
                     { name = 'value', bits = 32 },
@@ -842,9 +842,9 @@ local definitions =
             },
 
             {
-                name = 'GrapIDTbl', -- 0x48-0x59
-                type = 'array',
-                count = 9,
+                name   = 'GrapIDTbl', -- 0x48-0x59
+                type   = 'array',
+                count  = 9,
                 layout =
                 {
                     { name = 'value', bits = 16 },
@@ -853,7 +853,7 @@ local definitions =
 
             { name = 'name',            type = 'string', size = 16 }, -- 0x5A-0x69
         },
-        [PacketId.GP_SERV_COMMAND_CHAR_NPC] =
+        [PacketId.GP_SERV_COMMAND_CHAR_NPC]          =
         {
             { name = 'UniqueNo', bits = 32 }, -- 0x04-0x07
             { name = 'ActIndex', bits = 16 }, -- 0x08-0x09
@@ -1031,8 +1031,8 @@ local definitions =
             { name = 'SubKind',    bits = 3 },  -- 0x30.0-0x30.2
             { name = 'Status',     bits = 13 }, -- 0x30.3-0x31.7
             {
-                name = 'Data',                  -- 0x32+ (size varies)
-                type = 'struct',
+                name   = 'Data',                -- 0x32+ (size varies)
+                type   = 'struct',
                 layout = function(ctx)
                     local fields = {}
                     -- Model Handling
@@ -1042,9 +1042,9 @@ local definitions =
                         elseif ctx.SubKind == 1 or ctx.SubKind == 7 then
                             table.insert(fields,
                                 {
-                                    name = 'GrapIDTbl', -- 0x32-0x43
-                                    type = 'array',
-                                    count = 9,
+                                    name   = 'GrapIDTbl', -- 0x32-0x43
+                                    type   = 'array',
+                                    count  = 9,
                                     layout = { { name = 'value', bits = 16 } },
                                 })
                         end
@@ -1105,16 +1105,16 @@ local definitions =
                 end,
             },
         },
-        [PacketId.GP_SERV_COMMAND_GM] =
+        [PacketId.GP_SERV_COMMAND_GM]                =
         {
             -- TODO: Mes field is a variable-length string
         },
-        [PacketId.GP_SERV_COMMAND_GMCOMMAND] =
+        [PacketId.GP_SERV_COMMAND_GMCOMMAND]         =
         {
             { name = 'GMUniqueNo', bits = 32 }, -- 0x04-0x07
             -- TODO: Mes field is a variable-length array
         },
-        [PacketId.GP_SERV_COMMAND_BATTLE2] =
+        [PacketId.GP_SERV_COMMAND_BATTLE2]           =
         {
             {
                 name = 'info_size',
@@ -1141,21 +1141,21 @@ local definitions =
                 expr = function(ctx)
                     local cmd_names =
                     {
-                        [0] = 'None',             -- None.
-                        [1] = 'Attack',           -- Basic Attack
-                        [2] = 'R.Attack (F)',     -- Finish: Ranged Attack
-                        [3] = 'WeaponSkill (F)',  -- Finish: Player Weapon Skills (Some job abilities use this such as Mug.)
-                        [4] = 'Magic (F)',        -- Finish: Player and Monster Magic Casts
-                        [5] = 'Item (F)',         -- Finish: Item Use
-                        [6] = 'JobAbility (F)',   -- Finish: Player Job Abilities, DNC Reverse Flourish
-                        [7] = 'Mon/WepSkill (S)', -- Start: Monster Skill, Weapon Skill
-                        [8] = 'Magic (S)',        -- Start: Player and Monster Magic Casts
-                        [9] = 'Item (S)',         -- Start: Item Use
-                        [10] = 'JobAbility (S)',  -- Start: Job Ability
-                        [11] = 'MonSkill (F)',    -- Finish: Monster Skill
-                        [12] = 'R.Attack (S)',    -- Start: Ranged Attack
-                        [14] = 'Dancer',          -- Dancer Flourish, Samba, Step, Waltz
-                        [15] = 'RuneFencer',      -- Rune Fencer Effusion, Ward
+                        [0]  = 'None',             -- None.
+                        [1]  = 'Attack',           -- Basic Attack
+                        [2]  = 'R.Attack (F)',     -- Finish: Ranged Attack
+                        [3]  = 'WeaponSkill (F)',  -- Finish: Player Weapon Skills (Some job abilities use this such as Mug.)
+                        [4]  = 'Magic (F)',        -- Finish: Player and Monster Magic Casts
+                        [5]  = 'Item (F)',         -- Finish: Item Use
+                        [6]  = 'JobAbility (F)',   -- Finish: Player Job Abilities, DNC Reverse Flourish
+                        [7]  = 'Mon/WepSkill (S)', -- Start: Monster Skill, Weapon Skill
+                        [8]  = 'Magic (S)',        -- Start: Player and Monster Magic Casts
+                        [9]  = 'Item (S)',         -- Start: Item Use
+                        [10] = 'JobAbility (S)',   -- Start: Job Ability
+                        [11] = 'MonSkill (F)',     -- Finish: Monster Skill
+                        [12] = 'R.Attack (S)',     -- Start: Ranged Attack
+                        [14] = 'Dancer',           -- Dancer Flourish, Samba, Step, Waltz
+                        [15] = 'RuneFencer',       -- Rune Fencer Effusion, Ward
                     }
 
                     return cmd_names[ctx.cmd_no]
@@ -1170,9 +1170,9 @@ local definitions =
                 bits = 32,
             },
             {
-                name = 'target',
-                type = 'array',
-                count = 'trg_sum',
+                name   = 'target',
+                type   = 'array',
+                count  = 'trg_sum',
                 layout =
                 {
                     {
@@ -1184,9 +1184,9 @@ local definitions =
                         bits = 4,
                     },
                     {
-                        name = 'result',
-                        type = 'array',
-                        count = 'result_sum',
+                        name   = 'result',
+                        type   = 'array',
+                        count  = 'result_sum',
                         layout =
                         {
                             {
@@ -1222,13 +1222,13 @@ local definitions =
                                 bits = 31,
                             },
                             {
-                                name = 'has_proc',
-                                bits = 1,
+                                name        = 'has_proc',
+                                bits        = 1,
                                 conditional = true,
-                                layout =
+                                layout      =
                                 {
-                                    name = 'proc',
-                                    type = 'struct',
+                                    name   = 'proc',
+                                    type   = 'struct',
                                     layout =
                                     {
                                         {
@@ -1251,13 +1251,13 @@ local definitions =
                                 },
                             },
                             {
-                                name = 'has_react',
-                                bits = 1,
+                                name        = 'has_react',
+                                bits        = 1,
                                 conditional = true,
-                                layout =
+                                layout      =
                                 {
-                                    name = 'react',
-                                    type = 'struct',
+                                    name   = 'react',
+                                    type   = 'struct',
                                     layout =
                                     {
                                         {
@@ -1284,7 +1284,7 @@ local definitions =
                 },
             },
         },
-        [PacketId.GP_SERV_COMMAND_BATTLE_MESSAGE] =
+        [PacketId.GP_SERV_COMMAND_BATTLE_MESSAGE]    =
         {
             { name = 'UniqueNoCas', bits = 32 }, -- 0x04
             { name = 'UniqueNoTar', bits = 32 }, -- 0x08
@@ -1296,7 +1296,7 @@ local definitions =
             { name = 'Type',        bits = 8 },  -- 0x1A
             { name = 'padding00',   bits = 8 },  -- 0x1B
         },
-        [PacketId.GP_SERV_COMMAND_TRACKING_LIST] =
+        [PacketId.GP_SERV_COMMAND_TRACKING_LIST]     =
         {
             -- TrackingListTbl
             { name = 'ActIndex', bits = 16 },                  -- 0x04
@@ -1332,11 +1332,11 @@ local definitions =
                 end,
             },
         },
-        [PacketId.GP_SERV_COMMAND_TRACKING_STATE] =
+        [PacketId.GP_SERV_COMMAND_TRACKING_STATE]    =
         {
             { name = 'State', bits = 32 }, -- 0x04
         },
-        [PacketId.GP_SERV_COMMAND_CHAR_PC] =
+        [PacketId.GP_SERV_COMMAND_CHAR_PC]           =
         {
             { name = 'UniqueNo', bits = 32 }, -- 0x04-0x07
             { name = 'ActIndex', bits = 16 }, -- 0x08-0x09
@@ -1527,9 +1527,9 @@ local definitions =
             },
 
             {
-                name = 'CustomProperties', -- 0x34-0x3B
-                type = 'array',
-                count = 2,
+                name   = 'CustomProperties', -- 0x34-0x3B
+                type   = 'array',
+                count  = 2,
                 layout =
                 {
                     { name = 'value', bits = 32 },
@@ -1581,9 +1581,9 @@ local definitions =
             },
 
             {
-                name = 'GrapIDTbl', -- 0x48-0x59
-                type = 'array',
-                count = 9,
+                name   = 'GrapIDTbl', -- 0x48-0x59
+                type   = 'array',
+                count  = 9,
                 layout =
                 {
                     { name = 'value', bits = 16 },
@@ -1592,7 +1592,7 @@ local definitions =
 
             { name = 'name',            type = 'string', size = 16 }, -- 0x5A-0x69
         },
-        [PacketId.GP_SERV_COMMAND_CHAR_NPC] =
+        [PacketId.GP_SERV_COMMAND_CHAR_NPC]          =
         {
             { name = 'UniqueNo', bits = 32 }, -- 0x04-0x07
             { name = 'ActIndex', bits = 16 }, -- 0x08-0x09
@@ -1770,8 +1770,8 @@ local definitions =
             { name = 'SubKind',    bits = 3 },  -- 0x30.0-0x30.2
             { name = 'Status',     bits = 13 }, -- 0x30.3-0x31.7
             {
-                name = 'Data',                  -- 0x32+ (size varies)
-                type = 'struct',
+                name   = 'Data',                -- 0x32+ (size varies)
+                type   = 'struct',
                 layout = function(ctx)
                     local fields = {}
                     -- Model Handling
@@ -1781,9 +1781,9 @@ local definitions =
                         elseif ctx.SubKind == 1 or ctx.SubKind == 7 then
                             table.insert(fields,
                                 {
-                                    name = 'GrapIDTbl', -- 0x32-0x43
-                                    type = 'array',
-                                    count = 9,
+                                    name   = 'GrapIDTbl', -- 0x32-0x43
+                                    type   = 'array',
+                                    count  = 9,
                                     layout = { { name = 'value', bits = 16 } },
                                 })
                         end
@@ -1844,16 +1844,16 @@ local definitions =
                 end,
             },
         },
-        [PacketId.GP_SERV_COMMAND_GM] =
+        [PacketId.GP_SERV_COMMAND_GM]                =
         {
             -- TODO: Mes field is a variable-length string
         },
-        [PacketId.GP_SERV_COMMAND_GMCOMMAND] =
+        [PacketId.GP_SERV_COMMAND_GMCOMMAND]         =
         {
             { name = 'GMUniqueNo', bits = 32 }, -- 0x04-0x07
             -- TODO: Mes field is a variable-length array
         },
-        [PacketId.GP_SERV_COMMAND_BATTLE2] =
+        [PacketId.GP_SERV_COMMAND_BATTLE2]           =
         {
             {
                 name = 'info_size',
@@ -1880,21 +1880,21 @@ local definitions =
                 expr = function(ctx)
                     local cmd_names =
                     {
-                        [0] = 'None',             -- None.
-                        [1] = 'Attack',           -- Basic Attack
-                        [2] = 'R.Attack (F)',     -- Finish: Ranged Attack
-                        [3] = 'WeaponSkill (F)',  -- Finish: Player Weapon Skills (Some job abilities use this such as Mug.)
-                        [4] = 'Magic (F)',        -- Finish: Player and Monster Magic Casts
-                        [5] = 'Item (F)',         -- Finish: Item Use
-                        [6] = 'JobAbility (F)',   -- Finish: Player Job Abilities, DNC Reverse Flourish
-                        [7] = 'Mon/WepSkill (S)', -- Start: Monster Skill, Weapon Skill
-                        [8] = 'Magic (S)',        -- Start: Player and Monster Magic Casts
-                        [9] = 'Item (S)',         -- Start: Item Use
-                        [10] = 'JobAbility (S)',  -- Start: Job Ability
-                        [11] = 'MonSkill (F)',    -- Finish: Monster Skill
-                        [12] = 'R.Attack (S)',    -- Start: Ranged Attack
-                        [14] = 'Dancer',          -- Dancer Flourish, Samba, Step, Waltz
-                        [15] = 'RuneFencer',      -- Rune Fencer Effusion, Ward
+                        [0]  = 'None',             -- None.
+                        [1]  = 'Attack',           -- Basic Attack
+                        [2]  = 'R.Attack (F)',     -- Finish: Ranged Attack
+                        [3]  = 'WeaponSkill (F)',  -- Finish: Player Weapon Skills (Some job abilities use this such as Mug.)
+                        [4]  = 'Magic (F)',        -- Finish: Player and Monster Magic Casts
+                        [5]  = 'Item (F)',         -- Finish: Item Use
+                        [6]  = 'JobAbility (F)',   -- Finish: Player Job Abilities, DNC Reverse Flourish
+                        [7]  = 'Mon/WepSkill (S)', -- Start: Monster Skill, Weapon Skill
+                        [8]  = 'Magic (S)',        -- Start: Player and Monster Magic Casts
+                        [9]  = 'Item (S)',         -- Start: Item Use
+                        [10] = 'JobAbility (S)',   -- Start: Job Ability
+                        [11] = 'MonSkill (F)',     -- Finish: Monster Skill
+                        [12] = 'R.Attack (S)',     -- Start: Ranged Attack
+                        [14] = 'Dancer',           -- Dancer Flourish, Samba, Step, Waltz
+                        [15] = 'RuneFencer',       -- Rune Fencer Effusion, Ward
                     }
 
                     return cmd_names[ctx.cmd_no]
@@ -1909,9 +1909,9 @@ local definitions =
                 bits = 32,
             },
             {
-                name = 'target',
-                type = 'array',
-                count = 'trg_sum',
+                name   = 'target',
+                type   = 'array',
+                count  = 'trg_sum',
                 layout =
                 {
                     {
@@ -1923,9 +1923,9 @@ local definitions =
                         bits = 4,
                     },
                     {
-                        name = 'result',
-                        type = 'array',
-                        count = 'result_sum',
+                        name   = 'result',
+                        type   = 'array',
+                        count  = 'result_sum',
                         layout =
                         {
                             {
@@ -1961,13 +1961,13 @@ local definitions =
                                 bits = 31,
                             },
                             {
-                                name = 'has_proc',
-                                bits = 1,
+                                name        = 'has_proc',
+                                bits        = 1,
                                 conditional = true,
-                                layout =
+                                layout      =
                                 {
-                                    name = 'proc',
-                                    type = 'struct',
+                                    name   = 'proc',
+                                    type   = 'struct',
                                     layout =
                                     {
                                         {
@@ -1990,13 +1990,13 @@ local definitions =
                                 },
                             },
                             {
-                                name = 'has_react',
-                                bits = 1,
+                                name        = 'has_react',
+                                bits        = 1,
                                 conditional = true,
-                                layout =
+                                layout      =
                                 {
-                                    name = 'react',
-                                    type = 'struct',
+                                    name   = 'react',
+                                    type   = 'struct',
                                     layout =
                                     {
                                         {
@@ -2023,7 +2023,7 @@ local definitions =
                 },
             },
         },
-        [PacketId.GP_SERV_COMMAND_BATTLE_MESSAGE] =
+        [PacketId.GP_SERV_COMMAND_BATTLE_MESSAGE]    =
         {
             { name = 'UniqueNoCas', bits = 32 }, -- 0x04
             { name = 'UniqueNoTar', bits = 32 }, -- 0x08
@@ -2035,7 +2035,7 @@ local definitions =
             { name = 'Type',        bits = 8 },  -- 0x1A
             { name = 'padding00',   bits = 8 },  -- 0x1B
         },
-        [PacketId.GP_SERV_COMMAND_TRACKING_LIST] =
+        [PacketId.GP_SERV_COMMAND_TRACKING_LIST]     =
         {
             -- TrackingListTbl
             { name = 'ActIndex', bits = 16 },                  -- 0x04
@@ -2071,7 +2071,7 @@ local definitions =
                 end,
             },
         },
-        [PacketId.GP_SERV_COMMAND_EVENTUCOFF] =
+        [PacketId.GP_SERV_COMMAND_EVENTUCOFF]        =
         {
             { name = 'Mode', bits = 32 }, -- 0x04 - The user control mode value
             {
@@ -2102,7 +2102,7 @@ local definitions =
                         [4] = 'Release from fishing event lock',
                     }
 
-                    local mode = bit.band(ctx.Mode or 0, 0xFF)
+                    local mode              = bit.band(ctx.Mode or 0, 0xFF)
                     if mode_descriptions[mode] then
                         return mode_descriptions[mode]
                     end
@@ -2111,14 +2111,14 @@ local definitions =
                 end,
             },
         },
-        [PacketId.GP_SERV_COMMAND_SYSTEMMES] =
+        [PacketId.GP_SERV_COMMAND_SYSTEMMES]         =
         {
             { name = 'para',      bits = 32 }, -- 0x04 - The message parameter (1)
             { name = 'para2',     bits = 32 }, -- 0x08 - The message parameter (2)
             { name = 'Number',    bits = 16 }, -- 0x0C - The message number
             { name = 'padding00', bits = 16 }, -- 0x0E - Padding; unused
         },
-        [PacketId.GP_SERV_COMMAND_MUSIC] =
+        [PacketId.GP_SERV_COMMAND_MUSIC]             =
         {
             { name = 'Slot',     bits = 16 }, -- 0x04 - The music slot to be updated (0-7)
             { name = 'MusicNum', bits = 16 }, -- 0x06 - The music ID to play
@@ -2145,7 +2145,7 @@ local definitions =
                 end,
             },
         },
-        [PacketId.GP_SERV_COMMAND_MUSICVOLUME] =
+        [PacketId.GP_SERV_COMMAND_MUSICVOLUME]       =
         {
             { name = 'time',   bits = 16 }, -- 0x04 - The time to reach the target volume (linear interpolation)
             { name = 'volume', bits = 16 }, -- 0x06 - The target volume level (0-127)
@@ -2160,7 +2160,7 @@ local definitions =
                 end,
             },
         },
-        [PacketId.GP_SERV_COMMAND_BAZAAR_LIST] =
+        [PacketId.GP_SERV_COMMAND_BAZAAR_LIST]       =
         {
             { name = 'Price',     bits = 32 },               -- 0x04 - The price of the item being sold
             { name = 'ItemNum',   bits = 32 },               -- 0x08 - The number of items being sold
@@ -2170,17 +2170,17 @@ local definitions =
             { name = 'Attr',      type = 'raw', size = 24 }, -- 0x11-0x28 - The item attributes
             { name = 'padding00', type = 'raw', size = 3 },  -- 0x29-0x2B - Padding; unused
         },
-        [PacketId.GP_SERV_COMMAND_BAZAAR_BUY] =
+        [PacketId.GP_SERV_COMMAND_BAZAAR_BUY]        =
         {
             { name = 'State', bits = 32 },                  -- 0x04 - The state of the purchase (0 = OK, 1 = ERR)
             { name = 'sName', type = 'string', size = 16 }, -- 0x08-0x17 - The name of the player whos bazaar the item was purchased from
         },
-        [PacketId.GP_SERV_COMMAND_BAZAAR_CLOSE] =
+        [PacketId.GP_SERV_COMMAND_BAZAAR_CLOSE]      =
         {
             { name = 'sName',     type = 'string', size = 16 }, -- 0x04-0x13 - The name of the player whos bazaar was closed
             { name = 'padding00', type = 'raw',    size = 4 },  -- 0x14-0x17 - Padding; unused
         },
-        [PacketId.GP_SERV_COMMAND_BAZAAR_SHOPPING] =
+        [PacketId.GP_SERV_COMMAND_BAZAAR_SHOPPING]   =
         {
             { name = 'UniqueNo',  bits = 32 },                  -- 0x04 - The viewing players server id
             { name = 'State',     bits = 32 },                  -- 0x08 - The players viewing state (0 = Enter, 1 = Exit)
@@ -2189,7 +2189,7 @@ local definitions =
             { name = 'ActIndex',  bits = 16 },                  -- 0x0E - The viewing players target index
             { name = 'sName',     type = 'string', size = 16 }, -- 0x10-0x1F - The viewing players name
         },
-        [PacketId.GP_SERV_COMMAND_BAZAAR_SELL] =
+        [PacketId.GP_SERV_COMMAND_BAZAAR_SELL]       =
         {
             { name = 'UniqueNo',       bits = 32 },                  -- 0x04 - The buying players server id
             { name = 'ItemNum',        bits = 32 },                  -- 0x08 - The number of items being purchased
@@ -2199,30 +2199,30 @@ local definitions =
             { name = 'ItemIndex',      bits = 8 },                   -- 0x20 - The purchased item index
             { name = 'padding00',      type = 'raw',    size = 3 },  -- 0x21-0x23 - Padding; unused
         },
-        [PacketId.GP_SERV_COMMAND_BAZAAR_SALE] =
+        [PacketId.GP_SERV_COMMAND_BAZAAR_SALE]       =
         {
             { name = 'ItemNum',   bits = 32 },                  -- 0x04 - The number of items sold
             { name = 'ItemNo',    bits = 16 },                  -- 0x08 - The item id
             { name = 'sName',     type = 'string', size = 16 }, -- 0x0A-0x19 - The name of the buyer
             { name = 'padding00', type = 'raw',    size = 2 },  -- 0x1A-0x1B - Padding; unused
         },
-        [PacketId.GP_SERV_COMMAND_REQSUBMAPNUM] =
+        [PacketId.GP_SERV_COMMAND_REQSUBMAPNUM]      =
         {
             { name = 'MapNum', bits = 32 }, -- 0x04 - The sub map number
         },
-        [PacketId.GP_SERV_COMMAND_REQLOGOUTINFO] =
+        [PacketId.GP_SERV_COMMAND_REQLOGOUTINFO]     =
         {
             { name = 'Mode', bits = 32 }, -- 0x04 - The logout mode
         },
-        [PacketId.GP_SERV_COMMAND_SHOP_LIST] =
+        [PacketId.GP_SERV_COMMAND_SHOP_LIST]         =
         {
             { name = 'ShopItemOffsetIndex', bits = 16 }, -- 0x04 - The starting offset of where the items in this packet will be placed into the internal shop system table
             { name = 'Flags',               bits = 8 },  -- 0x06 - The shop flags
             { name = 'padding00',           bits = 8 },  -- 0x07 - Padding; unused
             {
-                name = 'ShopItemTbl',                    -- 0x08+ - The list of items (variable length array)
-                type = 'array',
-                count = function(ctx, data, hdr)
+                name   = 'ShopItemTbl',                  -- 0x08+ - The list of items (variable length array)
+                type   = 'array',
+                count  = function(ctx, data, hdr)
                     -- Calculate item count based on packet size
                     -- (4 * packet_size - struct_size) / item_struct_size + 1
                     local packet_size = hdr.size
@@ -2239,7 +2239,7 @@ local definitions =
                 },
             },
         },
-        [PacketId.GP_SERV_COMMAND_SHOP_SELL] =
+        [PacketId.GP_SERV_COMMAND_SHOP_SELL]         =
         {
             { name = 'Price',             bits = 32 }, -- 0x04 - The price of the item
             { name = 'PropertyItemIndex', bits = 8 },  -- 0x08 - The index of the item
@@ -2247,30 +2247,30 @@ local definitions =
             { name = 'padding00',         bits = 16 }, -- 0x0A - Padding; unused
             { name = 'Count',             bits = 32 }, -- 0x0C - The number of items being sold
         },
-        [PacketId.GP_SERV_COMMAND_SHOP_OPEN] =
+        [PacketId.GP_SERV_COMMAND_SHOP_OPEN]         =
         {
             { name = 'ShopListNum', bits = 16 }, -- 0x04 - The number of items within the shop
             { name = 'padding00',   bits = 16 }, -- 0x06 - Padding; unused
         },
-        [PacketId.GP_SERV_COMMAND_SHOP_BUY] =
+        [PacketId.GP_SERV_COMMAND_SHOP_BUY]          =
         {
             { name = 'ShopItemIndex', bits = 16 }, -- 0x04 - The shop item index
             { name = 'BuyState',      bits = 8 },  -- 0x06 - Unknown; not used by the client
             { name = 'padding00',     bits = 8 },  -- 0x07 - Padding; unused
             { name = 'Count',         bits = 32 }, -- 0x08 - The item count being purchased; not used by the client
         },
-        [PacketId.GP_SERV_COMMAND_GUILD_BUY] =
+        [PacketId.GP_SERV_COMMAND_GUILD_BUY]         =
         {
             { name = 'ItemNo', bits = 16 }, -- 0x04 - The item id being purchased (0 if purchase failed)
             { name = 'Count',  bits = 8 },  -- 0x06 - The count of items the guild has available
             { name = 'Trade',  bits = 8 },  -- 0x07 - The amount of items purchased (negative for partial purchase, also used for error state)
         },
-        [PacketId.GP_SERV_COMMAND_GUILD_BUYLIST] =
+        [PacketId.GP_SERV_COMMAND_GUILD_BUYLIST]     =
         {
             {
-                name = 'List', -- 0x04 - The list of items available for purchase
-                type = 'array',
-                count = 30,
+                name   = 'List', -- 0x04 - The list of items available for purchase
+                type   = 'array',
+                count  = 30,
                 layout =
                 {
                     { name = 'ItemNo', bits = 16 }, -- The item id
@@ -2282,18 +2282,18 @@ local definitions =
             { name = 'Count', bits = 8 }, -- 0xF4 - The number of items within List that are populated
             { name = 'Stat',  bits = 8 }, -- 0xF5 - The status flags (0x40 = Initialize guild list, 0x80 = Reset guild Stat value)
         },
-        [PacketId.GP_SERV_COMMAND_GUILD_SELL] =
+        [PacketId.GP_SERV_COMMAND_GUILD_SELL]        =
         {
             { name = 'ItemNo', bits = 16 }, -- 0x04 - The item id being sold (0 if sale failed)
             { name = 'Count',  bits = 8 },  -- 0x06 - The count of items the guild has available
             { name = 'Trade',  bits = 8 },  -- 0x07 - The amount of items sold (negative for partial sale)
         },
-        [PacketId.GP_SERV_COMMAND_GUILD_SELLLIST] =
+        [PacketId.GP_SERV_COMMAND_GUILD_SELLLIST]    =
         {
             {
-                name = 'List', -- 0x04 - The list of items accepted for sales
-                type = 'array',
-                count = 30,
+                name   = 'List', -- 0x04 - The list of items accepted for sales
+                type   = 'array',
+                count  = 30,
                 layout =
                 {
                     { name = 'ItemNo', bits = 16 }, -- The item id
@@ -2305,13 +2305,13 @@ local definitions =
             { name = 'Count', bits = 8 }, -- 0xF4 - The number of items within List that are populated
             { name = 'Stat',  bits = 8 }, -- 0xF5 - The status flags (0x40 = Initialize guild list, 0x80 = Reset guild Stat value)
         },
-        [PacketId.GP_SERV_COMMAND_GUILD_OPEN] =
+        [PacketId.GP_SERV_COMMAND_GUILD_OPEN]        =
         {
             { name = 'Stat',      bits = 8 },               -- 0x04 - The packet status (0 = Guild open, 1 = Guild closed, 2 = Guild closed for holiday)
             { name = 'padding00', type = 'raw', size = 3 }, -- 0x05-0x07 - Padding; unused
             { name = 'Time',      bits = 32 },              -- 0x08 - The guild time information (hours of operation or holiday day)
         },
-        [PacketId.GP_SERV_COMMAND_CHAT_STD] =
+        [PacketId.GP_SERV_COMMAND_CHAT_STD]          =
         {
             { name = 'Kind',  bits = 8 },                   -- 0x04 - The message kind (0 = Say, 1 = Shout, 3 = Tell, 4 = Party, etc.)
             { name = 'Attr',  bits = 8 },                   -- 0x05 - The message attributes (0x01 = Prefix with [GM], 0x08 = Special message format)
@@ -2323,7 +2323,7 @@ local definitions =
                 size = function(ctx, data, hdr)
                     -- Calculate string length based on packet size
                     local packet_size = hdr.size
-                    local str_len = (4 * packet_size - 23)
+                    local str_len     = (4 * packet_size - 23)
                     return str_len
                 end,
             },
@@ -2332,12 +2332,12 @@ local definitions =
                 expr = function(ctx)
                     local kinds =
                     {
-                        [0] = 'Say',
-                        [1] = 'Shout',
-                        [3] = 'Tell',
-                        [4] = 'Party',
-                        [5] = 'Linkshell',
-                        [8] = 'Emote',
+                        [0]  = 'Say',
+                        [1]  = 'Shout',
+                        [3]  = 'Tell',
+                        [4]  = 'Party',
+                        [5]  = 'Linkshell',
+                        [8]  = 'Emote',
                         [27] = 'System Message',
                         [33] = 'Linkshell2',
                         [34] = 'System Message2',
@@ -2348,27 +2348,27 @@ local definitions =
                 end,
             },
         },
-        [PacketId.GP_SERV_COMMAND_ITEM_MAX] =
+        [PacketId.GP_SERV_COMMAND_ITEM_MAX]          =
         {
             { name = 'ItemNum',   type = 'array', count = 18, layout = { bits = 8 } },  -- 0x04-0x15 - The characters various inventory container sizes
             { name = 'padding00', type = 'raw',   size = 14 },                          -- 0x16-0x23 - Padding; unused
             { name = 'ItemNum2',  type = 'array', count = 18, layout = { bits = 16 } }, -- 0x24-0x47 - The characters various inventory container sizes
             { name = 'padding01', type = 'raw',   size = 28 },                          -- 0x48-0x63 - Padding; unused
         },
-        [PacketId.GP_SERV_COMMAND_ITEM_SAME] =
+        [PacketId.GP_SERV_COMMAND_ITEM_SAME]         =
         {
             { name = 'State',     bits = 8 },               -- 0x04 - The current state of inventory container loading for the client (0: loading, 1: all loaded)
             { name = 'padding00', type = 'raw', size = 3 }, -- 0x05-0x07 - Padding; unused
             { name = 'Flags',     bits = 32 },              -- 0x08 - The overall inventory container table flags
         },
-        [PacketId.GP_SERV_COMMAND_ITEM_NUM] =
+        [PacketId.GP_SERV_COMMAND_ITEM_NUM]          =
         {
             { name = 'ItemNum',   bits = 32 }, -- 0x04 - The updated quantity of items to be set
             { name = 'Category',  bits = 8 },  -- 0x08 - The container holding the item being updated
             { name = 'ItemIndex', bits = 8 },  -- 0x09 - The index inside of the container of the item being updated
             { name = 'LockFlg',   bits = 8 },  -- 0x0A - The item lock flag
         },
-        [PacketId.GP_SERV_COMMAND_ITEM_LIST] =
+        [PacketId.GP_SERV_COMMAND_ITEM_LIST]         =
         {
             { name = 'ItemNum',   bits = 32 }, -- 0x04 - The quantity of the item
             { name = 'ItemNo',    bits = 16 }, -- 0x08 - The item id
@@ -2376,7 +2376,7 @@ local definitions =
             { name = 'ItemIndex', bits = 8 },  -- 0x0B - The index inside of the container this item is located
             { name = 'LockFlg',   bits = 8 },  -- 0x0C - The item lock flag
         },
-        [PacketId.GP_SERV_COMMAND_ITEM_ATTR] =
+        [PacketId.GP_SERV_COMMAND_ITEM_ATTR]         =
         {
             { name = 'ItemNum',   bits = 32 },               -- 0x04 - The quantity of the item
             { name = 'Price',     bits = 32 },               -- 0x08 - The bazaar price, if set, of the item
@@ -2477,19 +2477,19 @@ local definitions =
                 end,
             },
         },
-        [PacketId.GP_SERV_COMMAND_ITEM_TRADE_REQ] =
+        [PacketId.GP_SERV_COMMAND_ITEM_TRADE_REQ]    =
         {
             { name = 'UniqueNo',  bits = 32 }, -- 0x04 - The server id of the entity who sent the trade request
             { name = 'ActIndex',  bits = 16 }, -- 0x08 - The target index of the entity who sent the trade request
             { name = 'padding00', bits = 16 }, -- 0x0A - Padding; unused
         },
-        [PacketId.GP_SERV_COMMAND_ITEM_TRADE_RES] =
+        [PacketId.GP_SERV_COMMAND_ITEM_TRADE_RES]    =
         {
             { name = 'UniqueNo', bits = 32 }, -- 0x04 - The server id of the entity causing the trade action
             { name = 'Kind',     bits = 32 }, -- 0x08 - The kind of trade action being reported
             { name = 'ActIndex', bits = 16 }, -- 0x0C - The target index of the entity causing the trade action
         },
-        [PacketId.GP_SERV_COMMAND_ITEM_TRADE_LIST] =
+        [PacketId.GP_SERV_COMMAND_ITEM_TRADE_LIST]   =
         {
             { name = 'ItemNum',          bits = 32 },               -- 0x04 - The traded item quantity
             { name = 'TradeCounter',     bits = 16 },               -- 0x08 - The trade counter
@@ -2505,28 +2505,28 @@ local definitions =
             { name = 'TradeIndex', bits = 8 },  -- 0x0A - The trade container index
             { name = 'ItemIndex',  bits = 8 },  -- 0x0B - The item index
         },
-        [PacketId.GP_SERV_COMMAND_EQUIP_CLEAR] =
+        [PacketId.GP_SERV_COMMAND_EQUIP_CLEAR]       =
         {
             { name = 'padding00', bits = 32 }, -- 0x04 - Padding; unused
         },
-        [PacketId.GP_SERV_COMMAND_EQUIP_LIST] =
+        [PacketId.GP_SERV_COMMAND_EQUIP_LIST]        =
         {
             { name = 'PropertyItemIndex', bits = 8 }, -- 0x04 - The index of the item within the container
             { name = 'EquipKind',         bits = 8 }, -- 0x05 - The equipment slot enumeration id
             { name = 'Category',          bits = 8 }, -- 0x06 - The container holding the item being equipped
             { name = 'padding00',         bits = 8 }, -- 0x07 - Padding; unused
         },
-        [PacketId.GP_SERV_COMMAND_GRAP_LIST] =
+        [PacketId.GP_SERV_COMMAND_GRAP_LIST]         =
         {
             { name = 'GrapIDTbl', type = 'array', count = 9, layout = { bits = 16 } }, -- 0x04-0x15 - The clients equipment model visual ids
             { name = 'padding00', bits = 16 },                                         -- 0x16 - Padding; unused
         },
-        [PacketId.GP_SERV_COMMAND_BLACK_LIST] =
+        [PacketId.GP_SERV_COMMAND_BLACK_LIST]        =
         {
             {
-                name = 'List', -- 0x04-0xF3 - The list of blacklist entries of this packet
-                type = 'array',
-                count = 12,
+                name   = 'List', -- 0x04-0xF3 - The list of blacklist entries of this packet
+                type   = 'array',
+                count  = 12,
                 layout =
                 {
                     { name = 'ID',   bits = 32 },                  -- The blacklisted character server id
@@ -2537,11 +2537,11 @@ local definitions =
             { name = 'Num',       bits = 8 },  -- 0xF5 - The number of entries populated in the List array
             { name = 'padding00', bits = 16 }, -- 0xF6-0xF7 - Padding; unused
         },
-        [PacketId.GP_SERV_COMMAND_BLACK_EDIT] =
+        [PacketId.GP_SERV_COMMAND_BLACK_EDIT]        =
         {
             {
-                name = 'Data', -- 0x04-0x17 - The blacklist entry
-                type = 'struct',
+                name   = 'Data', -- 0x04-0x17 - The blacklist entry
+                type   = 'struct',
                 layout =
                 {
                     { name = 'ID',   bits = 32 },                  -- The blacklisted character server id
@@ -2552,12 +2552,12 @@ local definitions =
             { name = 'Mode',      bits = 8 },               -- 0x18 - The packets mode (0 = Add, 1 = Delete)
             { name = 'padding00', type = 'raw', size = 3 }, -- 0x19-0x1B - Padding; unused
         },
-        [PacketId.GP_SERV_COMMAND_GROUP_SOLICIT_NO] =
+        [PacketId.GP_SERV_COMMAND_GROUP_SOLICIT_NO]  =
         {
             { name = 'Reason',    bits = 8 },               -- 0x04 - The party mode update reason
             { name = 'padding00', type = 'raw', size = 3 }, -- 0x05-0x07 - Padding; unused
         },
-        [PacketId.GP_SERV_COMMAND_GROUP_ATTR] =
+        [PacketId.GP_SERV_COMMAND_GROUP_ATTR]        =
         {
             { name = 'UniqueNo',          bits = 32 }, -- 0x04 - The party members server id
             { name = 'Hp',                bits = 32 }, -- 0x08 - The party members current health
@@ -2584,7 +2584,7 @@ local definitions =
 
                     if ctx.masterjob_flags then
                         flags.Unlocked = bit.band(ctx.masterjob_flags, 0x01) ~= 0
-                        flags.Capped = bit.band(ctx.masterjob_flags, 0x02) ~= 0
+                        flags.Capped   = bit.band(ctx.masterjob_flags, 0x02) ~= 0
                     end
 
                     return flags
@@ -2622,15 +2622,15 @@ local definitions =
                 end,
             },
         },
-        [PacketId.GP_SERV_COMMAND_GROUP_LIST] =
+        [PacketId.GP_SERV_COMMAND_GROUP_LIST]        =
         {
             { name = 'UniqueNo', bits = 32 }, -- 0x04 - The party members server id
             { name = 'Hp',       bits = 32 }, -- 0x08 - The party members current health
             { name = 'Mp',       bits = 32 }, -- 0x0C - The party members current mana
             { name = 'Tp',       bits = 32 }, -- 0x10 - The party members current TP
             {
-                name = 'GAttr',               -- 0x14 - The party members flags
-                type = 'struct',
+                name   = 'GAttr',             -- 0x14 - The party members flags
+                type   = 'struct',
                 layout =
                 {
                     {
@@ -2697,33 +2697,33 @@ local definitions =
 
                     if ctx.masterjob_flags then
                         flags.Unlocked = bit.band(ctx.masterjob_flags, 0x01) ~= 0
-                        flags.Capped = bit.band(ctx.masterjob_flags, 0x02) ~= 0
+                        flags.Capped   = bit.band(ctx.masterjob_flags, 0x02) ~= 0
                     end
 
                     return flags
                 end,
             },
         },
-        [PacketId.GP_SERV_COMMAND_GROUP_COMLINK] =
+        [PacketId.GP_SERV_COMMAND_GROUP_COMLINK]     =
         {
             { name = 'LinkshellNum', bits = 8 }, -- 0x04 - The linkshell slot number (0 = main, 1 = secondary)
             { name = 'ItemIndex',    bits = 8 }, -- 0x05 - The linkshell item index
             { name = 'Category',     bits = 8 }, -- 0x06 - The container that the linkshell item is located in
             { name = 'padding00',    bits = 8 }, -- 0x07 - Padding; unused
         },
-        [PacketId.GP_SERV_COMMAND_GROUP_CHECKID] =
+        [PacketId.GP_SERV_COMMAND_GROUP_CHECKID]     =
         {
             { name = 'GroupID', bits = 32 }, -- 0x04 - The party group id
         },
-        [PacketId.GP_SERV_COMMAND_GROUP_LIST2] =
+        [PacketId.GP_SERV_COMMAND_GROUP_LIST2]       =
         {
             { name = 'UniqueNo', bits = 32 }, -- 0x04 - The party members server id
             { name = 'Hp',       bits = 32 }, -- 0x08 - The party members current health
             { name = 'Mp',       bits = 32 }, -- 0x0C - The party members current mana
             { name = 'Tp',       bits = 32 }, -- 0x10 - The party members current TP
             {
-                name = 'GAttr',               -- 0x14 - The party members flags
-                type = 'struct',
+                name   = 'GAttr',             -- 0x14 - The party members flags
+                type   = 'struct',
                 layout =
                 {
                     {
@@ -2790,29 +2790,84 @@ local definitions =
 
                     if ctx.masterjob_flags then
                         flags.Unlocked = bit.band(ctx.masterjob_flags, 0x01) ~= 0
-                        flags.Capped = bit.band(ctx.masterjob_flags, 0x02) ~= 0
+                        flags.Capped   = bit.band(ctx.masterjob_flags, 0x02) ~= 0
                     end
 
                     return flags
                 end,
             },
         },
-        [PacketId.GP_SERV_COMMAND_WEATHER] =
+        [PacketId.GP_SERV_COMMAND_WEATHER]           =
         {
             { name = 'StartTime',         bits = 32 }, -- 0x04
             { name = 'WeatherNumber',     bits = 16 }, -- 0x08
             { name = 'WeatherOffsetTime', bits = 16 }, -- 0x0A
         },
+        [PacketId.GP_SERV_COMMAND_EFFECT]            =
+        {
+            { name = 'UniqueNo',  bits = 32 },                -- 0x04
+            { name = 'ActIndex',  bits = 16 },                -- 0x08
+            { name = 'EffectNum', bits = 16, signed = true }, -- 0x0A
+            { name = 'Type',      bits = 8,  signed = true }, -- 0x0C
+            { name = 'Status',    bits = 8,  signed = true }, -- 0x0D
+            { name = 'Timer',     bits = 16 },                -- 0x0E
+        },
+        [PacketId.GP_SERV_COMMAND_COMBINE_ANS]       =
+        {
+            { name = 'Result',    bits = 8 },  -- 0x04
+            { name = 'Grade',     bits = 8 },  -- 0x05
+            { name = 'Count',     bits = 8 },  -- 0x06
+            { name = 'padding00', bits = 8 },  -- 0x07
+            { name = 'ItemNo',    bits = 16 }, -- 0x08
+            {
+                name   = 'BreakNo',
+                type   = 'array',
+                count  = 8,
+                layout =
+                {
+                    { name = 'value', bits = 16 },
+                },
+            }, -- 0x0A-0x19 (8 * 2 bytes)
+            {
+                name   = 'UpKind',
+                type   = 'array',
+                count  = 4,
+                layout =
+                {
+                    { name = 'value', bits = 8, signed = true },
+                },
+            }, -- 0x1A-0x1D (4 * 1 byte)
+            {
+                name   = 'UpLevel',
+                type   = 'array',
+                count  = 4,
+                layout =
+                {
+                    { name = 'value', bits = 8, signed = true },
+                },
+            },                                 -- 0x1E-0x21 (4 * 1 byte)
+            { name = 'CrystalNo', bits = 16 }, -- 0x22
+            {
+                name   = 'MaterialNo',
+                type   = 'array',
+                count  = 8,
+                layout =
+                {
+                    { name = 'value', bits = 16 },
+                },
+            },                                 -- 0x24-0x33 (8 * 2 bytes)
+            { name = 'padding01', bits = 32 }, -- 0x34
+        },
     },
     outgoing =
     {
-        [PacketId.GP_CLI_COMMAND_ACTION] =
+        [PacketId.GP_CLI_COMMAND_ACTION]          =
         {
-            { name = 'UniqueNo',  bits = 32 }, -- 0x04
-            { name = 'ActIndex',  bits = 16 }, -- 0x08
-            { name = 'ActionID',  bits = 16 }, -- 0x0A
+            { name = 'UniqueNo', bits = 32 }, -- 0x04
+            { name = 'ActIndex', bits = 16 }, -- 0x08
+            { name = 'ActionID', bits = 16 }, -- 0x0A
         },
-        [PacketId.GP_CLI_COMMAND_POS] =
+        [PacketId.GP_CLI_COMMAND_POS]             =
         {
             { name = 'x',          bits = 32, type = 'float' }, -- 0x04 - The local clients X position
             { name = 'z',          bits = 32, type = 'float' }, -- 0x08 - The local clients Z position
@@ -2827,7 +2882,7 @@ local definitions =
             { name = 'facetarget', bits = 16 },                 -- 0x16 - The client face target
             { name = 'TimeNow',    bits = 32 },                 -- 0x18 - The client timestamp
         },
-        [PacketId.GP_CLI_COMMAND_EVENTEND] =
+        [PacketId.GP_CLI_COMMAND_EVENTEND]        =
         {
             { name = 'UniqueNo',  bits = 32 }, -- 0x04
             { name = 'EndPara',   bits = 32 }, -- 0x08
@@ -2836,7 +2891,7 @@ local definitions =
             { name = 'EventNum',  bits = 16 }, -- 0x10
             { name = 'EventPara', bits = 16 }, -- 0x12
         },
-        [PacketId.GP_CLI_COMMAND_EVENTENDXZY] =
+        [PacketId.GP_CLI_COMMAND_EVENTENDXZY]     =
         {
             { name = 'x',         bits = 32, type = 'float' }, -- 0x04 - The local clients X position
             { name = 'y',         bits = 32, type = 'float' }, -- 0x08 - The local clients Y position
@@ -2849,48 +2904,48 @@ local definitions =
             { name = 'Mode',      bits = 8 },                  -- 0x1E - The packet mode (always 1)
             { name = 'dir',       bits = 8,  signed = true },  -- 0x1F - The local clients heading direction
         },
-        [PacketId.GP_CLI_COMMAND_PASSWARDS] =
+        [PacketId.GP_CLI_COMMAND_PASSWARDS]       =
         {
             { name = 'UniqueNo',  bits = 32 },                  -- 0x04 - The event server id
             { name = 'ActIndex',  bits = 16 },                  -- 0x08 - The event target index
             { name = 'padding00', bits = 16 },                  -- 0x0A - Padding; unused
             { name = 'String',    type = 'string', size = 16 }, -- 0x0C - The string input value from the client
         },
-        [PacketId.GP_CLI_COMMAND_BAZAAR_LIST] =
+        [PacketId.GP_CLI_COMMAND_BAZAAR_LIST]     =
         {
             { name = 'UniqueNo',  bits = 32 }, -- 0x04 - The server id of the player whos bazaar is being requested
             { name = 'ActIndex',  bits = 16 }, -- 0x08 - The target index of the player whos bazaar is being requested
             { name = 'padding00', bits = 16 }, -- 0x0A - Padding; unused
         },
-        [PacketId.GP_CLI_COMMAND_BAZAAR_BUY] =
+        [PacketId.GP_CLI_COMMAND_BAZAAR_BUY]      =
         {
             { name = 'BazaarItemIndex', bits = 8 },               -- 0x04 - The index within the bazaar where the item being requested for purchase is located
             { name = 'padding00',       type = 'raw', size = 3 }, -- 0x05-0x07 - Padding; unused
             { name = 'BuyNum',          bits = 32 },              -- 0x08 - The count of items the client is requesting to purchase
         },
-        [PacketId.GP_CLI_COMMAND_BAZAAR_CLOSE] =
+        [PacketId.GP_CLI_COMMAND_BAZAAR_CLOSE]    =
         {
             { name = 'AllListClearFlg', bits = 32 }, -- 0x04 - Unknown; client always sets this to 0
         },
-        [PacketId.GP_CLI_COMMAND_BAZAAR_OPEN] =
+        [PacketId.GP_CLI_COMMAND_BAZAAR_OPEN]     =
         {
             -- No fields beyond the header
         },
-        [PacketId.GP_CLI_COMMAND_BAZAAR_ITEMSET] =
+        [PacketId.GP_CLI_COMMAND_BAZAAR_ITEMSET]  =
         {
             { name = 'ItemIndex', bits = 8 },               -- 0x04 - The index of the item in the clients inventory
             { name = 'padding00', type = 'raw', size = 3 }, -- 0x05-0x07 - Padding; unused
             { name = 'Price',     bits = 32 },              -- 0x08 - The item sale price
         },
-        [PacketId.GP_CLI_COMMAND_REQSUBMAPNUM] =
+        [PacketId.GP_CLI_COMMAND_REQSUBMAPNUM]    =
         {
             { name = 'MapNum', bits = 32 }, -- 0x04 - The sub map number
         },
-        [PacketId.GP_CLI_COMMAND_REQLOGOUTINFO] =
+        [PacketId.GP_CLI_COMMAND_REQLOGOUTINFO]   =
         {
             { name = 'Mode', bits = 32 }, -- 0x04 - The logout mode
         },
-        [PacketId.GP_CLI_COMMAND_SHOP_BUY] =
+        [PacketId.GP_CLI_COMMAND_SHOP_BUY]        =
         {
             { name = 'ItemNum',           bits = 32 },              -- 0x04 - The quantity of the item to be purchased
             { name = 'ShopNo',            bits = 16 },              -- 0x08 - Unused; not set or used by the client
@@ -2898,38 +2953,38 @@ local definitions =
             { name = 'PropertyItemIndex', bits = 8 },               -- 0x0C - The index within the clients inventory to store the item (always 0)
             { name = 'padding00',         type = 'raw', size = 3 }, -- 0x0D-0x0F - Padding; unused
         },
-        [PacketId.GP_CLI_COMMAND_SHOP_SELL_REQ] =
+        [PacketId.GP_CLI_COMMAND_SHOP_SELL_REQ]   =
         {
             { name = 'ItemNum',   bits = 32 }, -- 0x04 - The quantity of the item to be sold
             { name = 'ItemNo',    bits = 16 }, -- 0x08 - The item id being sold
             { name = 'ItemIndex', bits = 8 },  -- 0x0A - The index within the clients inventory that holds the item to be sold
             { name = 'padding00', bits = 8 },  -- 0x0B - Padding; unused
         },
-        [PacketId.GP_CLI_COMMAND_SHOP_SELL_SET] =
+        [PacketId.GP_CLI_COMMAND_SHOP_SELL_SET]   =
         {
             { name = 'SellFlag', bits = 16 }, -- 0x04 - Flag set to confirm the sale of an item to the shop (always 1)
         },
-        [PacketId.GP_CLI_COMMAND_GUILD_BUY] =
+        [PacketId.GP_CLI_COMMAND_GUILD_BUY]       =
         {
             { name = 'ItemNo',            bits = 16 }, -- 0x04 - The item id being purchased
             { name = 'PropertyItemIndex', bits = 8 },  -- 0x06 - The index within the clients inventory to place the item (always 0)
             { name = 'ItemNum',           bits = 8 },  -- 0x07 - The quantity of items being purchased
         },
-        [PacketId.GP_CLI_COMMAND_GUILD_BUYLIST] =
+        [PacketId.GP_CLI_COMMAND_GUILD_BUYLIST]   =
         {
             -- No fields beyond the header
         },
-        [PacketId.GP_CLI_COMMAND_GUILD_SELL] =
+        [PacketId.GP_CLI_COMMAND_GUILD_SELL]      =
         {
             { name = 'ItemNo',            bits = 16 }, -- 0x04 - The item id being sold
             { name = 'PropertyItemIndex', bits = 8 },  -- 0x06 - The index within the clients inventory of the item being sold
             { name = 'ItemNum',           bits = 8 },  -- 0x07 - The quantity of items being sold
         },
-        [PacketId.GP_CLI_COMMAND_GUILD_SELLLIST] =
+        [PacketId.GP_CLI_COMMAND_GUILD_SELLLIST]  =
         {
             -- No fields beyond the header
         },
-        [PacketId.GP_CLI_COMMAND_CHAT_STD] =
+        [PacketId.GP_CLI_COMMAND_CHAT_STD]        =
         {
             { name = 'Kind',      bits = 8 }, -- 0x04 - The message kind (0 = Say, 1 = Shout, 4 = Party, 5 = Linkshell, etc.)
             { name = 'unknown00', bits = 8 }, -- 0x05 - Unknown; client always sets to 0
@@ -2939,7 +2994,7 @@ local definitions =
                 size = function(ctx, data, hdr)
                     -- Calculate string length based on packet size
                     local packet_size = hdr.size
-                    local str_len = (4 * packet_size - 6)
+                    local str_len     = (4 * packet_size - 6)
                     return str_len
                 end,
             },
@@ -2964,20 +3019,20 @@ local definitions =
                 end,
             },
         },
-        [PacketId.GP_CLI_COMMAND_CHAT_NAME] =
+        [PacketId.GP_CLI_COMMAND_CHAT_NAME]       =
         {
             { name = 'ChanNo',    bits = 8 },                   -- 0x04 - The channel
             { name = 'padding00', bits = 8 },                   -- 0x05 - Padding
             { name = 'padding01', bits = 16 },                  -- 0x06 - Padding
             { name = 'sName',     type = 'string', size = 16 }, -- 0x08-0x17 - The player name
         },
-        [PacketId.GP_CLI_COMMAND_ITEM_TRADE_REQ] =
+        [PacketId.GP_CLI_COMMAND_ITEM_TRADE_REQ]  =
         {
             { name = 'UniqueNo',  bits = 32 }, -- 0x04 - The server id of the player to trade with
             { name = 'ActIndex',  bits = 16 }, -- 0x08 - The target index of the player to trade with
             { name = 'padding00', bits = 16 }, -- 0x0A - Padding; unused
         },
-        [PacketId.GP_CLI_COMMAND_ITEM_TRADE_RES] =
+        [PacketId.GP_CLI_COMMAND_ITEM_TRADE_RES]  =
         {
             { name = 'Kind',         bits = 32 }, -- 0x04 - The response kind (0=start, 1=cancel, 2=accept, 3=cancel accept)
             { name = 'TradeCounter', bits = 16 }, -- 0x08 - The clients trade counter
@@ -2989,11 +3044,11 @@ local definitions =
             { name = 'ItemIndex',  bits = 8 },  -- 0x0A - The index within the players inventory the item is located
             { name = 'TradeIndex', bits = 8 },  -- 0x0B - The trade window slot index
         },
-        [PacketId.GP_CLI_COMMAND_ITEM_STACK] =
+        [PacketId.GP_CLI_COMMAND_ITEM_STACK]      =
         {
             { name = 'Category', bits = 32 }, -- 0x04 - The container holding the item
         },
-        [PacketId.GP_CLI_COMMAND_ITEM_TRANSFER] =
+        [PacketId.GP_CLI_COMMAND_ITEM_TRANSFER]   =
         {
             { name = 'UniqueNo',             bits = 32 },                                          -- 0x04 - The server id of the NPC being traded with
             { name = 'ItemNumTbl',           type = 'array', count = 10, layout = { bits = 32 } }, -- 0x08-0x2F - An array holding the count of items being traded for each slot
@@ -3002,13 +3057,13 @@ local definitions =
             { name = 'ItemNum',              bits = 8 },                                           -- 0x3C - The number of slots populated in the trade
             { name = 'padding00',            type = 'raw',   size = 3 },                           -- 0x3D-0x3F - Padding; unused
         },
-        [PacketId.GP_CLI_COMMAND_ITEM_DUMP] =
+        [PacketId.GP_CLI_COMMAND_ITEM_DUMP]       =
         {
             { name = 'ItemNum',   bits = 32 }, -- 0x04 - The quantity of the item to be dropped
             { name = 'Category',  bits = 8 },  -- 0x08 - The container holding the item
             { name = 'ItemIndex', bits = 8 },  -- 0x09 - The index inside of the container this item is located
         },
-        [PacketId.GP_CLI_COMMAND_ITEM_MOVE] =
+        [PacketId.GP_CLI_COMMAND_ITEM_MOVE]       =
         {
             { name = 'ItemNum',    bits = 32 }, -- 0x04 - The quantity of the item to be moved
             { name = 'Category1',  bits = 8 },  -- 0x08 - The container holding the item
@@ -3016,7 +3071,7 @@ local definitions =
             { name = 'ItemIndex1', bits = 8 },  -- 0x0A - The index inside of the container (Category1) this item is currently located
             { name = 'ItemIndex2', bits = 8 },  -- 0x0B - The index inside of the container (Category2) this item is being moved to
         },
-        [PacketId.GP_CLI_COMMAND_ITEM_USE] =
+        [PacketId.GP_CLI_COMMAND_ITEM_USE]        =
         {
             { name = 'UniqueNo',          bits = 32 }, -- 0x04 - The server id of the entity the item is being used on
             { name = 'ItemNum',           bits = 32 }, -- 0x08 - The count of items being used (always 0 from client)
@@ -3025,19 +3080,19 @@ local definitions =
             { name = 'padding00',         bits = 8 },  -- 0x0F - Padding; unused
             { name = 'Category',          bits = 32 }, -- 0x10 - The container holding the item
         },
-        [PacketId.GP_CLI_COMMAND_ITEM_MAKE] =
+        [PacketId.GP_CLI_COMMAND_ITEM_MAKE]       =
         {
             { name = 'ItemNum',   bits = 32 }, -- 0x04 - The count of items
             { name = 'ItemNo',    bits = 16 }, -- 0x08 - The item id
             { name = 'padding00', bits = 16 }, -- 0x0A - Padding; unused
         },
-        [PacketId.GP_CLI_COMMAND_EQUIP_SET] =
+        [PacketId.GP_CLI_COMMAND_EQUIP_SET]       =
         {
             { name = 'PropertyItemIndex', bits = 8 }, -- 0x04 - The index within the container where the item is located to be equipped
             { name = 'EquipKind',         bits = 8 }, -- 0x05 - The equipment slot being modified
             { name = 'Category',          bits = 8 }, -- 0x06 - The container that holds the item being equipped or unequipped
         },
-        [PacketId.GP_CLI_COMMAND_BLACK_LIST] =
+        [PacketId.GP_CLI_COMMAND_BLACK_LIST]      =
         {
             { name = 'unknown00', bits = 32 },              -- 0x04 - Unknown
             { name = 'unknown01', bits = 32 },              -- 0x08 - Unknown
@@ -3047,11 +3102,11 @@ local definitions =
             { name = 'unknown05', bits = 8 },               -- 0x18 - Unknown
             { name = 'padding00', type = 'raw', size = 3 }, -- 0x19-0x1B - Padding; unused
         },
-        [PacketId.GP_CLI_COMMAND_BLACK_EDIT] =
+        [PacketId.GP_CLI_COMMAND_BLACK_EDIT]      =
         {
             {
-                name = 'Data', -- 0x04-0x17 - The blacklist entry
-                type = 'struct',
+                name   = 'Data', -- 0x04-0x17 - The blacklist entry
+                type   = 'struct',
                 layout =
                 {
                     { name = 'ID',   bits = 32 },                  -- The blacklisted character server id (0 when sent from client)
@@ -3061,7 +3116,7 @@ local definitions =
             { name = 'Mode',      bits = 8 },               -- 0x18 - The packets mode (0 = Add, 1 = Delete)
             { name = 'padding00', type = 'raw', size = 3 }, -- 0x19-0x1B - Padding; unused
         },
-        [PacketId.GP_CLI_COMMAND_ITEM_ATTR] =
+        [PacketId.GP_CLI_COMMAND_ITEM_ATTR]       =
         {
             { name = 'Category',  bits = 8 }, -- 0x04 - The container holding the item
             { name = 'ItemIndex', bits = 8 }, -- 0x05 - The index inside of the container this item is located

@@ -157,6 +157,27 @@
 ---@field Data table -- Nested struct
 ---@field NPCType any -- Computed
 
+---@class GP_SERV_COMMAND_EFFECT : ParsedPacket
+---@field UniqueNo number       -- 0x04: Entity server ID
+---@field ActIndex number       -- 0x08: Entity target index
+---@field EffectNum number      -- 0x0A: Effect number (signed int16)
+---@field Type number           -- 0x0C: Effect type (signed int8)
+---@field Status number         -- 0x0D: Effect status (signed int8)
+---@field Timer number          -- 0x0E: Effect timer
+
+---@class GP_SERV_COMMAND_COMBINE_ANS : ParsedPacket
+---@field Result number         -- 0x04: Synthesis result (0x00=Success, 0x01=Fail: Lost Crystal, etc.)
+---@field Grade number          -- 0x05: Grade/quality of the synthesis result (-1 to +3 typically)
+---@field Count number          -- 0x06: Number of items produced
+---@field padding00 number      -- 0x07: Padding (unused)
+---@field ItemNo number         -- 0x08: Item ID of the synthesized item
+---@field BreakNo number[]      -- 0x0A: Array[8] of item IDs that broke during synthesis
+---@field UpKind number[]       -- 0x1A: Array[4] of skill types that leveled up (signed int8)
+---@field UpLevel number[]      -- 0x1E: Array[4] of skill level increases (signed int8)
+---@field CrystalNo number      -- 0x22: Crystal item ID used for synthesis
+---@field MaterialNo number[]   -- 0x24: Array[8] of material item IDs used
+---@field padding01 number      -- 0x34: Padding (unused)
+
 ---@class GP_SERV_COMMAND_REQSUBMAPNUM : ParsedPacket
 ---@field MapNum number
 
