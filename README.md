@@ -262,6 +262,10 @@ How may I help you?
 - Queries server for all static entities in zone
 - **Super detectable, must accept warning in settings** ☠️☠️☠️
 
+#### LevelRangeTrack
+- Captures level ranges for each unique mob
+- **Requires Auto-Widescan**
+
 ### Other
 - UI configuration
 - Packets parser
