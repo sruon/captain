@@ -45,6 +45,8 @@ Database.RESULT_UPDATED = 2
 
 local SQLITE_ROW        = 100
 local BATCH_SIZE        = 50
+local FLUSH_INTERVAL    = 30 -- Flush every 30 seconds
+local _last_flush_time  = os.time()
 local function sqlite_exec(db, sql)
     local errmsg_ptr = ffi.new('char*[1]')
     local result     = sqlite.sqlite3_exec(db, sql, nil, nil, errmsg_ptr)
@@ -100,6 +102,11 @@ function Database.new(file, opts)
 
     self:_build_schema_from_example(opts.schema)
 
+    if not _databases_by_file[filename] then
+        _databases_by_file[filename] = {}
+    end
+    table.insert(_databases_by_file[filename], self)
+
     return self
 end
 
@@ -146,12 +153,6 @@ function Database:_ensure_initialized()
     self:_setup_performance()
 
     table.insert(_open_databases, self)
-
-    if not _databases_by_file[self._filename] then
-        _databases_by_file[self._filename] = {}
-    end
-    table.insert(_databases_by_file[self._filename], self)
-
     self._initialized = true
 end
 
@@ -278,6 +279,13 @@ function Database:begin_transaction()
         sqlite_exec(self.db, 'BEGIN TRANSACTION')
         self._transaction_active = true
         self._pending_operations = 0
+    end
+
+    -- Check if we need to flush based on time
+    local now = os.time()
+    if now - _last_flush_time >= FLUSH_INTERVAL then
+        _last_flush_time = now
+        Database.flush_all()
     end
 end
 
@@ -518,6 +526,22 @@ function Database:find_by(path, expected)
 end
 
 function Database:close()
+    if not self._initialized then
+        -- Not initialized, just clean up tracking
+        if self._filename and _databases_by_file[self._filename] then
+            for i, db in ipairs(_databases_by_file[self._filename]) do
+                if db == self then
+                    table.remove(_databases_by_file[self._filename], i)
+                    break
+                end
+            end
+            if #_databases_by_file[self._filename] == 0 then
+                _databases_by_file[self._filename] = nil
+            end
+        end
+        return
+    end
+
     if self.db ~= nil then
         self:commit_transaction()
         sqlite.sqlite3_close(self.db)
@@ -564,6 +588,15 @@ Database.close_all                   = function()
     end
 
     _databases_by_file = {}
+end
+
+Database.flush_all                   = function()
+    for i = 1, #_open_databases do
+        local db = _open_databases[i]
+        if db and db._initialized and db._transaction_active then
+            db:commit_transaction()
+        end
+    end
 end
 
 Database.force_close_all_connections = function()
