@@ -242,6 +242,11 @@ How may I help you?
 
 <img width="591" height="439" alt="image" src="https://github.com/user-attachments/assets/7852b394-3114-4950-9349-0f130d91c354" />
 
+#### CheckParam
+- Logs /checkparam <me> results at the defined interval
+- Not enabled by default
+- Use intervals lower than 1s at your own risk
+
 ### Other
 - UI configuration
 - Packets parser
