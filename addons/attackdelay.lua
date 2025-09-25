@@ -63,16 +63,57 @@ addon.onIncomingPacket = function(id, data, size)
             if not knownMob then
                 addon.mobs[packet.m_uID] =
                 {
-                    lastAttack   = os.clock(),
-                    delays       = {},
-                    hitsPerRound = {},
+                    lastAttack      = os.clock(),
+                    delays          = {},
+                    isH2H           = false,
+                    roundsTracked   = 0,
+                    roundsWithKicks = 0,
+                    hitsByRound     = {}, -- Track hit count per round
+                    hitsBySlot      =
+                    {
+                        mainHand  = 0, -- sub_kind 0
+                        offHand   = 0, -- sub_kind 1
+                        rightKick = 0, -- sub_kind 2
+                        leftKick  = 0, -- sub_kind 3
+                    },
                 }
             else
                 local delay_seconds = os.clock() - knownMob.lastAttack
                 knownMob.lastAttack = os.clock()
                 table.insert(knownMob.delays, delay_seconds)
-                knownMob.hitsPerRound[packet.target[1].result_sum] = (knownMob.hitsPerRound[packet.target[1].result_sum] or 0) +
-                  1
+                knownMob.roundsTracked = knownMob.roundsTracked + 1
+
+                -- Count hits by slot type and track per-round totals
+                local roundHitCount    = 0
+                local hadKick          = false
+
+                if packet.target[1] and packet.target[1].result then
+                    for _, result in ipairs(packet.target[1].result) do
+                        roundHitCount = roundHitCount + 1
+
+                        if result.sub_kind == 0 then
+                            knownMob.hitsBySlot.mainHand = knownMob.hitsBySlot.mainHand + 1
+                        elseif result.sub_kind == 1 then
+                            knownMob.hitsBySlot.offHand = knownMob.hitsBySlot.offHand + 1
+                        elseif result.sub_kind == 2 then
+                            knownMob.hitsBySlot.rightKick = knownMob.hitsBySlot.rightKick + 1
+                            knownMob.isH2H                = true
+                            hadKick                       = true
+                        elseif result.sub_kind == 3 then
+                            knownMob.hitsBySlot.leftKick = knownMob.hitsBySlot.leftKick + 1
+                            knownMob.isH2H               = true
+                            hadKick                      = true
+                        end
+                    end
+                end
+
+                -- Track this round's hit count
+                table.insert(knownMob.hitsByRound, roundHitCount)
+
+                -- Track if this round had kicks
+                if hadKick then
+                    knownMob.roundsWithKicks = knownMob.roundsWithKicks + 1
+                end
             end
         end
     elseif id == PacketId.GP_SERV_COMMAND_GROUP_ATTR then -- Char Update
@@ -176,21 +217,88 @@ addon.onIncomingPacket = function(id, data, size)
                         local commonDelay = stats.mode(trackedMob.delayFromTpGain, 10)
                         if commonDelay then
                             table.insert(output_lines, string.format(
-                                '  TP-Delay: %.0f (%d samples)',
+                                '  Reverse calculation: %.0f (%d samples)',
                                 commonDelay, #trackedMob.delayFromTpGain
                             ))
                         end
                     end
 
-                    -- Line 4: Multi-hit percentages if any
-                    local hit_distribution = stats.distribution(trackedMob.hitsPerRound, nil, nil)
-
-                    if next(hit_distribution) then
-                        local hit_stats = {}
-                        for rounds, percentage in pairs(hit_distribution) do
-                            table.insert(hit_stats, string.format('%d-hit: %.0f%%', rounds, percentage))
+                    -- Line 4: Multi-hit percentages
+                    if trackedMob.hitsByRound and #trackedMob.hitsByRound > 0 then
+                        -- Count rounds by number of hits
+                        local hitCounts = {}
+                        for _, hits in ipairs(trackedMob.hitsByRound) do
+                            hitCounts[hits] = (hitCounts[hits] or 0) + 1
                         end
-                        table.insert(output_lines, string.format('  Multi-hits: %s', table.concat(hit_stats, ' | ')))
+
+                        -- Build multi-hit statistics
+                        local hit_stats       = {}
+                        local totalRounds     = #trackedMob.hitsByRound
+
+                        -- Show percentages for each hit count up to 8
+                        local hit_stats_1to3  = {}
+                        local hit_stats_4plus = {}
+
+                        for i = 1, 3 do
+                            if hitCounts[i] then
+                                table.insert(hit_stats_1to3,
+                                    string.format('%d-hit: %.0f%%', i, (hitCounts[i] / totalRounds * 100)))
+                            end
+                        end
+
+                        for i = 4, 8 do
+                            if hitCounts[i] then
+                                table.insert(hit_stats_4plus,
+                                    string.format('%d-hit: %.0f%%', i, (hitCounts[i] / totalRounds * 100)))
+                            end
+                        end
+
+                        if #hit_stats_1to3 > 0 then
+                            table.insert(output_lines,
+                                string.format('  Multi-hit: %s', table.concat(hit_stats_1to3, ' | ')))
+                        end
+                        if #hit_stats_4plus > 0 then
+                            table.insert(output_lines,
+                                string.format('            %s', table.concat(hit_stats_4plus, ' | ')))
+                        end
+
+                        -- Line 5: Slot-based stats
+                        if trackedMob.hitsBySlot then
+                            local slot_stats = {}
+
+                            -- Calculate hits per slot per round
+                            if trackedMob.hitsBySlot.mainHand > 0 then
+                                table.insert(slot_stats,
+                                    string.format('MH:%.2f', trackedMob.hitsBySlot.mainHand / totalRounds))
+                            end
+
+                            if trackedMob.hitsBySlot.offHand > 0 then
+                                table.insert(slot_stats,
+                                    string.format('OH:%.2f', trackedMob.hitsBySlot.offHand / totalRounds))
+                            end
+
+                            -- Add individual kick slot stats
+                            if trackedMob.hitsBySlot.rightKick > 0 then
+                                table.insert(slot_stats,
+                                    string.format('RK:%.2f', trackedMob.hitsBySlot.rightKick / totalRounds))
+                            end
+
+                            if trackedMob.hitsBySlot.leftKick > 0 then
+                                table.insert(slot_stats,
+                                    string.format('LK:%.2f', trackedMob.hitsBySlot.leftKick / totalRounds))
+                            end
+
+                            -- Add kick round percentage
+                            if trackedMob.roundsWithKicks and trackedMob.roundsWithKicks > 0 then
+                                table.insert(slot_stats,
+                                    string.format('Kicks:%.0f%%', trackedMob.roundsWithKicks / totalRounds * 100))
+                            end
+
+                            if #slot_stats > 0 then
+                                table.insert(output_lines,
+                                    string.format('  Slots/rnd: %s', table.concat(slot_stats, ' ')))
+                            end
+                        end
                     end
 
                     for _, line in ipairs(output_lines) do
