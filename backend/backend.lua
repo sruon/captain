@@ -25,16 +25,16 @@ local csv                  = require('csv')
 -- Handles opening, or creating, a file object. Returns it.
 --------------------------------
 backend.fileOpen           = function(path)
-    -- Replace spaces with underscores in the path
     path        = path:gsub('%s+', '_'):gsub(':', '_'):gsub('%?', 'qm'):gsub("'", '_'):gsub('"', '_')
 
     local file  =
     {
-        path      = path, -- Store relative path
+        path      = path,
         full_path = backend.script_path() .. path,
         locked    = false,
         scheduled = false,
         buffer    = '',
+        created   = backend.file_exists(path),
     }
 
     file.append = function(self, text)
@@ -81,7 +81,16 @@ backend.fileWrite          = function(file)
     file.scheduled = false
 
     if to_write and to_write ~= '' then
-        local success = backend.append_file(file.path, to_write)
+        local success
+        if not file.created then
+            success = backend.write_file(file.path, to_write)
+            if success then
+                file.created = true
+            end
+        else
+            success = backend.append_file(file.path, to_write)
+        end
+
         if not success then
             print('[backend] Failed to write to file: ' .. file.path)
         end
@@ -106,12 +115,15 @@ end
 -- Zero out a file and empties the buffer
 --------------------------------
 backend.fileClear          = function(file)
-    local success = backend.write_file(file.path, '')
-    if not success then
-        print('[backend] Failed to clear file: ' .. file.path)
+    if file.created then
+        local success = backend.write_file(file.path, '')
+        if not success then
+            print('[backend] Failed to clear file: ' .. file.path)
+        end
     end
     file.buffer    = ''
     file.scheduled = false
+    file.created   = true
 end
 
 backend.databaseOpen       = function(path, opts)
@@ -136,7 +148,6 @@ backend.notificationCreate = function(emitter, title, dataFields)
         dataFields = {}
     end
 
-    -- Temporary: Send notifications to chatlog, until we figure out a better mechanism
     if #dataFields > 0 then
         local fieldMsg = ''
         for i, field in ipairs(dataFields) do
@@ -162,7 +173,7 @@ backend.notificationCreate = function(emitter, title, dataFields)
     captain.notificationMgr:create(
         {
             title = title,
-            data  = dataFields, -- Array of key-value pairs
+            data  = dataFields,
         })
 end
 

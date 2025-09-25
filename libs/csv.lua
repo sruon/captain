@@ -5,6 +5,7 @@
 ---@field columns string[] Table of column names
 ---@field entries table[] Array of entries to be written
 ---@field file File The file object to write to
+---@field headers_written boolean Whether headers have been written
 local CSV   = {}
 CSV.__index = CSV
 
@@ -17,8 +18,12 @@ function CSV.new(file, columns)
     self.columns = columns
     self.entries = {}
     self.file    = file
+    self.headers_written = false
 
-    self:write_headers()
+    -- If file was already created by the backend, assume headers exist
+    if file.created then
+        self.headers_written = true
+    end
 
     return self
 end
@@ -26,12 +31,12 @@ end
 ---Write headers to the CSV file
 ---@return boolean true on success, false on error
 function CSV:write_headers()
-    if not self.file then
+    if not self.file or self.headers_written then
         return false
     end
 
-    -- Write the headers
     self.file:append(table.concat(self.columns, ',') .. '\n')
+    self.headers_written = true
     return true
 end
 
@@ -76,15 +81,17 @@ function CSV:save()
         return true
     end
 
+    if not self.headers_written then
+        self:write_headers()
+    end
+
     local content = ''
     for _, row in ipairs(self.entries) do
         content = content .. table.concat(row, ',') .. '\n'
     end
 
-    -- Append to the file
     self.file:append(content)
 
-    -- Clear entries after save
     self.entries = {}
     return true
 end

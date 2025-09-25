@@ -86,46 +86,19 @@ function Database.new(file, opts)
         error('Database schema is required. Provide opts.schema with an example object.')
     end
 
-    local dir = filename:match('(.+)[/\\][^/\\]+$')
-    if dir then
-        backend.create_dir(dir)
-    end
-
-    Database._force_close_file(filename)
-    local db_ptr = ffi.new('sqlite3*[1]')
-    local result = sqlite.sqlite3_open(filename, db_ptr)
-
-    if result ~= 0 then
-        local db = db_ptr[0]
-        if db ~= nil then
-            local errmsg = ffi.string(sqlite.sqlite3_errmsg(db))
-            sqlite.sqlite3_close(db)
-            error('Failed to open database: ' .. errmsg)
-        else
-            error('Failed to open database: unknown error')
-        end
-    end
-
     local self = setmetatable(
         {
-            db                  = db_ptr[0],
+            db                  = nil,
             max_history         = opts and opts.max_history or nil,
             _transaction_active = false,
             _pending_operations = 0,
             _schema_columns     = {},
             _filename           = filename,
+            _initialized        = false,
+            _opts               = opts,
         }, Database)
 
     self:_build_schema_from_example(opts.schema)
-    self:_init_schema()
-    self:_setup_performance()
-
-    table.insert(_open_databases, self)
-
-    if not _databases_by_file[filename] then
-        _databases_by_file[filename] = {}
-    end
-    table.insert(_databases_by_file[filename], self)
 
     return self
 end
@@ -141,6 +114,45 @@ function Database:_build_schema_from_example(example)
     for key, value in pairs(flat_data) do
         self._schema_columns[key] = self:_infer_sql_type(value)
     end
+end
+
+function Database:_ensure_initialized()
+    if self._initialized then
+        return
+    end
+
+    local dir = self._filename:match('(.+)[/\\][^/\\]+$')
+    if dir then
+        backend.create_dir(dir)
+    end
+
+    Database._force_close_file(self._filename)
+    local db_ptr = ffi.new('sqlite3*[1]')
+    local result = sqlite.sqlite3_open(self._filename, db_ptr)
+
+    if result ~= 0 then
+        local db = db_ptr[0]
+        if db ~= nil then
+            local errmsg = ffi.string(sqlite.sqlite3_errmsg(db))
+            sqlite.sqlite3_close(db)
+            error('Failed to open database: ' .. errmsg)
+        else
+            error('Failed to open database: unknown error')
+        end
+    end
+
+    self.db = db_ptr[0]
+    self:_init_schema()
+    self:_setup_performance()
+
+    table.insert(_open_databases, self)
+
+    if not _databases_by_file[self._filename] then
+        _databases_by_file[self._filename] = {}
+    end
+    table.insert(_databases_by_file[self._filename], self)
+
+    self._initialized = true
 end
 
 function Database:_init_schema()
@@ -261,6 +273,7 @@ function Database:_compute_diff(old_data, new_data)
 end
 
 function Database:begin_transaction()
+    self:_ensure_initialized()
     if not self._transaction_active then
         sqlite_exec(self.db, 'BEGIN TRANSACTION')
         self._transaction_active = true
@@ -270,6 +283,7 @@ end
 
 function Database:commit_transaction()
     if self._transaction_active then
+        self:_ensure_initialized()
         sqlite_exec(self.db, 'COMMIT')
         self._transaction_active = false
         self._pending_operations = 0
@@ -277,6 +291,7 @@ function Database:commit_transaction()
 end
 
 function Database:add_or_update(id, fragment)
+    self:_ensure_initialized()
     self:begin_transaction()
 
     local id_str    = tostring(id)
@@ -408,6 +423,7 @@ function Database:add_or_update(id, fragment)
 end
 
 function Database:get(id)
+    self:_ensure_initialized()
     local id_str  = tostring(id)
 
     local columns = {}
@@ -454,9 +470,10 @@ function Database:get(id)
 end
 
 function Database:count()
-    if not self.db then
+    if not self._initialized then
         return 0
     end
+    self:_ensure_initialized()
 
     local stmt  = sqlite_prepare(self.db, 'SELECT COUNT(*) FROM entries')
     local count = 0
@@ -476,6 +493,7 @@ function Database:find_by(path, expected)
         return nil, nil
     end
 
+    self:_ensure_initialized()
     local stmt = sqlite_prepare(self.db, string.format('SELECT id FROM entries WHERE "%s" = ?', column_name))
 
     if type(expected) == 'boolean' then
@@ -504,6 +522,7 @@ function Database:close()
         self:commit_transaction()
         sqlite.sqlite3_close(self.db)
         self.db = nil
+        self._initialized = false
 
         if self._filename and _databases_by_file[self._filename] then
             for i, db in ipairs(_databases_by_file[self._filename]) do
@@ -527,7 +546,7 @@ Database._force_close_file           = function(filename)
     if _databases_by_file[filename] then
         for i = #_databases_by_file[filename], 1, -1 do
             local db = _databases_by_file[filename][i]
-            if db and db.db then
+            if db and db._initialized and db.db then
                 db:close()
             end
         end
