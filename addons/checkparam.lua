@@ -140,8 +140,10 @@ end
 
 addon.onCaptureStop    = function()
     addon.captureDir = nil
-    addon.csvFile:close()
-    addon.csvFile = nil
+    if addon.csvFile then
+        addon.csvFile:close()
+        addon.csvFile = nil
+    end
 end
 
 addon.onUnload         = function()
