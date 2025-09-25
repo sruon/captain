@@ -11,6 +11,14 @@ By using `captain` you acknowledge you are aware of the risks.
 
 Certain actions are known to be relatively safe and are enabled by default (such as Auto Wide Scan), others are explicitly opt-in.
 
+Addons and features are marked with ☠️ to help inform on the risks involved.
+| Banhammer |                                                                                                                               |
+|-----------|-------------------------------------------------------------------------------------------------------------------------------|
+| X         | Passively captures packets or emits packets in situations similar to the client                                               |
+| ☠️  | Technically detectable under certain conditions but has been proven to be safe.                                               |
+| ☠️☠️         | Replicates somewhat the client behavior but may under certain conditions be detectable and not enough data to prove its safe. |
+| ☠️☠️☠️         | Absolutely impossible to replicate with the client. High chance of getting banned. Use throw-away accounts.                   |
+
 ## A note about privacy
 Captures contain the full dump of packets emitted and received by your client. This includes chat messages and other information you may wish to keep private.
 
@@ -89,7 +97,7 @@ Re-emits all received/emitted packets to any UDP port.
 - Strings are stripped of auto-translate tags and colors.
 
 #### Widescan
-Emits recurring Widescan packets, to be consumed by other addons.
+Emits recurring Widescan packets, to be consumed by other addons. ☠️
 
 ```
 [19:35:04][AutoWidescan] Received updates for 36 entities.
@@ -191,7 +199,7 @@ leg,x,y,z,dir,delta
 
 #### ShopStock
 - Captures all items offered for sale by NPCs.
-- Can **optionally** automatically appraise all items in your inventory.
+- Can **optionally** automatically appraise all items in your inventory. ☠️
 
 ```
 [01:20:55][ShopStock] Recorded 19 items sold by Teerth
@@ -236,7 +244,6 @@ How may I help you?
 
 #### OBS
 - Automates the start of a recording with OBS through the WebSocket interface.
-- Support 
 - Recordings can optionally be saved in the capture directory.
 - Will automatically attempt to set OBS source to the current window.
 
@@ -245,7 +252,15 @@ How may I help you?
 #### CheckParam
 - Logs /checkparam <me> results at the defined interval
 - Not enabled by default
-- Use intervals lower than 1s at your own risk
+- Use intervals lower than 1s at your own risk ☠️☠️
+
+#### SpawnTrack
+- Tracks exact spawn time and spawn points for defeated mobs
+- **Super highly detectable, must accept warning in settings** ☠️☠️☠️
+
+#### ZoneDump
+- Queries server for all static entities in zone
+- **Super detectable, must accept warning in settings** ☠️☠️☠️
 
 ### Other
 - UI configuration
@@ -305,7 +320,7 @@ If you're interested about maintaining compatibility with Windower, please reach
 
 ### Will this get me banned
 
-With the features provided out of the box, _probably not_ but consider it as a very real possibility.
+With the features enabled out of the box, _probably not_ but consider it as a very real possibility.
 
 Use a trial/burner account if you're concerned (Retail) or seek permission from the server owner (PServer).
 
