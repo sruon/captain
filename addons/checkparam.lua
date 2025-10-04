@@ -24,6 +24,7 @@ local addon  =
     currentEntry    =
     {
         recvTime = 0,
+        syncId   = 0,
         acc      = 0,
         atk      = 0,
         offacc   = 0,
@@ -92,8 +93,9 @@ addon.onIncomingPacket = function(id, data, size)
             elseif packet.MessageNum == 731 then
                 return true
             elseif packet.MessageNum == 712 then
-                addon.currentEntry.acc = packet.Data
-                addon.currentEntry.atk = packet.Data2
+                addon.currentEntry.acc    = packet.Data
+                addon.currentEntry.syncId = packet.header.sync
+                addon.currentEntry.atk    = packet.Data2
                 return true
             elseif packet.MessageNum == 713 then
                 addon.currentEntry.offacc = packet.Data
@@ -123,6 +125,7 @@ addon.onCaptureStart   = function(captureDir)
         addon.csvFile = backend.csvOpen(string.format('%s/%s.csv', captureDir, backend.player_name()),
             {
                 'recvTime',
+                'syncId',
                 'acc',
                 'atk',
                 'offacc',
