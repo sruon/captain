@@ -29,6 +29,7 @@ local addon            =
     modelIds        = {},
     speeds          = {},
     speedBases      = {},
+    animationSubs   = {},
 }
 
 addon.onIncomingPacket = function(id, data)
@@ -53,6 +54,7 @@ addon.onIncomingPacket = function(id, data)
         if packet.SpeedBase and packet.SpeedBase ~= 0 then
             addon.speedBases[packet.ActIndex] = packet.SpeedBase
         end
+
     elseif id == PacketId.GP_SERV_COMMAND_CHAR_NPC then
         ---@type GP_SERV_COMMAND_CHAR_NPC
         packet = packet
@@ -76,6 +78,11 @@ addon.onIncomingPacket = function(id, data)
         if packet.SpeedBase and packet.SpeedBase ~= 0 then
             addon.speedBases[packet.ActIndex] = packet.SpeedBase
         end
+
+        if packet.SubAnimation then
+            addon.animationSubs[packet.ActIndex] = packet.SubAnimation
+        end
+
     elseif id == PacketId.GP_SERV_COMMAND_BATTLE_MESSAGE then
         ---@type GP_SERV_COMMAND_BATTLE_MESSAGE
         packet = packet
@@ -137,10 +144,11 @@ addon.onPrerender      = function()
         local row1      = string.format('X:%-7.3f Y:%-7.3f Z:%-7.3f R:%-3d D:%.3f',
             targetData.x, targetData.y, targetData.z, targetData.r, targetData.distance)
         -- Row 2: Model info
-        local row2      = string.format('Model:%-4d Hitbox:%-2d Size:%d',
+        local row2      = string.format('Model:%-4d Hitbox:%-2d Size:%-2d AnimSub:%d',
             addon.modelIds[targetData.targIndex] or 0,
             addon.hitboxSizes[targetData.targIndex] or 0,
-            addon.modelSizes[targetData.targIndex] or 0)
+            addon.modelSizes[targetData.targIndex] or 0,
+            addon.animationSubs[targetData.targIndex] or 0)
         -- Row 3: Speed info
         local row3      = string.format('Speed:%-3d Base:%-3d',
             addon.speeds[targetData.targIndex] or 0,
@@ -164,13 +172,14 @@ addon.onInitialize     = function(_)
 end
 
 addon.onZoneChange     = function(_)
-    addon.checkData    = {}
-    addon.pendingCheck = {}
-    addon.hitboxSizes  = {}
-    addon.modelSizes   = {}
-    addon.modelIds     = {}
-    addon.speeds       = {}
-    addon.speedBases   = {}
+    addon.checkData      = {}
+    addon.pendingCheck   = {}
+    addon.hitboxSizes    = {}
+    addon.modelSizes     = {}
+    addon.modelIds       = {}
+    addon.speeds         = {}
+    addon.speedBases     = {}
+    addon.animationSubs  = {}
 end
 
 addon.onConfigMenu     = function()
