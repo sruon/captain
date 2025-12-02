@@ -193,6 +193,14 @@ function Database:_init_schema()
 
     sqlite_exec(self.db, create_sql)
 
+    -- Add missing columns to existing tables
+    for _, col_data in ipairs(data_columns) do
+        local col_name = col_data[1]
+        local col_type = col_data[2]
+        local alter_sql = string.format('ALTER TABLE entries ADD COLUMN "%s" %s', col_name, col_type)
+        pcall(function() sqlite_exec(self.db, alter_sql) end)
+    end
+
     sqlite_exec(self.db, [[
         CREATE TABLE IF NOT EXISTS history (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
