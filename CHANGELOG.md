@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.6.1](https://github.com/sruon/captain/compare/v1.6.0...v1.6.1) (2025-09-25)
+
+
+### Bug Fixes
+
+* **checkparam:** missing nil check ([65abf91](https://github.com/sruon/captain/commit/65abf918510d1f4a19a7dc4a4f82da9fa33a29e1))
+
 ## [1.6.0](https://github.com/sruon/captain/compare/v1.5.2...v1.6.0) (2025-09-25)
 
 
