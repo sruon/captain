@@ -21,6 +21,15 @@ end
 ---Handle the load event - initializes addons, registers keybinds, and reports performance
 ---Automatically loads all addons from the addons directory and sets up their configurations
 function LoadHandler:handle()
+    -- Check if player is logged in and has a valid name
+    local loginStatus = AshitaCore:GetMemoryManager():GetPlayer():GetLoginStatus()
+    local playerName = backend.player_name()
+
+    if loginStatus ~= 2 or not playerName or playerName == '' then
+        self.captain.needsInitialization = true
+        return
+    end
+
     local load_start_time = os.clock()
     local addon_timings   = {}
     -- Register captain keybinds
@@ -83,29 +92,56 @@ function LoadHandler:handle()
     -- Force close any stale SQLite connections from previous crashes
     database.force_close_all_connections()
 
-    -- Load settings and register keybinds, but don't initialize yet
+    -- IMPORTANT: Load settings library and Captain's settings now that we have a valid player name
+    -- This ensures settings are loaded from the character-specific folder, not defaults
+    local settings = require('settings')
+
+    if not settings.logged_in then
+        local player = GetPlayerEntity()
+        if player and player.ServerId and player.ServerId > 0 and player.Name and player.Name ~= '' then
+            -- Manually update settings library state to match current login status
+            settings.logged_in = true
+            settings.server_id = player.ServerId
+            settings.name = player.Name
+        end
+    end
+
+    -- Load Captain's own settings
+    self.captain.settings = backend.loadConfig('captain', require('settings_schema').get_defaults())
+    settings.register('captain', 'captain_settings_update', function(newSettings)
+        self.captain.settings = newSettings
+        -- Update notification manager with new settings
+        self.captain.notificationMgr = require('notifications').new(newSettings.notifications or {})
+    end)
+
+    -- Load addon settings
     for addonName, subAddon in pairs(self.captain.addons) do
-        subAddon.settings = backend.loadConfig(addonName, subAddon.defaultSettings)
+        -- Use lowercase alias to match settings library's internal lowercasing
+        local settingsAlias = string.lower(addonName)
+
+        -- Load settings for this addon (this creates the settings cache entry)
+        -- Since we verified player name exists, this will load from character folder
+        subAddon.settings = backend.loadConfig(settingsAlias, subAddon.defaultSettings)
+
+        -- Register a callback to automatically reload settings when character switches
+        settings.register(settingsAlias, settingsAlias .. '_settings_update', function(newSettings)
+            subAddon.settings = newSettings
+        end)
     end
 
     -- Register addon keybinds
     self.captain.keyBinds:registerAddonKeybinds()
 
-    -- Check if player is already loaded, if so initialize immediately
-    if backend.player_name() ~= nil then
-        for addonName, subAddon in pairs(self.captain.addons) do
-            if type(subAddon.onInitialize) == 'function' then
-                utils.withPerformanceMonitoring(addonName .. '.onInitialize', function()
-                    return utils.safe_call(addonName .. '.onInitialize', subAddon.onInitialize,
-                        string.format('captures/%s/', addonName))
-                end)
-            end
+    -- Initialize addons now that settings are loaded
+    for addonName, subAddon in pairs(self.captain.addons) do
+        if type(subAddon.onInitialize) == 'function' then
+            utils.withPerformanceMonitoring(addonName .. '.onInitialize', function()
+                return utils.safe_call(addonName .. '.onInitialize', subAddon.onInitialize,
+                    string.format('captures/%s/', addonName))
+            end)
         end
-        self.captain.needsInitialization = false
-    else
-        -- Mark that we need to initialize addons when client is ready
-        self.captain.needsInitialization = true
     end
+    self.captain.needsInitialization = false
 
     -- Report total time and slowest operations
     local total_time = os.clock() - load_start_time

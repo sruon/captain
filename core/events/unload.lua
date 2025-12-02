@@ -34,6 +34,8 @@ function UnloadHandler:handle()
         end
     end
 
+    backend.saveConfig('captain')
+
     -- Close all open SQLite databases
     database.close_all()
 end

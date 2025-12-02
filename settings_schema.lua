@@ -150,7 +150,7 @@ local settings_schema =
         },
         textBox       =
         {
-            scale    =
+            scale     =
             {
                 default = 1.0,
                 ui      =
@@ -163,7 +163,11 @@ local settings_schema =
                     description = 'Size scaling factor for text boxes',
                 },
             },
-            defaults =
+            positions =
+            {
+                default = {},
+            },
+            defaults  =
             {
                 pos     =
                 {

@@ -204,15 +204,31 @@ backend.register_event_prerender = function(func)
             imgui.SetNextWindowSize({ -1, -1 }, ImGuiCond_Always)
             imgui.SetNextWindowSizeConstraints({ -1, -1 }, { FLT_MAX, FLT_MAX })
 
+            if captain.settings and captain.settings.textBox and captain.settings.textBox.positions and captain.settings.textBox.positions[box.name] then
+                local pos = captain.settings.textBox.positions[box.name]
+                imgui.SetNextWindowPos({ pos.x, pos.y }, ImGuiCond_Appearing)
+            elseif captain.settings and captain.settings.textBox and captain.settings.textBox.defaults and captain.settings.textBox.defaults.pos then
+                imgui.SetNextWindowPos({ captain.settings.textBox.defaults.pos.x, captain.settings.textBox.defaults.pos.y }, ImGuiCond_Appearing)
+            end
+
             if box.text ~= nil and box.visible and imgui.Begin(box.name, true, flags) then
-                -- Apply scaling to content
-                imgui.SetWindowFontScale(captain.settings.textBox.scale)
+                local scale = (captain.settings and captain.settings.textBox and captain.settings.textBox.scale) or 1.0
+                imgui.SetWindowFontScale(scale)
 
                 if box.title then
                     colored_text(box.title)
                     imgui.Separator()
                 end
                 colored_text(box.text)
+
+                if captain.settings and captain.settings.textBox then
+                    if not captain.settings.textBox.positions then
+                        captain.settings.textBox.positions = {}
+                    end
+                    local posX, posY = imgui.GetWindowPos()
+                    captain.settings.textBox.positions[box.name] = { x = posX, y = posY }
+                end
+
                 imgui.End()
             end
         end
@@ -343,12 +359,13 @@ end
 --------------------------------
 local textBoxIdCounter           = 0
 
-backend.textBox                  = function(_)
+backend.textBox                  = function(id)
     local box        = {}
-    box.name         = '' .. textBoxIdCounter
+    box.name         = id or ('' .. textBoxIdCounter)
     box.title        = nil
     box.text         = nil
     box.visible      = true
+    box.positionSet  = false -- Track if we've applied saved position
 
     textBoxIdCounter = textBoxIdCounter + 1
 
@@ -777,7 +794,7 @@ backend.loadConfig               = function(name, defaults)
 end
 
 backend.saveConfig               = function(name)
-    return settings.save(name)
+    return settings.save(string.lower(name))
 end
 
 
