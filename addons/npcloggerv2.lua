@@ -187,9 +187,11 @@ local function parseNpcUpdate(data)
         if packet.SubKind == 1 or packet.SubKind == 7 then
             -- Equipped NPCs (wearing gear)
             npc.GrapIdTbl = packet.Data.GrapIDTbl
-        elseif packet.SubKind == 0 or packet.SubKind == 5 or packet.SubKind == 6 then
-            npc.model_id = packet.Data.model_id
         end
+    end
+
+    if packet.Data.model_id then
+        npc.model_id = packet.Data.model_id
     end
 
     if packet.SendFlg.Name then
