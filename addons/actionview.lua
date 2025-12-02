@@ -69,21 +69,23 @@ local addon  =
     -- Action schema based on actual data structure
     schema           =
     {
-        ActionType   = 'Physical',      -- Action type string
-        category     = 1,               -- Category number (cmd_no)
-        actor        = 12345,           -- Actor ID (m_uID)
-        id           = 123,             -- Action/ability ID
-        message      = 1,               -- Message ID from target result
-        animation    = 456,             -- Animation ID (sub_kind)
+        ActionType   = 'Physical',        -- Action type string
+        category     = 1,                 -- Category number (cmd_no)
+        actor        = 12345,             -- Actor ID (m_uID)
+        id           = 123,               -- Action/ability ID
+        message      = 1,                 -- Message ID from target result
+        animation    = 456,               -- Animation ID (sub_kind)
         name         = 'Example Ability', -- Resolved action name
-        actor_name   = 'Actor Name',    -- Resolved actor name
-        knockback    = 0,               -- Knockback value
-        ready_time   = 0.0,             -- Ready time (ms) from start to finish
-        info         = 0,               -- Info field from target result
-        proc_kind    = 0,               -- Proc kind (added effect type)
-        proc_info    = 0,               -- Proc info
-        proc_value   = 0,               -- Proc value (damage/amount)
-        proc_message = 0,               -- Proc message ID
+        actor_name   = 'Actor Name',      -- Resolved actor name
+        knockback    = 0,                 -- Knockback value
+        ready_time   = 0.0,               -- Ready time (ms) from start to finish
+        info         = 0,                 -- Info field from target result
+        proc_kind    = 0,                 -- Proc kind (added effect type)
+        proc_info    = 0,                 -- Proc info
+        proc_value   = 0,                 -- Proc value (damage/amount)
+        proc_message = 0,                 -- Proc message ID
+        max_range    = 0.0,               -- Maximum distance from mob to furthest target (for mob skills)
+        max_spread   = 0.0,               -- Maximum distance between any two targets (for mob skills)
     },
     files            =
     {
@@ -118,8 +120,23 @@ local addon  =
 --------------------------------------------------
 local function buildSimpleString(info)
     local simple_info = '[Actor: %s (%s)] %s > Cat: %s ID: %s Anim: %s Msg: %s'
-    return string.format(simple_info, info.actor, info.actor_name, info.name, info.category, info.id, info.animation,
+    local base_str    = string.format(simple_info, info.actor, info.actor_name, info.name, info.category, info.id,
+        info.animation,
         info.message)
+
+    -- Append range and spread for mob skills (category 11)
+    if info.category == '11' then
+        local max_range  = tonumber(info.max_range or 0)
+        local max_spread = tonumber(info.max_spread or 0)
+        if max_range > 0 then
+            base_str = base_str .. string.format(' Range: %.2f', max_range)
+        end
+        if max_spread > 0 then
+            base_str = base_str .. string.format(' Spread: %.2f', max_spread)
+        end
+    end
+
+    return base_str
 end
 
 -- Checks if a mob ID belongs to a "mob" based on the current zone
@@ -202,6 +219,8 @@ local function parseAction(action)
     result.proc_info    = 0
     result.proc_value   = 0
     result.proc_message = 0
+    result.max_range    = 0.0
+    result.max_spread   = 0.0
 
     if action.target then
         -- Get message and animation from first target's first result
@@ -216,6 +235,13 @@ local function parseAction(action)
                 result.proc_value   = action.target[1].result[1].proc.value or 0
                 result.proc_message = action.target[1].result[1].proc.message or 0
             end
+        end
+
+        -- Get actor position and collect target positions for distance calculations (mob skills only)
+        local actorMob        = nil
+        local targetPositions = {}
+        if result.category == 11 then
+            actorMob = backend.get_mob_by_id(action.m_uID)
         end
 
         -- Iterate over all targets and their results
@@ -233,6 +259,52 @@ local function parseAction(action)
                     -- Check if any result has critical bit set (bit 1)
                     if targetResult.info and bit.band(targetResult.info, 2) == 2 then
                         result.info = bit.bor(result.info, 2)
+                    end
+                end
+
+                -- Collect target positions for mob skills (category 11)
+                if result.category == 11 and actorMob then
+                    local targetMob = backend.get_mob_by_id(target.m_uID)
+                    if targetMob and targetMob.x then
+                        table.insert(targetPositions,
+                        {
+                            x = tonumber(targetMob.x),
+                            y = tonumber(targetMob.y),
+                            z = tonumber(targetMob.z),
+                        })
+                    end
+                end
+            end
+        end
+
+        -- Calculate range and spread for mob skills
+        if result.category == 11 and actorMob and #targetPositions > 0 then
+            local actorX = tonumber(actorMob.x)
+            local actorY = tonumber(actorMob.y)
+            local actorZ = tonumber(actorMob.z)
+
+            -- Calculate max range (mob to furthest target)
+            for _, pos in ipairs(targetPositions) do
+                local dx       = pos.x - actorX
+                local dy       = pos.y - actorY
+                local dz       = pos.z - actorZ
+                local distance = math.sqrt(dx * dx + dy * dy + dz * dz)
+
+                if distance > result.max_range then
+                    result.max_range = distance
+                end
+            end
+
+            -- Calculate max spread (distance between any two targets)
+            for i = 1, #targetPositions do
+                for j = i + 1, #targetPositions do
+                    local dx       = targetPositions[j].x - targetPositions[i].x
+                    local dy       = targetPositions[j].y - targetPositions[i].y
+                    local dz       = targetPositions[j].z - targetPositions[i].z
+                    local distance = math.sqrt(dx * dx + dy * dy + dz * dz)
+
+                    if distance > result.max_spread then
+                        result.max_spread = distance
                     end
                 end
             end
@@ -269,6 +341,22 @@ end
 ---------------------------------------------------------------------
 local function addActionToMobList(result)
     local mob_key = string.format('%08d-%03d', result.actor, result.id)
+
+    -- For mob skills, track the maximum range and spread across all uses
+    if result.category == 11 then
+        if addon.databases.global then
+            local existing = addon.databases.global:get(mob_key)
+            if existing then
+                if existing.max_range and result.max_range > 0 then
+                    result.max_range = math.max(result.max_range, existing.max_range)
+                end
+                if existing.max_spread and result.max_spread > 0 then
+                    result.max_spread = math.max(result.max_spread, existing.max_spread)
+                end
+            end
+        end
+    end
+
     if addon.databases.global then
         addon.databases.global:add_or_update(mob_key, result)
     end
@@ -336,6 +424,16 @@ local function createActionNotification(result)
 
     if result.ready_time and result.ready_time > 0 then
         table.insert(dataFields, { 'Ready Time', string.format('%.0fms', result.ready_time) })
+    end
+
+    -- Display range and spread for mob skills
+    if result.category == 11 then
+        if result.max_range > 0 then
+            table.insert(dataFields, { 'Range', string.format('%.2f', result.max_range) })
+        end
+        if result.max_spread > 0 then
+            table.insert(dataFields, { 'Spread', string.format('%.2f', result.max_spread) })
+        end
     end
 
     backend.notificationCreate('AView', title, dataFields)
