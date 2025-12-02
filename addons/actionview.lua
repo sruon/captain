@@ -9,21 +9,22 @@ local socket = require('socket')
 ---@field h table Headers for log strings
 ---@field vars { zone_start: number, zone_end: number } Zone-specific variables
 ---@field databases { global: table, capture: table } Action databases
-local addon =
+local addon  =
 {
-    name            = 'ActionView',
-    filters         =
+    name             = 'ActionView',
+    filters          =
     {
         incoming =
         {
             [PacketId.GP_SERV_COMMAND_BATTLE2] = true,
         },
     },
-    settings        = {},
-    defaultSettings =
+    settings         = {},
+    defaultSettings  =
     {
-        mobsOnly = true,
-        category =
+        mobsOnly  = true,
+        showProcs = true,
+        category  =
         {
             [1]  = false, -- Melee Attack
             [2]  = false, -- Ranged Attack execution
@@ -41,7 +42,7 @@ local addon =
             [14] = true,  -- Non-blinkable job abilities (Jigs, Sambas, Steps, Waltzes, Flourish)
             [15] = true,  -- Some RUN job abilities
         },
-        color    =
+        color     =
         {
             id        = 22, -- Red Lotus Blade
             name      = 24, -- 34
@@ -51,7 +52,7 @@ local addon =
             message   = 25, -- 185
             system    = 19,
         },
-        database =
+        database  =
         {
             max_history    = 10,
             ignore_updates =
@@ -59,28 +60,32 @@ local addon =
             },
         },
     },
-    databases       =
+    databases        =
     {
         global  = nil,
         capture = nil,
     },
 
     -- Action schema based on actual data structure
-    schema          =
+    schema           =
     {
-        ActionType = 'Physical',        -- Action type string
-        category   = 1,                 -- Category number (cmd_no)
-        actor      = 12345,             -- Actor ID (m_uID)
-        id         = 123,               -- Action/ability ID
-        message    = 1,                 -- Message ID from target result
-        animation  = 456,               -- Animation ID (sub_kind)
-        name       = 'Example Ability', -- Resolved action name
-        actor_name = 'Actor Name',      -- Resolved actor name
-        knockback  = 0,                 -- Knockback value
-        ready_time = 0.0,               -- Ready time (ms) from start to finish
-        info       = 0,                 -- Info field from target result
+        ActionType   = 'Physical',      -- Action type string
+        category     = 1,               -- Category number (cmd_no)
+        actor        = 12345,           -- Actor ID (m_uID)
+        id           = 123,             -- Action/ability ID
+        message      = 1,               -- Message ID from target result
+        animation    = 456,             -- Animation ID (sub_kind)
+        name         = 'Example Ability', -- Resolved action name
+        actor_name   = 'Actor Name',    -- Resolved actor name
+        knockback    = 0,               -- Knockback value
+        ready_time   = 0.0,             -- Ready time (ms) from start to finish
+        info         = 0,               -- Info field from target result
+        proc_kind    = 0,               -- Proc kind (added effect type)
+        proc_info    = 0,               -- Proc info
+        proc_value   = 0,               -- Proc value (damage/amount)
+        proc_message = 0,               -- Proc message ID
     },
-    files           =
+    files            =
     {
         simple  = nil,
         capture =
@@ -88,23 +93,23 @@ local addon =
             simple = nil,
         },
     },
-    category        =
+    category         =
     {
-        ['1']  = 'Melee', -- Melee Attack
-        ['2']  = 'RA',    -- Ranged Attack execution
-        ['3']  = 'WS-JA', -- WS or some damaging JAs; "ability IDs are unshifted, WS IDs shifted to +768"
-        ['4']  = 'MA',    -- Casted magic
-        ['5']  = 'Item',  -- Item Usage execution
-        ['6']  = 'JA',    -- Most job abilities
-        ['7']  = 'TP-St', -- TP Move Start "Players: add 768, compare abils.xml. Mobs: -256, mabils.xml"
-        ['8']  = 'MA-St', -- Spell Start
-        ['9']  = 'Itm-S', -- Item Usage initiation
-        ['10'] = 'Unkwn', -- Unknown category
-        ['11'] = 'Mb-TP', -- Mob TP moves
-        ['12'] = 'RA-St', -- Ranged Attack initiation
-        ['13'] = 'Pt-TP', -- Pet TP Moves
-        ['14'] = 'Nb-JA', -- Non-blinkable job abilities (Jigs, Sambas, Steps, Waltzes, Flourish)
-        ['15'] = 'RN-JA', -- Some RUN job abilities
+        ['1']  = 'Melee',  -- Melee Attack
+        ['2']  = 'RA',     -- Ranged Attack execution
+        ['3']  = 'WS-JA',  -- WS or some damaging JAs; "ability IDs are unshifted, WS IDs shifted to +768"
+        ['4']  = 'MA',     -- Casted magic
+        ['5']  = 'Item',   -- Item Usage execution
+        ['6']  = 'JA',     -- Most job abilities
+        ['7']  = 'TP-St',  -- TP Move Start "Players: add 768, compare abils.xml. Mobs: -256, mabils.xml"
+        ['8']  = 'MA-St',  -- Spell Start
+        ['9']  = 'Itm-S',  -- Item Usage initiation
+        ['10'] = 'Unkwn',  -- Unknown category
+        ['11'] = 'Mb-TP',  -- Mob TP moves
+        ['12'] = 'RA-St',  -- Ranged Attack initiation
+        ['13'] = 'Pt-TP',  -- Pet TP Moves
+        ['14'] = 'Nb-JA',  -- Non-blinkable job abilities (Jigs, Sambas, Steps, Waltzes, Flourish)
+        ['15'] = 'RN-JA',  -- Some RUN job abilities
     },
     actionStartTimes = {}, -- Track start times for actions (category 7/8/12 -> finish category)
 }
@@ -189,16 +194,28 @@ local function parseAction(action)
     end
 
     -- Iterate over all targets and results
-    result.message   = 0
-    result.animation = 0
-    result.knockback = 0
-    result.info      = 0
+    result.message      = 0
+    result.animation    = 0
+    result.knockback    = 0
+    result.info         = 0
+    result.proc_kind    = 0
+    result.proc_info    = 0
+    result.proc_value   = 0
+    result.proc_message = 0
 
     if action.target then
         -- Get message and animation from first target's first result
         if action.target[1] and action.target[1].result and action.target[1].result[1] then
             result.message   = action.target[1].result[1].message
             result.animation = action.target[1].result[1].sub_kind
+
+            -- Capture proc (added effect) data from first target's first result
+            if action.target[1].result[1].proc then
+                result.proc_kind    = action.target[1].result[1].proc.kind or 0
+                result.proc_info    = action.target[1].result[1].proc.info or 0
+                result.proc_value   = action.target[1].result[1].proc.value or 0
+                result.proc_message = action.target[1].result[1].proc.message or 0
+            end
         end
 
         -- Iterate over all targets and their results
@@ -309,6 +326,14 @@ local function createActionNotification(result)
         end
     end
 
+    -- Display proc (added effect) information for melee attacks
+    if addon.settings.showProcs and result.category == 1 and result.proc_message and result.proc_message > 0 then
+        table.insert(dataFields, { 'Proc Kind', result.proc_kind })
+        table.insert(dataFields, { 'Proc Info', result.proc_info })
+        table.insert(dataFields, { 'Proc Value', result.proc_value })
+        table.insert(dataFields, { 'Proc Message', result.proc_message })
+    end
+
     if result.ready_time and result.ready_time > 0 then
         table.insert(dataFields, { 'Ready Time', string.format('%.0fms', result.ready_time) })
     end
@@ -322,25 +347,41 @@ local function checkAction(data)
         return
     end
 
-    -- If we're interested in that particular action type
+    local result, str_info = parseAction(action)
+    if not result or result.message == 84 then
+        return
+    end
+
+    -- Check if we should process this action
+    local shouldProcess = false
+
+    -- Always show if the category is enabled
     if addon.settings.category[action.cmd_no] then
         if (not addon.settings.mobsOnly) or isMob(action.m_uID) then
-            local result, str_info = parseAction(action)
-            if result and (result.message ~= 84) then
-                -- Calculate ready time delta for finish actions (in milliseconds)
-                if action.cmd_no == 11 or action.cmd_no == 4 or action.cmd_no == 2 then
-                    local key = tostring(action.m_uID)
-                    if addon.actionStartTimes[key] then
-                        result.ready_time = (socket.gettime() * 1000) - addon.actionStartTimes[key]
-                        addon.actionStartTimes[key] = nil
-                    end
-                end
+            shouldProcess = true
+        end
+    end
 
-                recordAction(result, str_info)
+    -- Special case: Show melee attacks (category 1) if showProcs is enabled and there's a proc
+    if addon.settings.showProcs and action.cmd_no == 1 and result.proc_message and result.proc_message > 0 then
+        if (not addon.settings.mobsOnly) or isMob(action.m_uID) then
+            shouldProcess = true
+        end
+    end
 
-                createActionNotification(result)
+    if shouldProcess then
+        -- Calculate ready time delta for finish actions (in milliseconds)
+        if action.cmd_no == 11 or action.cmd_no == 4 or action.cmd_no == 2 then
+            local key = tostring(action.m_uID)
+            if addon.actionStartTimes[key] then
+                result.ready_time           = (socket.gettime() * 1000) - addon.actionStartTimes[key]
+                addon.actionStartTimes[key] = nil
             end
         end
+
+        recordAction(result, str_info)
+
+        createActionNotification(result)
     end
 end
 
@@ -427,7 +468,7 @@ addon.onIncomingPacket = function(id, data)
         -- Track start times for timing (category 7: TP-St, 8: MA-St, 12: RA-St)
         if action.cmd_no == 7 or action.cmd_no == 8 or action.cmd_no == 12 then
             -- Since only one action can be in progress per actor, key by actor ID only
-            local key = tostring(action.m_uID)
+            local key                   = tostring(action.m_uID)
             addon.actionStartTimes[key] = socket.gettime() * 1000
         end
     end
@@ -471,9 +512,18 @@ addon.onConfigMenu     = function()
         {
             key         = 'mobsOnly',
             title       = 'Mobs Only',
-            description = 'If enabled, only displays notifications for mob actions. If disabled, shows player actions too.',
+            description =
+            'If enabled, only displays notifications for mob actions. If disabled, shows player actions too.',
             type        = 'checkbox',
             default     = addon.defaultSettings.mobsOnly,
+        },
+        {
+            key         = 'showProcs',
+            title       = 'Show Procs (Added Effects)',
+            description =
+            'If enabled, displays proc information for melee attacks even if melee attack category is disabled.',
+            type        = 'checkbox',
+            default     = addon.defaultSettings.showProcs,
         },
         {
             key         = 'category.1',
