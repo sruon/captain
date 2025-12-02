@@ -1,4 +1,6 @@
 -- Credits: Original code written by ibm2431, ported by sruon
+local socket = require('socket')
+
 ---@class ActionViewAddon : AddonInterface
 ---@field files { simple: File?, capture: { simple: File? } } File handles for logging
 ---@field rootDir string Directory where logs are stored
@@ -75,6 +77,7 @@ local addon =
         name       = 'Example Ability', -- Resolved action name
         actor_name = 'Actor Name',      -- Resolved actor name
         knockback  = 0,                 -- Knockback value
+        ready_time = 0.0,               -- Ready time (ms) from start to finish
     },
     files           =
     {
@@ -102,6 +105,7 @@ local addon =
         ['14'] = 'Nb-JA', -- Non-blinkable job abilities (Jigs, Sambas, Steps, Waltzes, Flourish)
         ['15'] = 'RN-JA', -- Some RUN job abilities
     },
+    actionStartTimes = {}, -- Track start times for actions (category 7/8/12 -> finish category)
 }
 
 -- Builds a simple string for file logging
@@ -169,20 +173,25 @@ local function parseAction(action)
     result.ActionType = action.ActionType
     result.category   = action.cmd_no
     result.actor      = action.m_uID
+    result.ready_time = 0 -- Initialize ready_time (0 = not tracked)
 
-    if result.category == 7 then -- TP Move Start has the ID in the target array
-        result.id = action.target[1].result[1].value
+    -- Extract ID - some categories have ID in target array, others in cmd_arg
+    if result.category == 7 then
+        -- TP Move Start (7) has the ID in the target array
+        if action.target and action.target[1] and action.target[1].result and action.target[1].result[1] then
+            result.id = action.target[1].result[1].value
+        else
+            result.id = action.cmd_arg
+        end
     else
         result.id = action.cmd_arg
     end
+
     if action.target and action.target[1] then
         if action.target[1].result and action.target[1].result[1] then
             result.message   = action.target[1].result[1].message
             result.animation = action.target[1].result[1].sub_kind
             result.knockback = action.target[1].result[1].knockback or 0
-            if action.cmd_no == 8 then
-                result.id = action.target[1].result[1].value
-            end
         end
     end
 
@@ -265,6 +274,10 @@ local function createActionNotification(result)
         table.insert(dataFields, { 'Knockback', result.knockback })
     end
 
+    if result.ready_time and result.ready_time > 0 then
+        table.insert(dataFields, { 'Ready Time', string.format('%.0fms', result.ready_time) })
+    end
+
     backend.notificationCreate('AView', title, dataFields)
 end
 
@@ -279,6 +292,15 @@ local function checkAction(data)
         if (not addon.settings.mobsOnly) or isMob(action.m_uID) then
             local result, str_info = parseAction(action)
             if result and (result.message ~= 84) then
+                -- Calculate ready time delta for finish actions (in milliseconds)
+                if action.cmd_no == 11 or action.cmd_no == 4 or action.cmd_no == 2 then
+                    local key = tostring(action.m_uID)
+                    if addon.actionStartTimes[key] then
+                        result.ready_time = (socket.gettime() * 1000) - addon.actionStartTimes[key]
+                        addon.actionStartTimes[key] = nil
+                    end
+                end
+
                 recordAction(result, str_info)
 
                 createActionNotification(result)
@@ -364,6 +386,17 @@ end
 addon.onClientReady    = setupZone
 
 addon.onIncomingPacket = function(id, data)
+    -- Always track start times for timing purposes, even if category is disabled
+    local action = backend.parsePacket('incoming', data)
+    if action then
+        -- Track start times for timing (category 7: TP-St, 8: MA-St, 12: RA-St)
+        if action.cmd_no == 7 or action.cmd_no == 8 or action.cmd_no == 12 then
+            -- Since only one action can be in progress per actor, key by actor ID only
+            local key = tostring(action.m_uID)
+            addon.actionStartTimes[key] = socket.gettime() * 1000
+        end
+    end
+
     checkAction(data)
 end
 
