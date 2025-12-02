@@ -1,5 +1,31 @@
 # Changelog
 
+## [1.7.0](https://github.com/sruon/captain/compare/v1.6.1...v1.7.0) (2025-12-02)
+
+
+### Features
+
+* **actionview:** allow configuring actions to display and mob filter through the UI ([6c6927f](https://github.com/sruon/captain/commit/6c6927f705131394e6d6b714747c8c860bc48f7e))
+* **actionview:** display critical hits on mobskills and player weaponskills ([3b5d56b](https://github.com/sruon/captain/commit/3b5d56be9ccaa1f145f7c6774519800450ede885))
+* **actionview:** print knockback values ([36d4053](https://github.com/sruon/captain/commit/36d40530b2f51ef1bf3a4172e736d13f8fb5e3c9))
+* **actionview:** show additional effects on melee attacks ([2a01e09](https://github.com/sruon/captain/commit/2a01e090d8a72189a58df95efb3f2eb09261edb4))
+* **actionview:** track max distance and max target spread for mobskills finish ([d541818](https://github.com/sruon/captain/commit/d541818b7c39993457d49cb427085040c74d8f6c))
+* **actionview:** Track ready time for mobskills and spells ([78dd995](https://github.com/sruon/captain/commit/78dd9959038adea6aac8aa9a8a0bed2565406392))
+* **addon:** immunitytrack tracks immunities on mobs, including resist traits procs ([fc81c63](https://github.com/sruon/captain/commit/fc81c639d38474bc75deba7594778d5793f59ef3))
+* **addon:** POITrack - saves HELM points, Treasure Chest/Coffers positions ([7d88419](https://github.com/sruon/captain/commit/7d88419791a8d9259f04c7fd2166e357cf24158c))
+* **attackdelay:** stop tracking when mob casts a spell or use a skill. Show live data in a new window. ([94b9d4d](https://github.com/sruon/captain/commit/94b9d4d7a393770b9db1e86be360aae9e581c8b1))
+* **guildstock:** optionally print the entries to chat as they get captured ([8b0c7ea](https://github.com/sruon/captain/commit/8b0c7ea3f7abab5913c47603e4785b3692011c16))
+* **packetlogger:** milliseconds precision on timestamps ([d3b897b](https://github.com/sruon/captain/commit/d3b897bf0dd8e642e2ca1f10c59ddac6cf12d959))
+* **sqlite:** automatically add missing columns ([5588cad](https://github.com/sruon/captain/commit/5588cad775bcd03155d920b83675474b8735d2bf))
+* **targetinfo:** display animsub ([8dad39b](https://github.com/sruon/captain/commit/8dad39b48ad0d8e936883a2bc19c7a36a7c3d51b))
+* **targetinfo:** print target model/hitbox/model size/speed ([1e476e0](https://github.com/sruon/captain/commit/1e476e0762b51af721711f77cf0c66469a332c01))
+
+
+### Bug Fixes
+
+* **checkparam:** Collect syncid ([7c967b7](https://github.com/sruon/captain/commit/7c967b703ac22d0618f3fd2ae5c1b9883717f301))
+* **npclogger:** properly capture model_id ([cfb0c8e](https://github.com/sruon/captain/commit/cfb0c8ed44cfbf15147ccab1aff017ddb4103fb9))
+
 ## [1.6.1](https://github.com/sruon/captain/compare/v1.6.0...v1.6.1) (2025-09-25)
 
 
