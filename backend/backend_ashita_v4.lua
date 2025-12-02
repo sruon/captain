@@ -483,13 +483,15 @@ backend.get_target_entity_data   = function()
     local index            = AshitaCore:GetMemoryManager():GetTarget():GetTargetIndex(0)
     local targetEntityData =
     {
-        name      = AshitaCore:GetMemoryManager():GetEntity():GetName(index),
-        serverId  = AshitaCore:GetMemoryManager():GetEntity():GetServerId(index),
-        targIndex = index,
-        x         = string.format('%+08.03f', AshitaCore:GetMemoryManager():GetEntity():GetLocalPositionX(index)),
-        y         = string.format('%+08.03f', AshitaCore:GetMemoryManager():GetEntity():GetLocalPositionY(index)),
-        z         = string.format('%+08.03f', AshitaCore:GetMemoryManager():GetEntity():GetLocalPositionZ(index)),
-        r         = utils.headingToByteRotation(AshitaCore:GetMemoryManager():GetEntity():GetLocalPositionYaw(index)),
+        name            = AshitaCore:GetMemoryManager():GetEntity():GetName(index),
+        serverId        = AshitaCore:GetMemoryManager():GetEntity():GetServerId(index),
+        targIndex       = index,
+        x               = string.format('%+08.03f', AshitaCore:GetMemoryManager():GetEntity():GetLocalPositionX(index)),
+        y               = string.format('%+08.03f', AshitaCore:GetMemoryManager():GetEntity():GetLocalPositionY(index)),
+        z               = string.format('%+08.03f', AshitaCore:GetMemoryManager():GetEntity():GetLocalPositionZ(index)),
+        r               = utils.headingToByteRotation(AshitaCore:GetMemoryManager():GetEntity():GetLocalPositionYaw(
+        index)),
+        distance        = string.format('%.3f', math.sqrt(AshitaCore:GetMemoryManager():GetEntity():GetDistance(index))),
     }
     return targetEntityData
 end

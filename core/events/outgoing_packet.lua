@@ -21,9 +21,6 @@ end
 ---@param size number The packet size in bytes
 ---@return boolean shouldBlock Whether the packet should be blocked
 function OutgoingPacketHandler:handle(id, data, size)
-    if self.captain.needsInitialization then
-        return false
-    end
 
     local shouldBlock = false
     for addonName, addon in pairs(self.captain.addons) do

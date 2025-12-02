@@ -13,6 +13,8 @@ local addon            =
         {
             [PacketId.GP_SERV_COMMAND_BATTLE_MESSAGE] = true, -- /check
             [PacketId.GP_SERV_COMMAND_TRACKING_LIST]  = true, -- Widescan state updates
+            [PacketId.GP_SERV_COMMAND_CHAR_NPC]       = true,
+            [PacketId.GP_SERV_COMMAND_CHAR_PC]        = true,
         },
     },
     settings        = {},
@@ -22,11 +24,59 @@ local addon            =
     },
     checkData       = {},
     pendingCheck    = {},
+    modelSizes      = {},
+    hitboxSizes     = {},
+    modelIds        = {},
+    speeds          = {},
+    speedBases      = {},
 }
 
 addon.onIncomingPacket = function(id, data)
     local packet = backend.parsePacket('incoming', data)
-    if id == PacketId.GP_SERV_COMMAND_BATTLE_MESSAGE then
+
+    if id == PacketId.GP_SERV_COMMAND_CHAR_PC then
+        ---@type GP_SERV_COMMAND_CHAR_PC
+        packet = packet
+
+        if packet.ModelHitboxSize ~= 0 then
+            addon.hitboxSizes[packet.ActIndex] = packet.ModelHitboxSize
+        end
+
+        if packet.Flags1.GraphSize ~= 0 then
+            addon.modelSizes[packet.ActIndex] = packet.Flags1.GraphSize
+        end
+
+        if packet.Speed and packet.Speed ~= 0 then
+            addon.speeds[packet.ActIndex] = packet.Speed
+        end
+
+        if packet.SpeedBase and packet.SpeedBase ~= 0 then
+            addon.speedBases[packet.ActIndex] = packet.SpeedBase
+        end
+    elseif id == PacketId.GP_SERV_COMMAND_CHAR_NPC then
+        ---@type GP_SERV_COMMAND_CHAR_NPC
+        packet = packet
+
+        if packet.Flags2.g ~= 0 then
+            addon.hitboxSizes[packet.ActIndex] = packet.Flags2.g
+        end
+
+        if packet.Flags1.GraphSize ~= 0 then
+            addon.modelSizes[packet.ActIndex] = packet.Flags1.GraphSize
+        end
+
+        if packet.Data and packet.Data.model_id and packet.Data.model_id ~= 0 then
+            addon.modelIds[packet.ActIndex] = packet.Data.model_id
+        end
+
+        if packet.Speed and packet.Speed ~= 0 then
+            addon.speeds[packet.ActIndex] = packet.Speed
+        end
+
+        if packet.SpeedBase and packet.SpeedBase ~= 0 then
+            addon.speedBases[packet.ActIndex] = packet.SpeedBase
+        end
+    elseif id == PacketId.GP_SERV_COMMAND_BATTLE_MESSAGE then
         ---@type GP_SERV_COMMAND_BATTLE_MESSAGE
         packet = packet
 
@@ -83,11 +133,20 @@ addon.onPrerender      = function()
         targetTitleStr  = string.format('%s[%d/%d] %s', targetData.name, targetData.serverId, targetData.targIndex,
             levelStr)
 
-        targetOutputStr =
-          'X: ' .. targetData.x .. ' ' ..
-          'Y: ' .. targetData.y .. ' ' ..
-          'Z: ' .. targetData.z .. ' ' ..
-          'R: ' .. targetData.r
+        -- Row 1: Position and Distance (using monospace alignment)
+        local row1      = string.format('X:%-7.3f Y:%-7.3f Z:%-7.3f R:%-3d D:%.3f',
+            targetData.x, targetData.y, targetData.z, targetData.r, targetData.distance)
+        -- Row 2: Model info
+        local row2      = string.format('Model:%-4d Hitbox:%-2d Size:%d',
+            addon.modelIds[targetData.targIndex] or 0,
+            addon.hitboxSizes[targetData.targIndex] or 0,
+            addon.modelSizes[targetData.targIndex] or 0)
+        -- Row 3: Speed info
+        local row3      = string.format('Speed:%-3d Base:%-3d',
+            addon.speeds[targetData.targIndex] or 0,
+            addon.speedBases[targetData.targIndex] or 0)
+
+        targetOutputStr = row1 .. '\n' .. row2 .. '\n' .. row3
         if addon.targetInfo then
             addon.targetInfo:updateTitle({ { text = targetTitleStr, color = { 1.0, 0.65, 0.26, 1.0 } } })
             addon.targetInfo:updateText(targetOutputStr)
@@ -107,6 +166,11 @@ end
 addon.onZoneChange     = function(_)
     addon.checkData    = {}
     addon.pendingCheck = {}
+    addon.hitboxSizes  = {}
+    addon.modelSizes   = {}
+    addon.modelIds     = {}
+    addon.speeds       = {}
+    addon.speedBases   = {}
 end
 
 addon.onConfigMenu     = function()
