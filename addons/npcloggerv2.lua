@@ -38,13 +38,6 @@ local addon          =
             },
         },
     },
-    coroutinesSetup = false,
-    notifications   =
-    {
-        wsUpdated  = {},
-        npcUpdated = {},
-        npcCreated = {},
-    },
     databases       =
     {
         global  = nil,
@@ -270,13 +263,7 @@ local function parseNpcUpdate(data)
         npc.polutils_name = 'NotFound'
     end
 
-    local mt     = getmetatable(db)
-    local result = db:add_or_update(packet.UniqueNo, npc)
-    if result == mt.RESULT_NEW then
-        table.insert(addon.notifications.npcCreated, packet.UniqueNo)
-    elseif result == mt.RESULT_UPDATED then
-        table.insert(addon.notifications.npcUpdated, packet.UniqueNo)
-    end
+    db:add_or_update(packet.UniqueNo, npc)
 end
 
 local function parseWidescanUpdate(data)
@@ -306,11 +293,7 @@ local function parseWidescanUpdate(data)
         Type  = packet.Type,
     }
 
-    local mt     = getmetatable(db)
-    local result = db:add_or_update(UniqueNo, npc)
-    if result == mt.RESULT_UPDATED then
-        table.insert(addon.notifications.wsUpdated, UniqueNo)
-    end
+    db:add_or_update(UniqueNo, npc)
 end
 
 addon.onIncomingPacket = function(id, data)
@@ -332,22 +315,5 @@ addon.onInitialize     = function(rootDir)
         })
 end
 
-addon.onPrerender      = function()
-    if not addon.coroutinesSetup then
-        backend.forever(function()
-            local db = getCurrentDb()
-            if db and (#addon.notifications.npcCreated > 0) then
-                local report = string.format('Database updated. %d NPCs (%d new, %d updates, %d WS updates)', db:count(),
-                    #addon.notifications.npcCreated, #addon.notifications.npcUpdated, #addon.notifications.wsUpdated)
-                backend.msg('NPCLogger', report)
-                addon.notifications.npcCreated = {}
-                addon.notifications.npcUpdated = {}
-                addon.notifications.wsUpdated  = {}
-            end
-        end, 60)
-
-        addon.coroutinesSetup = true
-    end
-end
 
 return addon

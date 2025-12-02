@@ -48,8 +48,7 @@ local addon            =
             -- TODO: May need to swap fields order for better readability
             [PacketId.GP_SERV_COMMAND_LOGIN]          = -- Test: !pos -283 0 -52 78
             {
-                type               = 'CZoneInPacket',
-                legacyType         = 'Zone CS (0x00A)',
+                type               = 'GP_SERV_COMMAND_LOGIN',
                 notificationFields =
                 {
                     'EventPara',
@@ -60,8 +59,7 @@ local addon            =
             },
             [PacketId.GP_SERV_COMMAND_EVENT]          = -- Test: !pos 112 0 -8 231 (A.M.A.N Liaison)
             {
-                type               = 'CEventPacket',
-                legacyType         = 'CS Event (0x032)',
+                type               = 'GP_SERV_COMMAND_EVENT',
                 notificationFields =
                 {
                     'UniqueNo',
@@ -74,8 +72,7 @@ local addon            =
             },
             [PacketId.GP_SERV_COMMAND_EVENTNUM]       = -- Test: !pos 112 0 -8 231 (Explorer Moogle)
             {
-                type               = 'CEventPacket*',
-                legacyType         = 'CS Event + Params (0x034)',
+                type               = 'GP_SERV_COMMAND_EVENTNUM',
                 freeze             = true,
                 notificationFields =
                 {
@@ -90,7 +87,7 @@ local addon            =
             },
             [PacketId.GP_SERV_COMMAND_EVENTMES]       = -- Test: ?? Figure out on retail
             {
-                type               = 'CEventMesPacket (not implemented)',
+                type               = 'GP_SERV_COMMAND_EVENTMES',
                 notificationFields =
                 {
                     'UniqueNo',
@@ -100,8 +97,7 @@ local addon            =
             },
             [PacketId.GP_SERV_COMMAND_EVENTSTR]       = -- Test: !pos 35.7 -7 43 50 (Tateeya)
             {
-                type               = 'CEventStringPacket',
-                legacyType         = 'CS Event + Strings (0x033)',
+                type               = 'GP_SERV_COMMAND_EVENTSTR',
                 notificationFields =
                 {
                     'UniqueNo',
@@ -114,7 +110,7 @@ local addon            =
             },
             [PacketId.GP_SERV_COMMAND_EVENTUCOFF]     = -- Test: !release
             {
-                type               = 'CReleasePacket',
+                type               = 'GP_SERV_COMMAND_EVENTUCOFF',
                 notificationFields =
                 {
                     'EventId',
@@ -124,8 +120,7 @@ local addon            =
             },
             [PacketId.GP_SERV_COMMAND_PENDINGNUM]     = -- Test: TBD
             {
-                type               = 'CEventUpdatePacket',
-                legacyType         = 'Event Update (0x05C)',
+                type               = 'GP_SERV_COMMAND_PENDINGNUM',
                 notificationFields =
                 {
                     'num',
@@ -133,7 +128,7 @@ local addon            =
             },
             [PacketId.GP_SERV_COMMAND_SCHEDULOR]      = -- Test: !despawnmob
             {
-                type               = 'CEntityAnimationPacket',
+                type               = 'GP_SERV_COMMAND_SCHEDULOR',
                 notificationFields =
                 {
                     'UniqueNoCas',
@@ -143,7 +138,7 @@ local addon            =
             },
             [PacketId.GP_SERV_COMMAND_MAPSCHEDULOR]   = -- Test: !zone 35
             {
-                type               = 'CEntityVisualPacket',
+                type               = 'GP_SERV_COMMAND_MAPSCHEDULOR',
                 notificationFields =
                 {
                     'UniqueNoCas',
@@ -153,7 +148,7 @@ local addon            =
             },
             [PacketId.GP_SERV_COMMAND_MAGICSCHEDULOR] = -- Test: !menu
             {
-                type               = 'CIndependentAnimationPacket',
+                type               = 'GP_SERV_COMMAND_MAGICSCHEDULOR',
                 notificationFields =
                 {
                     'UniqueNoCas',
@@ -165,8 +160,7 @@ local addon            =
             },
             [PacketId.GP_SERV_COMMAND_TALKNUM]        = -- Test: Any !cs with menu, then !release
             {
-                type               = 'CMessageTextPacket',
-                legacyType         = 'NPC Chat (0x036)',
+                type               = 'GP_SERV_COMMAND_TALKNUM',
                 notificationFields =
                 {
                     'UniqueNo',
@@ -176,7 +170,7 @@ local addon            =
             },
             [PacketId.GP_SERV_COMMAND_TALKNUMWORK]    = -- Test: !messagespecial 1
             {
-                type               = 'CMessageSpecialPacket',
+                type               = 'GP_SERV_COMMAND_TALKNUMWORK',
                 notificationFields =
                 {
                     'UniqueNo',
@@ -192,7 +186,7 @@ local addon            =
             },
             [PacketId.GP_SERV_COMMAND_TALKNUMNAME]    = -- Test: no idea!
             {
-                type               = 'CCaughtMonsterPacket',
+                type               = 'GP_SERV_COMMAND_TALKNUMNAME',
                 notificationFields =
                 {
                     'UniqueNo',
@@ -205,7 +199,7 @@ local addon            =
             },
             [PacketId.GP_SERV_COMMAND_TALKNUMWORK2]   = -- Test: !instance 7704
             {
-                type               = 'CMessageNamePacket',
+                type               = 'GP_SERV_COMMAND_TALKNUMWORK2',
                 notificationFields =
                 {
                     'UniqueNo',
@@ -221,8 +215,7 @@ local addon            =
             },
             [PacketId.GP_SERV_COMMAND_SYSTEMMES]      = -- Test: Logout message as non-GM
             {
-                type               = 'CMessageSystemPacket',
-                legacyType         = 'SYSTEMMES (0x053)',
+                type               = 'GP_SERV_COMMAND_SYSTEMMES',
                 notificationFields =
                 {
                     'para',
@@ -232,7 +225,7 @@ local addon            =
             },
             [PacketId.GP_SERV_COMMAND_MUSIC]          =
             {
-                type               = 'CChangeMusicPacket',
+                type               = 'GP_SERV_COMMAND_MUSIC',
                 notificationFields =
                 {
                     'Slot',
@@ -242,7 +235,7 @@ local addon            =
             },
             [PacketId.GP_SERV_COMMAND_MUSICVOLUME]    =
             {
-                type               = 'CMusicVolumePacket (not implemented)',
+                type               = 'GP_SERV_COMMAND_MUSICVOLUME',
                 notificationFields =
                 {
                     'time',
@@ -257,7 +250,6 @@ local addon            =
             [PacketId.GP_CLI_COMMAND_EVENTEND]    = -- Test: !pos 112 0 -8 231 (A.M.A.N Liaison)
             {
                 type               = 'GP_CLI_COMMAND_EVENTEND',
-                legacyType         = 'Event Option (0x05B)',
                 notificationFields =
                 {
                     'UniqueNo',
@@ -270,7 +262,6 @@ local addon            =
             [PacketId.GP_CLI_COMMAND_EVENTENDXZY] = -- Test: !pos -283 0 -52 78
             {
                 type               = 'GP_CLI_COMMAND_EVENTENDXZY',
-                legacyType         = 'Event Option + Pos (0x05C)',
                 notificationFields =
                 {
                     'UniqueNo',
@@ -287,7 +278,6 @@ local addon            =
             [PacketId.GP_CLI_COMMAND_PASSWARDS]   = -- Test: !zone 245, !cs 199
             {
                 type               = 'GP_CLI_COMMAND_PASSWARDS',
-                legacyType         = 'String Input (0x060)',
                 notificationFields =
                 {
                     'UniqueNo',
@@ -330,11 +320,10 @@ addon.processPacket    = function(direction, id, data)
     end
 
     local dirPrefix  = (direction == 'incoming') and '<< ' or '>> '
-    local title      = string.format('%s[0x%03X] %s (%s)',
+    local title      = string.format('%s[0x%03X] %s',
         dirPrefix,
         id,
-        addon.mappings[direction][id].type,
-        PacketIdToName[direction][id])
+        addon.mappings[direction][id].type)
 
     local dataFields = {}
 

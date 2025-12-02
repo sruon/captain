@@ -41,8 +41,6 @@ addon.onIncomingPacket = function(id, data)
         packet = packet
         if packet.State == GP_TRACKING_STATE.GP_TRACKING_STATE_LIST_START then
             addon.entitiesCount = 0
-        elseif packet.State == GP_TRACKING_STATE.GP_TRACKING_STATE_LIST_END then
-            backend.msg('AutoWidescan', string.format('Received updates for %d entities.', addon.entitiesCount))
         end
     elseif id == PacketId.GP_SERV_COMMAND_TRACKING_LIST then
         addon.entitiesCount = addon.entitiesCount + 1
