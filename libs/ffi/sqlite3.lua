@@ -17,6 +17,7 @@ int sqlite3_step(sqlite3_stmt *pStmt);
 int sqlite3_finalize(sqlite3_stmt *pStmt);
 int sqlite3_bind_text(sqlite3_stmt *pStmt, int idx, const char *val, int n, void(*free)(void*));
 int sqlite3_bind_int(sqlite3_stmt *pStmt, int idx, int val);
+int sqlite3_bind_double(sqlite3_stmt *pStmt, int idx, double val);
 const char *sqlite3_column_text(sqlite3_stmt *pStmt, int iCol);
 int sqlite3_column_int(sqlite3_stmt *pStmt, int iCol);
 void sqlite3_free(void *ptr);
@@ -74,8 +75,15 @@ local function sqlite_prepare(db, sql)
 end
 
 local function bind_value(stmt, index, value)
-    if type(value) == 'string' then
+    local t = type(value)
+    if t == 'string' then
         sqlite.sqlite3_bind_text(stmt, index, value, -1, nil)
+    elseif t == 'number' then
+        if math.floor(value) == value then
+            sqlite.sqlite3_bind_int(stmt, index, value)
+        else
+            sqlite.sqlite3_bind_double(stmt, index, value)
+        end
     else
         sqlite.sqlite3_bind_int(stmt, index, value)
     end
