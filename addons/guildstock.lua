@@ -19,6 +19,7 @@ local addon          =
     settings        = {},
     defaultSettings =
     {
+        showItemMessages = false,
     },
     rootDir         = nil,
     databases       =
@@ -162,6 +163,15 @@ addon.onIncomingPacket = function(id, data)
                 Hidden      = bit.band(itemEntry.Price, 0x80000000) ~= 0, -- items with MSB set
                 Price       = bit.band(itemEntry.Price, 0x3FFFFFFF),
             }
+
+            if addon.settings.showItemMessages then
+                backend.msg('GuildStock', string.format('%s x%d @%d ea.',
+                    backend.get_item_name(itemEntry.ItemNo),
+                    itemEntry.Count,
+                    bit.band(itemEntry.Price, 0x3FFFFFFF)
+                ))
+            end
+
             if addon.databases.global.buyList then
                 addon.databases.global.buyList:add_or_update(itemKey, dbEntry)
             end
@@ -211,6 +221,19 @@ addon.onIncomingPacket = function(id, data)
         backend.msg('GuildStock',
             string.format('Recorded %d items purchased by %s', sellListPacket.Count, addon.guildNpc.Name))
     end
+end
+
+addon.onConfigMenu = function()
+    return
+    {
+        {
+            key         = 'showItemMessages',
+            title       = 'Show Item Messages',
+            description = 'If enabled, will display a message for each item when viewing guild stock.',
+            type        = 'checkbox',
+            default     = addon.defaultSettings.showItemMessages,
+        },
+    }
 end
 
 return addon
