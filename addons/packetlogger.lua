@@ -29,8 +29,12 @@ local addon            =
     },
 }
 
+local socket           = require('socket')
+
 addon.onIncomingPacket = function(id, data, size)
-    local timestr  = os.date('%Y-%m-%d %H:%M:%S')
+    local time     = socket.gettime()
+    local timestr  = os.date('%Y-%m-%d %H:%M:%S', math.floor(time)) ..
+      string.format('.%03d', math.floor((time % 1) * 1000))
     local hexidstr = string.format('0x%.3X', id)
 
     if captain.isCapturing then
@@ -55,7 +59,9 @@ addon.onIncomingPacket = function(id, data, size)
 end
 
 addon.onOutgoingPacket = function(id, data, size)
-    local timestr  = os.date('%Y-%m-%d %H:%M:%S')
+    local time     = socket.gettime()
+    local timestr  = os.date('%Y-%m-%d %H:%M:%S', math.floor(time)) ..
+      string.format('.%03d', math.floor((time % 1) * 1000))
     local hexidstr = string.format('0x%.3X', id)
 
     if captain.isCapturing then
