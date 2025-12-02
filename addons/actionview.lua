@@ -78,6 +78,7 @@ local addon =
         actor_name = 'Actor Name',      -- Resolved actor name
         knockback  = 0,                 -- Knockback value
         ready_time = 0.0,               -- Ready time (ms) from start to finish
+        info       = 0,                 -- Info field from target result
     },
     files           =
     {
@@ -187,11 +188,37 @@ local function parseAction(action)
         result.id = action.cmd_arg
     end
 
-    if action.target and action.target[1] then
-        if action.target[1].result and action.target[1].result[1] then
+    -- Iterate over all targets and results
+    result.message   = 0
+    result.animation = 0
+    result.knockback = 0
+    result.info      = 0
+
+    if action.target then
+        -- Get message and animation from first target's first result
+        if action.target[1] and action.target[1].result and action.target[1].result[1] then
             result.message   = action.target[1].result[1].message
             result.animation = action.target[1].result[1].sub_kind
-            result.knockback = action.target[1].result[1].knockback or 0
+        end
+
+        -- Iterate over all targets and their results
+        for i = 1, #action.target do
+            local target = action.target[i]
+            if target.result then
+                for j = 1, #target.result do
+                    local targetResult = target.result[j]
+
+                    -- Capture highest knockback value
+                    if targetResult.knockback and targetResult.knockback > result.knockback then
+                        result.knockback = targetResult.knockback
+                    end
+
+                    -- Check if any result has critical bit set (bit 1)
+                    if targetResult.info and bit.band(targetResult.info, 2) == 2 then
+                        result.info = bit.bor(result.info, 2)
+                    end
+                end
+            end
         end
     end
 
@@ -272,6 +299,14 @@ local function createActionNotification(result)
 
     if result.knockback > 0 then
         table.insert(dataFields, { 'Knockback', result.knockback })
+    end
+
+    -- Check if second bit of info is set for mob skills (11) and weapon skills (3)
+    if (result.category == 11 or result.category == 3) and result.info then
+        local infoBit1 = bit.band(result.info, 2)
+        if infoBit1 == 2 then
+            table.insert(dataFields, { 'Critical Hit', 'YES' })
+        end
     end
 
     if result.ready_time and result.ready_time > 0 then
