@@ -646,6 +646,44 @@
 ---@field WeatherNumber number
 ---@field WeatherOffsetTime number
 
+---@class CLISTATUS
+---@field hpmax number
+---@field mpmax number
+---@field mjob_no number
+---@field mjob_lv number
+---@field sjob_no number
+---@field sjob_lv number
+---@field exp_now number
+---@field exp_next number
+---@field bp_base table -- Array of 7 base stat values (STR, DEX, VIT, AGI, INT, MND, CHR)
+---@field bp_adj table -- Array of 7 adjusted stat values
+---@field atk number
+---@field def number
+---@field def_elem table -- Array of 8 elemental defense values
+---@field designation number
+---@field rank number
+---@field rankbar number
+---@field BindZoneNo number
+---@field MonsterBuster number
+---@field nation number
+---@field myroom number
+---@field su_lv number
+---@field padding00 number
+---@field highest_ilvl number
+---@field ilvl number
+---@field ilvl_mhand number
+---@field ilvl_ranged number
+---@field unity_info number
+---@field unity_points1 number
+---@field unity_points2 number
+---@field unity_chat_color_flag number
+---@field mastery_info number
+---@field mastery_exp_now number
+---@field mastery_exp_next number
+
+---@class GP_SERV_COMMAND_CLISTATUS : ParsedPacket
+---@field statusdata CLISTATUS
+
 ---@class GP_CLI_COMMAND_SHOP_BUY : ParsedPacket
 ---@field ItemNum number
 ---@field ShopNo number

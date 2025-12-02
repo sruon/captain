@@ -1052,17 +1052,23 @@ local definitions          =
 
                     -- Rename Handling
                     if (ctx.SubKind == 0 or ctx.SubKind == 1 or ctx.SubKind == 5 or ctx.SubKind == 6 or ctx.SubKind == 7) and ctx.SendFlg.Name and ctx.ActIndex and ctx.ActIndex >= 1792 then
-                        table.insert(fields, { name = 'data', bits = 16 })                  -- Varies based on prior fields
-                        table.insert(fields, { name = 'Name', type = 'string', size = 16 }) -- 16 bytes after data
+                        -- When SendFlg.Model is false, the data field IS the model_id
+                        if not ctx.SendFlg.Model then
+                            table.insert(fields, { name = 'model_id', bits = 16 })
+                        end
+                        table.insert(fields, { name = 'Name', type = 'string', size = 16 })
                     elseif ctx.SubKind == 1 and ctx.SendFlg.Name2 and ctx.ActIndex and ctx.ActIndex >= 1792 then
-                        table.insert(fields, { name = 'data', type = 'raw', size = 18 })    -- Varies
-                        table.insert(fields, { name = 'Name', type = 'string', size = 16 }) -- 16 bytes after data
+                        table.insert(fields, { name = 'data', type = 'raw', size = 18 })
+                        table.insert(fields, { name = 'Name', type = 'string', size = 16 })
                     elseif ctx.SubKind == 1 and ctx.SendFlg.Name2 and ctx.ActIndex and ctx.ActIndex < 1024 then
-                        table.insert(fields, { name = 'data', type = 'raw', size = 18 })    -- Varies
-                        table.insert(fields, { name = 'Name', type = 'string', size = 16 }) -- 16 bytes after data
+                        table.insert(fields, { name = 'data', type = 'raw', size = 18 })
+                        table.insert(fields, { name = 'Name', type = 'string', size = 16 })
                     elseif ctx.ActIndex and ctx.ActIndex < 1024 and ctx.SendFlg.Name then
-                        table.insert(fields, { name = 'data', bits = 16 })                  -- Varies
-                        table.insert(fields, { name = 'Name', type = 'string', size = 16 }) -- 16 bytes after data
+                        -- When SendFlg.Model is false, the data field IS the model_id
+                        if not ctx.SendFlg.Model then
+                            table.insert(fields, { name = 'model_id', bits = 16 })
+                        end
+                        table.insert(fields, { name = 'Name', type = 'string', size = 16 })
                     end
 
                     -- SubKind-specific handling (doors, elevators)
@@ -1207,7 +1213,11 @@ local definitions          =
                             },
                             {
                                 name = 'scale',
-                                bits = 5,
+                                bits = 2,
+                            },
+                            {
+                                name = 'knockback',
+                                bits = 3,
                             },
                             {
                                 name = 'value',
@@ -1791,17 +1801,23 @@ local definitions          =
 
                     -- Rename Handling
                     if (ctx.SubKind == 0 or ctx.SubKind == 1 or ctx.SubKind == 5 or ctx.SubKind == 6 or ctx.SubKind == 7) and ctx.SendFlg.Name and ctx.ActIndex and ctx.ActIndex >= 1792 then
-                        table.insert(fields, { name = 'data', bits = 16 })                  -- Varies based on prior fields
-                        table.insert(fields, { name = 'Name', type = 'string', size = 16 }) -- 16 bytes after data
+                        -- When SendFlg.Model is false, the data field IS the model_id
+                        if not ctx.SendFlg.Model then
+                            table.insert(fields, { name = 'model_id', bits = 16 })
+                        end
+                        table.insert(fields, { name = 'Name', type = 'string', size = 16 })
                     elseif ctx.SubKind == 1 and ctx.SendFlg.Name2 and ctx.ActIndex and ctx.ActIndex >= 1792 then
-                        table.insert(fields, { name = 'data', type = 'raw', size = 18 })    -- Varies
-                        table.insert(fields, { name = 'Name', type = 'string', size = 16 }) -- 16 bytes after data
+                        table.insert(fields, { name = 'data', type = 'raw', size = 18 })
+                        table.insert(fields, { name = 'Name', type = 'string', size = 16 })
                     elseif ctx.SubKind == 1 and ctx.SendFlg.Name2 and ctx.ActIndex and ctx.ActIndex < 1024 then
-                        table.insert(fields, { name = 'data', type = 'raw', size = 18 })    -- Varies
-                        table.insert(fields, { name = 'Name', type = 'string', size = 16 }) -- 16 bytes after data
+                        table.insert(fields, { name = 'data', type = 'raw', size = 18 })
+                        table.insert(fields, { name = 'Name', type = 'string', size = 16 })
                     elseif ctx.ActIndex and ctx.ActIndex < 1024 and ctx.SendFlg.Name then
-                        table.insert(fields, { name = 'data', bits = 16 })                  -- Varies
-                        table.insert(fields, { name = 'Name', type = 'string', size = 16 }) -- 16 bytes after data
+                        -- When SendFlg.Model is false, the data field IS the model_id
+                        if not ctx.SendFlg.Model then
+                            table.insert(fields, { name = 'model_id', bits = 16 })
+                        end
+                        table.insert(fields, { name = 'Name', type = 'string', size = 16 })
                     end
 
                     -- SubKind-specific handling (doors, elevators)
@@ -1946,7 +1962,11 @@ local definitions          =
                             },
                             {
                                 name = 'scale',
-                                bits = 5,
+                                bits = 2,
+                            },
+                            {
+                                name = 'knockback',
+                                bits = 3,
                             },
                             {
                                 name = 'value',
@@ -2802,6 +2822,73 @@ local definitions          =
             { name = 'StartTime',         bits = 32 }, -- 0x04
             { name = 'WeatherNumber',     bits = 16 }, -- 0x08
             { name = 'WeatherOffsetTime', bits = 16 }, -- 0x0A
+        },
+        [PacketId.GP_SERV_COMMAND_CLISTATUS]         =
+        {
+            {
+                name   = 'statusdata',
+                type   = 'struct',
+                layout =
+                {
+                    { name = 'hpmax',    bits = 32, signed = true }, -- 0x04
+                    { name = 'mpmax',    bits = 32, signed = true }, -- 0x08
+                    { name = 'mjob_no',  bits = 8 },                 -- 0x0C
+                    { name = 'mjob_lv',  bits = 8 },                 -- 0x0D
+                    { name = 'sjob_no',  bits = 8 },                 -- 0x0E
+                    { name = 'sjob_lv',  bits = 8 },                 -- 0x0F
+                    { name = 'exp_now',  bits = 16, signed = true }, -- 0x10
+                    { name = 'exp_next', bits = 16, signed = true }, -- 0x12
+                    {
+                        name   = 'bp_base',                          -- 0x14
+                        type   = 'array',
+                        count  = 7,
+                        layout =
+                        {
+                            { name = 'value', bits = 16 },
+                        },
+                    },
+                    {
+                        name   = 'bp_adj', -- 0x22
+                        type   = 'array',
+                        count  = 7,
+                        layout =
+                        {
+                            { name = 'value', bits = 16, signed = true },
+                        },
+                    },
+                    { name = 'atk', bits = 16, signed = true }, -- 0x30
+                    { name = 'def', bits = 16, signed = true }, -- 0x32
+                    {
+                        name   = 'def_elem',                    -- 0x34
+                        type   = 'array',
+                        count  = 8,
+                        layout =
+                        {
+                            { name = 'value', bits = 16, signed = true },
+                        },
+                    },
+                    { name = 'designation',           bits = 16 }, -- 0x44
+                    { name = 'rank',                  bits = 16 }, -- 0x46
+                    { name = 'rankbar',               bits = 16 }, -- 0x48
+                    { name = 'BindZoneNo',            bits = 16 }, -- 0x4A
+                    { name = 'MonsterBuster',         bits = 32 }, -- 0x4C
+                    { name = 'nation',                bits = 8 },  -- 0x50
+                    { name = 'myroom',                bits = 8 },  -- 0x51
+                    { name = 'su_lv',                 bits = 8 },  -- 0x52
+                    { name = 'padding00',             bits = 8 },  -- 0x53
+                    { name = 'highest_ilvl',          bits = 8 },  -- 0x54
+                    { name = 'ilvl',                  bits = 8 },  -- 0x55
+                    { name = 'ilvl_mhand',            bits = 8 },  -- 0x56
+                    { name = 'ilvl_ranged',           bits = 8 },  -- 0x57
+                    { name = 'unity_info',            bits = 32 }, -- 0x58
+                    { name = 'unity_points1',         bits = 16 }, -- 0x5C
+                    { name = 'unity_points2',         bits = 16 }, -- 0x5E
+                    { name = 'unity_chat_color_flag', bits = 32 }, -- 0x60
+                    { name = 'mastery_info',          bits = 32 }, -- 0x64
+                    { name = 'mastery_exp_now',       bits = 32 }, -- 0x68
+                    { name = 'mastery_exp_next',      bits = 32 }, -- 0x6C
+                },
+            },
         },
         [PacketId.GP_SERV_COMMAND_EFFECT]            =
         {
