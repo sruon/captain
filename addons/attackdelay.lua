@@ -22,9 +22,11 @@ local addon =
     settings        = {},
     defaultSettings =
     {
+        showWindow = true,
     },
     mobs            = {},
     charTp          = 0,
+    delayWindow     = nil,
     files           =
     {
         global  = nil,
@@ -42,6 +44,75 @@ end
 -- Rule of thumb: 21 TP/hit corresponds to a monster with 240 delay
 local function estimateMonsterDelay(playerTpGain)
     return (playerTpGain / 21) * 240
+end
+
+local function updateDelayWindow()
+    if not addon.settings.showWindow or not addon.delayWindow then
+        return
+    end
+
+    local target = backend.get_target_entity_data()
+    if not target or not backend.is_mob(target.targIndex) then
+        addon.delayWindow:hide()
+        return
+    end
+
+    local trackedMob = addon.mobs[target.serverId]
+    if not trackedMob or #trackedMob.delays == 0 then
+        addon.delayWindow:hide()
+        return
+    end
+
+    local sample_count  = #trackedMob.delays
+    local sorted_delays = utils.deepCopy(trackedMob.delays)
+    table.sort(sorted_delays)
+
+    local sum = 0
+    for _, delay in ipairs(sorted_delays) do
+        sum = sum + delay
+    end
+
+    local median      = stats.median(sorted_delays)
+
+    local ffxi_min    = secondsToFFXIDelay(sorted_delays[1])
+    local ffxi_max    = secondsToFFXIDelay(sorted_delays[#sorted_delays])
+    local ffxi_median = secondsToFFXIDelay(median)
+
+    -- Build output
+    local output      = {}
+    table.insert(output, string.format('%-18s %d-%d (Med: %d)', 'Delay:', ffxi_min, ffxi_max, ffxi_median))
+
+    -- Add TP-derived delay if available
+    if trackedMob.delayFromTpGain and #trackedMob.delayFromTpGain > 0 then
+        local commonDelay = stats.mode(trackedMob.delayFromTpGain, 10)
+        if commonDelay then
+            table.insert(output, string.format('%-18s %.0f', 'Delay (TP Return):', commonDelay))
+        end
+    end
+
+    -- Add multi-hit info
+    if trackedMob.hitsByRound and #trackedMob.hitsByRound > 0 then
+        local hitCounts = {}
+        for _, hits in ipairs(trackedMob.hitsByRound) do
+            hitCounts[hits] = (hitCounts[hits] or 0) + 1
+        end
+
+        local totalRounds = #trackedMob.hitsByRound
+        local hit_stats   = {}
+        for i = 1, 4 do
+            if hitCounts[i] then
+                table.insert(hit_stats, string.format('%d:%.0f%%', i, (hitCounts[i] / totalRounds * 100)))
+            end
+        end
+
+        if #hit_stats > 0 then
+            table.insert(output, string.format('%-18s %s', 'Multi:', table.concat(hit_stats, ' ')))
+        end
+    end
+
+    addon.delayWindow:updateTitle({ { text = target.name, color = { 1.0, 0.65, 0.26, 1.0 } } })
+    addon.delayWindow:updateText(table.concat(output, '\n'))
+    addon.delayWindow:show()
 end
 
 addon.onIncomingPacket = function(id, data, size)
@@ -71,49 +142,69 @@ addon.onIncomingPacket = function(id, data, size)
                     hitsByRound     = {}, -- Track hit count per round
                     hitsBySlot      =
                     {
-                        mainHand  = 0, -- sub_kind 0
-                        offHand   = 0, -- sub_kind 1
-                        rightKick = 0, -- sub_kind 2
-                        leftKick  = 0, -- sub_kind 3
+                        mainHand  = 0,      -- sub_kind 0
+                        offHand   = 0,      -- sub_kind 1
+                        rightKick = 0,      -- sub_kind 2
+                        leftKick  = 0,      -- sub_kind 3
                     },
+                    isTracking      = true, -- Track whether we should record delays
                 }
             else
-                local delay_seconds = os.clock() - knownMob.lastAttack
-                knownMob.lastAttack = os.clock()
-                table.insert(knownMob.delays, delay_seconds)
-                knownMob.roundsTracked = knownMob.roundsTracked + 1
+                -- Only record delay if we were tracking (not interrupted by spell/TP move)
+                if not knownMob.isTracking then
+                    -- Resume tracking after getting a melee hit
+                    knownMob.isTracking = true
+                    knownMob.lastAttack = os.clock()
+                    -- Don't record this delay as it includes the spell/ability time
+                else
+                    local delay_seconds = os.clock() - knownMob.lastAttack
+                    knownMob.lastAttack = os.clock()
+                    table.insert(knownMob.delays, delay_seconds)
+                    knownMob.roundsTracked = knownMob.roundsTracked + 1
 
-                -- Count hits by slot type and track per-round totals
-                local roundHitCount    = 0
-                local hadKick          = false
+                    -- Count hits by slot type and track per-round totals
+                    local roundHitCount    = 0
+                    local hadKick          = false
 
-                if packet.target[1] and packet.target[1].result then
-                    for _, result in ipairs(packet.target[1].result) do
-                        roundHitCount = roundHitCount + 1
+                    if packet.target[1] and packet.target[1].result then
+                        for _, result in ipairs(packet.target[1].result) do
+                            roundHitCount = roundHitCount + 1
 
-                        if result.sub_kind == 0 then
-                            knownMob.hitsBySlot.mainHand = knownMob.hitsBySlot.mainHand + 1
-                        elseif result.sub_kind == 1 then
-                            knownMob.hitsBySlot.offHand = knownMob.hitsBySlot.offHand + 1
-                        elseif result.sub_kind == 2 then
-                            knownMob.hitsBySlot.rightKick = knownMob.hitsBySlot.rightKick + 1
-                            knownMob.isH2H                = true
-                            hadKick                       = true
-                        elseif result.sub_kind == 3 then
-                            knownMob.hitsBySlot.leftKick = knownMob.hitsBySlot.leftKick + 1
-                            knownMob.isH2H               = true
-                            hadKick                      = true
+                            if result.sub_kind == 0 then
+                                knownMob.hitsBySlot.mainHand = knownMob.hitsBySlot.mainHand + 1
+                            elseif result.sub_kind == 1 then
+                                knownMob.hitsBySlot.offHand = knownMob.hitsBySlot.offHand + 1
+                            elseif result.sub_kind == 2 then
+                                knownMob.hitsBySlot.rightKick = knownMob.hitsBySlot.rightKick + 1
+                                knownMob.isH2H                = true
+                                hadKick                       = true
+                            elseif result.sub_kind == 3 then
+                                knownMob.hitsBySlot.leftKick = knownMob.hitsBySlot.leftKick + 1
+                                knownMob.isH2H               = true
+                                hadKick                      = true
+                            end
                         end
                     end
-                end
 
-                -- Track this round's hit count
-                table.insert(knownMob.hitsByRound, roundHitCount)
+                    -- Track this round's hit count
+                    table.insert(knownMob.hitsByRound, roundHitCount)
 
-                -- Track if this round had kicks
-                if hadKick then
-                    knownMob.roundsWithKicks = knownMob.roundsWithKicks + 1
+                    -- Track if this round had kicks
+                    if hadKick then
+                        knownMob.roundsWithKicks = knownMob.roundsWithKicks + 1
+                    end
+
+                    -- Update window after tracking attack
+                    updateDelayWindow()
                 end
+            end
+            -- Handle spell casting and TP moves - pause tracking
+        elseif packet.cmd_no == 4 or packet.cmd_no == 8 or packet.cmd_no == 11 then
+            -- Category 4: Magic (finish), 8: Magic (start), 11: Mob TP moves
+            local knownMob = addon.mobs[packet.m_uID]
+            if knownMob then
+                -- Pause tracking when mob uses spell or TP move
+                knownMob.isTracking = false
             end
         end
     elseif id == PacketId.GP_SERV_COMMAND_GROUP_ATTR then -- Char Update
@@ -153,6 +244,9 @@ addon.onIncomingPacket = function(id, data, size)
             end
 
             table.insert(mob.delayFromTpGain, estimatedDelay)
+
+            -- Update window after TP gain
+            updateDelayWindow()
         end
     elseif id == PacketId.GP_SERV_COMMAND_BATTLE_MESSAGE then
         -- Mob has been defeated, print and log the results
@@ -335,6 +429,7 @@ end
 addon.onInitialize     = function(rootDir)
     addon.rootDir      = rootDir
     addon.files.global = backend.fileOpen(rootDir .. backend.player_name() .. '/' .. backend.zone_name() .. '.log')
+    addon.delayWindow  = backend.textBox('attackdelay')
 end
 
 addon.onClientReady    = function(zoneId)
@@ -343,6 +438,23 @@ addon.onClientReady    = function(zoneId)
     if addon.files.capture then
         addon.files.capture = backend.fileOpen(addon.captureDir .. backend.zone_name() .. '.log')
     end
+end
+
+addon.onPrerender      = function()
+    updateDelayWindow()
+end
+
+addon.onConfigMenu     = function()
+    return
+    {
+        {
+            key         = 'showWindow',
+            title       = 'Show Attack Delay Window',
+            description = 'If enabled, displays a window with current attack delay statistics while fighting.',
+            type        = 'checkbox',
+            default     = addon.defaultSettings.showWindow,
+        },
+    }
 end
 
 return addon
