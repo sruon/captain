@@ -15,7 +15,7 @@ end
 -- Addon info
 local name     = 'captain'
 local author   = 'zach2good, sruon'
-local version  = '1.7.0' -- x-release-please-version
+local version  = '1.7.1' -- x-release-please-version
 local commands = { 'captain', 'cap' }
 
 if addon then

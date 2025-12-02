@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.7.1](https://github.com/sruon/captain/compare/v1.7.0...v1.7.1) (2025-12-02)
+
+
+### Bug Fixes
+
+* defer loading, save box positions ([14985e0](https://github.com/sruon/captain/commit/14985e0ca68edb6d302c651c818a5cc0e70990fa))
+
 ## [1.7.0](https://github.com/sruon/captain/compare/v1.6.1...v1.7.0) (2025-12-02)
 
 
