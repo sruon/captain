@@ -465,4 +465,122 @@ end
 
 addon.onInitialize     = initialize
 
+addon.onConfigMenu     = function()
+    return
+    {
+        {
+            key         = 'mobsOnly',
+            title       = 'Mobs Only',
+            description = 'If enabled, only displays notifications for mob actions. If disabled, shows player actions too.',
+            type        = 'checkbox',
+            default     = addon.defaultSettings.mobsOnly,
+        },
+        {
+            key         = 'category.1',
+            title       = 'Category 1: Melee Attack',
+            description = 'Show notifications for melee attacks',
+            type        = 'checkbox',
+            default     = addon.defaultSettings.category[1],
+        },
+        {
+            key         = 'category.2',
+            title       = 'Category 2: Ranged Attack (Finish)',
+            description = 'Show notifications for ranged attack execution',
+            type        = 'checkbox',
+            default     = addon.defaultSettings.category[2],
+        },
+        {
+            key         = 'category.3',
+            title       = 'Category 3: Weapon Skills / JAs',
+            description = 'Show notifications for weapon skills and some damaging job abilities',
+            type        = 'checkbox',
+            default     = addon.defaultSettings.category[3],
+        },
+        {
+            key         = 'category.4',
+            title       = 'Category 4: Magic (Finish)',
+            description = 'Show notifications for casted magic',
+            type        = 'checkbox',
+            default     = addon.defaultSettings.category[4],
+        },
+        {
+            key         = 'category.5',
+            title       = 'Category 5: Item Usage (Finish)',
+            description = 'Show notifications for item usage execution',
+            type        = 'checkbox',
+            default     = addon.defaultSettings.category[5],
+        },
+        {
+            key         = 'category.6',
+            title       = 'Category 6: Job Abilities',
+            description = 'Show notifications for most job abilities',
+            type        = 'checkbox',
+            default     = addon.defaultSettings.category[6],
+        },
+        {
+            key         = 'category.7',
+            title       = 'Category 7: TP Move (Start)',
+            description = 'Show notifications for TP move start',
+            type        = 'checkbox',
+            default     = addon.defaultSettings.category[7],
+        },
+        {
+            key         = 'category.8',
+            title       = 'Category 8: Magic (Start)',
+            description = 'Show notifications for spell start',
+            type        = 'checkbox',
+            default     = addon.defaultSettings.category[8],
+        },
+        {
+            key         = 'category.9',
+            title       = 'Category 9: Item Usage (Start)',
+            description = 'Show notifications for item usage initiation',
+            type        = 'checkbox',
+            default     = addon.defaultSettings.category[9],
+        },
+        {
+            key         = 'category.10',
+            title       = 'Category 10: Unknown',
+            description = 'Show notifications for unknown category',
+            type        = 'checkbox',
+            default     = addon.defaultSettings.category[10],
+        },
+        {
+            key         = 'category.11',
+            title       = 'Category 11: Mob TP Moves',
+            description = 'Show notifications for mob TP moves',
+            type        = 'checkbox',
+            default     = addon.defaultSettings.category[11],
+        },
+        {
+            key         = 'category.12',
+            title       = 'Category 12: Ranged Attack (Start)',
+            description = 'Show notifications for ranged attack initiation',
+            type        = 'checkbox',
+            default     = addon.defaultSettings.category[12],
+        },
+        {
+            key         = 'category.13',
+            title       = 'Category 13: Pet TP Moves',
+            description = 'Show notifications for pet TP moves',
+            type        = 'checkbox',
+            default     = addon.defaultSettings.category[13],
+        },
+        {
+            key         = 'category.14',
+            title       = 'Category 14: Non-blinkable JAs',
+            description = 'Show notifications for non-blinkable job abilities (Jigs, Sambas, Steps, Waltzes, Flourish)',
+            type        = 'checkbox',
+            default     = addon.defaultSettings.category[14],
+        },
+        {
+            key         = 'category.15',
+            title       = 'Category 15: RUN Job Abilities',
+            description = 'Show notifications for some RUN job abilities',
+            type        = 'checkbox',
+            default     = addon.defaultSettings.category[15],
+        },
+    }
+end
+
 return addon
