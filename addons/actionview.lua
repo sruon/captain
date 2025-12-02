@@ -74,6 +74,7 @@ local addon =
         animation  = 456,               -- Animation ID (sub_kind)
         name       = 'Example Ability', -- Resolved action name
         actor_name = 'Actor Name',      -- Resolved actor name
+        knockback  = 0,                 -- Knockback value
     },
     files           =
     {
@@ -178,6 +179,7 @@ local function parseAction(action)
         if action.target[1].result and action.target[1].result[1] then
             result.message   = action.target[1].result[1].message
             result.animation = action.target[1].result[1].sub_kind
+            result.knockback = action.target[1].result[1].knockback or 0
             if action.cmd_no == 8 then
                 result.id = action.target[1].result[1].value
             end
@@ -257,6 +259,10 @@ local function createActionNotification(result)
 
     if result.message then
         table.insert(dataFields, { 'Message', result.message })
+    end
+
+    if result.knockback > 0 then
+        table.insert(dataFields, { 'Knockback', result.knockback })
     end
 
     backend.notificationCreate('AView', title, dataFields)
