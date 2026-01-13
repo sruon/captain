@@ -221,6 +221,20 @@ backend.register_event_prerender = function(func)
                 end
                 colored_text(box.text)
 
+                -- Render buttons if any
+                if box.buttons and #box.buttons > 0 then
+                    imgui.Separator()
+                    for _, btn in ipairs(box.buttons) do
+                        if imgui.SmallButton(btn.label) then
+                            if btn.callback then
+                                btn.callback()
+                            end
+                        end
+                        imgui.SameLine()
+                    end
+                    imgui.NewLine()
+                end
+
                 if captain.settings and captain.settings.textBox then
                     if not captain.settings.textBox.positions then
                         captain.settings.textBox.positions = {}
@@ -366,6 +380,7 @@ backend.textBox                  = function(id)
     box.text         = nil
     box.visible      = true
     box.positionSet  = false -- Track if we've applied saved position
+    box.buttons      = {}
 
     textBoxIdCounter = textBoxIdCounter + 1
 
@@ -383,6 +398,14 @@ backend.textBox                  = function(id)
 
     box.updateText   = function(self, str)
         self.text = str or ''
+    end
+
+    box.addButton    = function(self, label, callback)
+        table.insert(self.buttons, { label = label, callback = callback })
+    end
+
+    box.clearButtons = function(self)
+        self.buttons = {}
     end
 
     table.insert(gui, box)

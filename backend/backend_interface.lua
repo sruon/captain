@@ -29,10 +29,13 @@
 ---@field title string
 ---@field text string
 ---@field visible boolean
+---@field buttons table[]
 ---@field show fun(self: TextBox)
 ---@field hide fun(self: TextBox)
 ---@field updateText fun(self: TextBox, text: string | table)
 ---@field updateTitle fun(self: TextBox, text: string | table)
+---@field addButton fun(self: TextBox, label: string, callback: fun())
+---@field clearButtons fun(self: TextBox)
 
 ---@class File
 ---@field path string
