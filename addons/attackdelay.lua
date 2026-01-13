@@ -22,9 +22,11 @@ local addon =
     settings        = {},
     defaultSettings =
     {
-        showWindow = true,
+        showWindow  = true,
+        trackPlayer = false,
     },
     mobs            = {},
+    player          = nil,
     charTp          = 0,
     delayWindow     = nil,
     files           =
@@ -48,6 +50,52 @@ end
 
 local function updateDelayWindow()
     if not addon.settings.showWindow or not addon.delayWindow then
+        return
+    end
+
+    if addon.settings.trackPlayer and addon.player and #addon.player.delays > 0 then
+        local sample_count  = #addon.player.delays
+        local sorted_delays = utils.deepCopy(addon.player.delays)
+        table.sort(sorted_delays)
+
+        local sum = 0
+        for _, delay in ipairs(sorted_delays) do
+            sum = sum + delay
+        end
+
+        local median      = stats.median(sorted_delays)
+
+        local ffxi_min    = secondsToFFXIDelay(sorted_delays[1])
+        local ffxi_max    = secondsToFFXIDelay(sorted_delays[#sorted_delays])
+        local ffxi_median = secondsToFFXIDelay(median)
+
+        local output = {}
+        table.insert(output, string.format('%-18s %.3f-%.3f (Med: %.3f)', 'Delay:', ffxi_min, ffxi_max, ffxi_median))
+        table.insert(output, string.format('%-18s %d', 'Attack Rounds:', sample_count))
+
+        -- Add multi-hit info
+        if addon.player.hitsByRound and #addon.player.hitsByRound > 0 then
+            local hitCounts = {}
+            for _, hits in ipairs(addon.player.hitsByRound) do
+                hitCounts[hits] = (hitCounts[hits] or 0) + 1
+            end
+
+            local totalRounds = #addon.player.hitsByRound
+            local hit_stats   = {}
+            for i = 1, 8 do
+                if hitCounts[i] then
+                    table.insert(hit_stats, string.format('%d:%.3f%%', i, (hitCounts[i] / totalRounds * 100)))
+                end
+            end
+
+            if #hit_stats > 0 then
+                table.insert(output, string.format('%-18s %s', 'Multi:', table.concat(hit_stats, ' ')))
+            end
+        end
+
+        addon.delayWindow:updateTitle({ { text = 'Player', color = { 0.26, 0.65, 1.0, 1.0 } } })
+        addon.delayWindow:updateText(table.concat(output, '\n'))
+        addon.delayWindow:show()
         return
     end
 
@@ -80,13 +128,14 @@ local function updateDelayWindow()
 
     -- Build output
     local output      = {}
-    table.insert(output, string.format('%-18s %d-%d (Med: %d)', 'Delay:', ffxi_min, ffxi_max, ffxi_median))
+    table.insert(output, string.format('%-18s %.3f-%.3f (Med: %.3f)', 'Delay:', ffxi_min, ffxi_max, ffxi_median))
+    table.insert(output, string.format('%-18s %d', 'Attack Rounds:', sample_count))
 
     -- Add TP-derived delay if available
     if trackedMob.delayFromTpGain and #trackedMob.delayFromTpGain > 0 then
         local commonDelay = stats.mode(trackedMob.delayFromTpGain, 10)
         if commonDelay then
-            table.insert(output, string.format('%-18s %.0f', 'Delay (TP Return):', commonDelay))
+            table.insert(output, string.format('%-18s %.3f', 'Delay (TP Return):', commonDelay))
         end
     end
 
@@ -99,9 +148,9 @@ local function updateDelayWindow()
 
         local totalRounds = #trackedMob.hitsByRound
         local hit_stats   = {}
-        for i = 1, 4 do
+        for i = 1, 8 do
             if hitCounts[i] then
-                table.insert(hit_stats, string.format('%d:%.0f%%', i, (hitCounts[i] / totalRounds * 100)))
+                table.insert(hit_stats, string.format('%d:%.3f%%', i, (hitCounts[i] / totalRounds * 100)))
             end
         end
 
@@ -130,81 +179,157 @@ addon.onIncomingPacket = function(id, data, size)
         -- TODO: We can try and detect if the mob is H2H based on sub_kind
         if not packet or not packet.target then return end
         if packet.cmd_no == 1 then -- Basic Attack
-            local knownMob = addon.mobs[packet.m_uID]
-            if not knownMob then
-                addon.mobs[packet.m_uID] =
-                {
-                    lastAttack      = os.clock(),
-                    delays          = {},
-                    isH2H           = false,
-                    roundsTracked   = 0,
-                    roundsWithKicks = 0,
-                    hitsByRound     = {}, -- Track hit count per round
-                    hitsBySlot      =
+            local playerData = backend.get_player_entity_data()
+            local isPlayerAttack = addon.settings.trackPlayer and playerData and packet.m_uID == playerData.serverId
+
+            if isPlayerAttack then
+                -- Track player attacks
+                if not addon.player then
+                    addon.player =
                     {
-                        mainHand  = 0,      -- sub_kind 0
-                        offHand   = 0,      -- sub_kind 1
-                        rightKick = 0,      -- sub_kind 2
-                        leftKick  = 0,      -- sub_kind 3
-                    },
-                    isTracking      = true, -- Track whether we should record delays
-                }
-            else
-                -- Only record delay if we were tracking (not interrupted by spell/TP move)
-                if not knownMob.isTracking then
-                    -- Resume tracking after getting a melee hit
-                    knownMob.isTracking = true
-                    knownMob.lastAttack = os.clock()
-                    -- Don't record this delay as it includes the spell/ability time
+                        lastAttack      = os.clock(),
+                        delays          = {},
+                        isH2H           = false,
+                        roundsTracked   = 0,
+                        roundsWithKicks = 0,
+                        hitsByRound     = {},
+                        hitsBySlot      =
+                        {
+                            mainHand  = 0,
+                            offHand   = 0,
+                            rightKick = 0,
+                            leftKick  = 0,
+                        },
+                        isTracking      = true,
+                    }
                 else
-                    local delay_seconds = os.clock() - knownMob.lastAttack
-                    knownMob.lastAttack = os.clock()
-                    table.insert(knownMob.delays, delay_seconds)
-                    knownMob.roundsTracked = knownMob.roundsTracked + 1
+                    if not addon.player.isTracking then
+                        addon.player.isTracking = true
+                        addon.player.lastAttack = os.clock()
+                    else
+                        local delay_seconds = os.clock() - addon.player.lastAttack
+                        addon.player.lastAttack = os.clock()
+                        table.insert(addon.player.delays, delay_seconds)
+                        addon.player.roundsTracked = addon.player.roundsTracked + 1
 
-                    -- Count hits by slot type and track per-round totals
-                    local roundHitCount    = 0
-                    local hadKick          = false
+                        local roundHitCount = 0
+                        local hadKick = false
 
-                    if packet.target[1] and packet.target[1].result then
-                        for _, result in ipairs(packet.target[1].result) do
-                            roundHitCount = roundHitCount + 1
+                        if packet.target[1] and packet.target[1].result then
+                            for _, result in ipairs(packet.target[1].result) do
+                                roundHitCount = roundHitCount + 1
 
-                            if result.sub_kind == 0 then
-                                knownMob.hitsBySlot.mainHand = knownMob.hitsBySlot.mainHand + 1
-                            elseif result.sub_kind == 1 then
-                                knownMob.hitsBySlot.offHand = knownMob.hitsBySlot.offHand + 1
-                            elseif result.sub_kind == 2 then
-                                knownMob.hitsBySlot.rightKick = knownMob.hitsBySlot.rightKick + 1
-                                knownMob.isH2H                = true
-                                hadKick                       = true
-                            elseif result.sub_kind == 3 then
-                                knownMob.hitsBySlot.leftKick = knownMob.hitsBySlot.leftKick + 1
-                                knownMob.isH2H               = true
-                                hadKick                      = true
+                                if result.sub_kind == 0 then
+                                    addon.player.hitsBySlot.mainHand = addon.player.hitsBySlot.mainHand + 1
+                                elseif result.sub_kind == 1 then
+                                    addon.player.hitsBySlot.offHand = addon.player.hitsBySlot.offHand + 1
+                                elseif result.sub_kind == 2 then
+                                    addon.player.hitsBySlot.rightKick = addon.player.hitsBySlot.rightKick + 1
+                                    addon.player.isH2H = true
+                                    hadKick = true
+                                elseif result.sub_kind == 3 then
+                                    addon.player.hitsBySlot.leftKick = addon.player.hitsBySlot.leftKick + 1
+                                    addon.player.isH2H = true
+                                    hadKick = true
+                                end
                             end
                         end
+
+                        table.insert(addon.player.hitsByRound, roundHitCount)
+
+                        if hadKick then
+                            addon.player.roundsWithKicks = addon.player.roundsWithKicks + 1
+                        end
+
+                        updateDelayWindow()
                     end
+                end
+            else
+                -- Track mob attacks
+                local knownMob = addon.mobs[packet.m_uID]
+                if not knownMob then
+                    addon.mobs[packet.m_uID] =
+                    {
+                        lastAttack      = os.clock(),
+                        delays          = {},
+                        isH2H           = false,
+                        roundsTracked   = 0,
+                        roundsWithKicks = 0,
+                        hitsByRound     = {}, -- Track hit count per round
+                        hitsBySlot      =
+                        {
+                            mainHand  = 0,      -- sub_kind 0
+                            offHand   = 0,      -- sub_kind 1
+                            rightKick = 0,      -- sub_kind 2
+                            leftKick  = 0,      -- sub_kind 3
+                        },
+                        isTracking      = true, -- Track whether we should record delays
+                    }
+                else
+                    -- Only record delay if we were tracking (not interrupted by spell/TP move)
+                    if not knownMob.isTracking then
+                        -- Resume tracking after getting a melee hit
+                        knownMob.isTracking = true
+                        knownMob.lastAttack = os.clock()
+                        -- Don't record this delay as it includes the spell/ability time
+                    else
+                        local delay_seconds = os.clock() - knownMob.lastAttack
+                        knownMob.lastAttack = os.clock()
+                        table.insert(knownMob.delays, delay_seconds)
+                        knownMob.roundsTracked = knownMob.roundsTracked + 1
 
-                    -- Track this round's hit count
-                    table.insert(knownMob.hitsByRound, roundHitCount)
+                        -- Count hits by slot type and track per-round totals
+                        local roundHitCount    = 0
+                        local hadKick          = false
 
-                    -- Track if this round had kicks
-                    if hadKick then
-                        knownMob.roundsWithKicks = knownMob.roundsWithKicks + 1
+                        if packet.target[1] and packet.target[1].result then
+                            for _, result in ipairs(packet.target[1].result) do
+                                roundHitCount = roundHitCount + 1
+
+                                if result.sub_kind == 0 then
+                                    knownMob.hitsBySlot.mainHand = knownMob.hitsBySlot.mainHand + 1
+                                elseif result.sub_kind == 1 then
+                                    knownMob.hitsBySlot.offHand = knownMob.hitsBySlot.offHand + 1
+                                elseif result.sub_kind == 2 then
+                                    knownMob.hitsBySlot.rightKick = knownMob.hitsBySlot.rightKick + 1
+                                    knownMob.isH2H                = true
+                                    hadKick                       = true
+                                elseif result.sub_kind == 3 then
+                                    knownMob.hitsBySlot.leftKick = knownMob.hitsBySlot.leftKick + 1
+                                    knownMob.isH2H               = true
+                                    hadKick                      = true
+                                end
+                            end
+                        end
+
+                        -- Track this round's hit count
+                        table.insert(knownMob.hitsByRound, roundHitCount)
+
+                        -- Track if this round had kicks
+                        if hadKick then
+                            knownMob.roundsWithKicks = knownMob.roundsWithKicks + 1
+                        end
+
+                        -- Update window after tracking attack
+                        updateDelayWindow()
                     end
-
-                    -- Update window after tracking attack
-                    updateDelayWindow()
                 end
             end
             -- Handle spell casting and TP moves - pause tracking
         elseif packet.cmd_no == 4 or packet.cmd_no == 8 or packet.cmd_no == 11 then
             -- Category 4: Magic (finish), 8: Magic (start), 11: Mob TP moves
-            local knownMob = addon.mobs[packet.m_uID]
-            if knownMob then
-                -- Pause tracking when mob uses spell or TP move
-                knownMob.isTracking = false
+            local playerData = backend.get_player_entity_data()
+            if addon.settings.trackPlayer and playerData and packet.m_uID == playerData.serverId then
+                -- Pause player tracking
+                if addon.player then
+                    addon.player.isTracking = false
+                end
+            else
+                local knownMob = addon.mobs[packet.m_uID]
+                if knownMob then
+                    -- Pause tracking when mob uses spell or TP move
+                    knownMob.isTracking = false
+                end
             end
         end
     elseif id == PacketId.GP_SERV_COMMAND_GROUP_ATTR then -- Char Update
@@ -426,10 +551,20 @@ addon.onCaptureStop    = function()
     addon.files.capture = nil
 end
 
+local function resetStats()
+    addon.mobs   = {}
+    addon.player = nil
+    addon.charTp = 0
+    if addon.delayWindow then
+        addon.delayWindow:hide()
+    end
+end
+
 addon.onInitialize     = function(rootDir)
     addon.rootDir      = rootDir
     addon.files.global = backend.fileOpen(rootDir .. backend.player_name() .. '/' .. backend.zone_name() .. '.log')
     addon.delayWindow  = backend.textBox('attackdelay')
+    addon.delayWindow:addButton('Reset', resetStats)
 end
 
 addon.onClientReady    = function(zoneId)
@@ -453,6 +588,13 @@ addon.onConfigMenu     = function()
             description = 'If enabled, displays a window with current attack delay statistics while fighting.',
             type        = 'checkbox',
             default     = addon.defaultSettings.showWindow,
+        },
+        {
+            key         = 'trackPlayer',
+            title       = 'Track Player Attacks',
+            description = 'If enabled, tracks the player\'s attack delay instead of the target mob.',
+            type        = 'checkbox',
+            default     = addon.defaultSettings.trackPlayer,
         },
     }
 end
