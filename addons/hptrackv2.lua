@@ -48,7 +48,19 @@ local DAMAGE_MESSAGES         =
 local HEAL_MESSAGES           =
 {
     [7]   = true, -- Magic recovery
+    [24]  = true, -- Target recovers HP (simple)
+    [102] = true, -- Recovers HP (skill/ability)
+    [103] = true, -- Skill recovers HP
+    [238] = true, -- Uses skill recovers HP (AOE)
     [263] = true, -- AOE recovery
+    [306] = true, -- Uses item recovers HP (AOE)
+    [318] = true, -- Uses item recovers HP (AOE2)
+    [367] = true, -- Target recovers HP
+    [373] = true, -- Spikes effect recover
+    [383] = true, -- Spikes effect heal
+    [384] = true, -- Additional effect recovers HP
+    [451] = true, -- Gains HP (drain-type self heal)
+    [587] = true, -- Target regains HP
     [651] = true, -- Meteor recovery
 }
 
@@ -165,8 +177,10 @@ local function extractDamage(cmd_no, effect)
             damage = effect.value
         end
     elseif cmd_no == 3 then
-        -- Skill (Finish)
-        damage = effect.value
+        -- Skill (Finish) - filter out heals
+        if not HEAL_MESSAGES[message] then
+            damage = effect.value
+        end
     elseif cmd_no == 4 then
         -- Magic - check if message type indicates damage
         if message and DAMAGE_MESSAGES[message] then
@@ -201,6 +215,38 @@ local function extractDamage(cmd_no, effect)
     end
 
     return damage
+end
+
+local function extractHealing(effect)
+    local message = effect.message or 0
+
+    if HEAL_MESSAGES[message] then
+        return effect.value
+    end
+
+    return 0
+end
+
+local function processHealing(mobId, healing, actionData)
+    local trackedMob = addon.mobs[mobId]
+    if not trackedMob then
+        addon.mobs[mobId] =
+        {
+            id            = mobId,
+            damageHistory = {},
+            totalHealing  = 0,
+        }
+        trackedMob        = addon.mobs[mobId]
+    end
+
+    if not trackedMob.totalHealing then
+        trackedMob.totalHealing = 0
+    end
+
+    trackedMob.totalHealing = trackedMob.totalHealing + healing
+
+    debug_msg('Healing on mob %d: %d [cmd_no: %d, message: %d]',
+        mobId, healing, actionData.cmd_no, actionData.message or 0)
 end
 
 local function processDamage(mobId, damage, actionData)
@@ -394,9 +440,13 @@ addon.onIncomingPacket = function(id, data, size)
             local mobId = target.m_uID
 
             for _, effect in pairs(target.result) do
-                local damage = extractDamage(cmd_no, effect)
+                local damage  = extractDamage(cmd_no, effect)
+                local healing = extractHealing(effect)
 
-                if damage > 0 or (effect.has_react and effect.react and isTrustedReactId(effect.react.message)) then
+                if healing > 0 and actor_id == mobId then
+                    local actionData = createActionData(cmd_no, effect, actor_id)
+                    processHealing(mobId, healing, actionData)
+                elseif damage > 0 or (effect.has_react and effect.react and isTrustedReactId(effect.react.message)) then
                     local actionData = createActionData(cmd_no, effect, actor_id)
 
                     processDamage(mobId, damage, actionData)
@@ -424,11 +474,19 @@ addon.onIncomingPacket = function(id, data, size)
 
             if trackedMob then
                 local minHp, maxHp = calculateHpRange(trackedMob)
+                local totalHealing = trackedMob.totalHealing or 0
 
                 local mob          = backend.get_mob_by_index(packet.ActIndexTar)
                 local mob_name     = mob and mob.name or tostring(defeatedId)
-                local log_string   = string.format('Defeated %s: %d~%d HP',
-                    mob_name, minHp, maxHp)
+                local log_string
+
+                if totalHealing > 0 then
+                    log_string = string.format('Defeated %s: %d~%d HP (healed %d)',
+                        mob_name, minHp, maxHp, totalHealing)
+                else
+                    log_string = string.format('Defeated %s: %d~%d HP',
+                        mob_name, minHp, maxHp)
+                end
 
                 backend.msg('HPTrack', log_string)
 
