@@ -38,8 +38,15 @@ local TrackingListTbl_Type =
     ENEMY    = 2,
 }
 
-local function getCurrentDb()
-    return addon.databases.capture or addon.databases.global
+local function getAllDbs()
+    local dbs = {}
+    if addon.databases.global then
+        table.insert(dbs, addon.databases.global)
+    end
+    if addon.databases.capture then
+        table.insert(dbs, addon.databases.capture)
+    end
+    return dbs
 end
 
 addon.onIncomingPacket = function(id, data)
@@ -63,15 +70,16 @@ addon.onIncomingPacket = function(id, data)
             return
         end
 
-        local db = getCurrentDb()
-        if not db then
+        local dbs = getAllDbs()
+        if #dbs == 0 then
             return
         end
 
         local unique_no = bit.lshift(backend.zone(), 12) + 0x1000000 + act_index
         local mob_id    = tostring(unique_no)
 
-        local existing  = db:get(mob_id)
+        -- Use global db as source of truth
+        local existing  = addon.databases.global and addon.databases.global:get(mob_id)
 
         if existing then
             -- Only update if level range changed or name changed
@@ -95,18 +103,22 @@ addon.onIncomingPacket = function(id, data)
 
             -- Only write to database if something actually changed
             if needsUpdate then
-                db:add_or_update(mob_id, existing)
+                for _, db in ipairs(dbs) do
+                    db:add_or_update(mob_id, existing)
+                end
             end
         else
             -- Create new entry
-            db:add_or_update(mob_id,
-                {
-                    UniqueNo  = unique_no,
-                    ActIndex  = act_index,
-                    sName     = name or 'Unknown',
-                    Level_min = level,
-                    Level_max = level,
-                })
+            local entry = {
+                UniqueNo  = unique_no,
+                ActIndex  = act_index,
+                sName     = name or 'Unknown',
+                Level_min = level,
+                Level_max = level,
+            }
+            for _, db in ipairs(dbs) do
+                db:add_or_update(mob_id, entry)
+            end
         end
     end
 end
