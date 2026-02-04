@@ -57,10 +57,12 @@ local HEAL_MESSAGES           =
     [318] = true, -- Uses item recovers HP (AOE2)
     [367] = true, -- Target recovers HP
     [373] = true, -- Spikes effect recover
+    [382] = true, -- Ranged attack absorbed (target recovers HP)
     [383] = true, -- Spikes effect heal
     [384] = true, -- Additional effect recovers HP
     [451] = true, -- Gains HP (drain-type self heal)
     [587] = true, -- Target regains HP
+    [606] = true, -- Counter absorbed (target recovers HP)
     [651] = true, -- Meteor recovery
 }
 
@@ -201,6 +203,11 @@ local function extractDamage(cmd_no, effect)
                     damage = effect.value
                 end
             end
+        end
+    elseif cmd_no == 13 then
+        -- Pet Ability (SMN Blood Pacts, BST pet abilities, etc.)
+        if not HEAL_MESSAGES[message] then
+            damage = effect.value
         end
     elseif cmd_no == 14 and message ~= 0 then
         -- Violent Flourish
@@ -443,7 +450,7 @@ addon.onIncomingPacket = function(id, data, size)
                 local damage  = extractDamage(cmd_no, effect)
                 local healing = extractHealing(effect)
 
-                if healing > 0 and actor_id == mobId then
+                if healing > 0 then
                     local actionData = createActionData(cmd_no, effect, actor_id)
                     processHealing(mobId, healing, actionData)
                 elseif damage > 0 or (effect.has_react and effect.react and isTrustedReactId(effect.react.message)) then
