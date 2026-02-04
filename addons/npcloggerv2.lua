@@ -130,8 +130,15 @@ addon.onClientReady  = function(zoneId)
     end
 end
 
-local function getCurrentDb()
-    return addon.databases.capture or addon.databases.global
+local function getAllDbs()
+    local dbs = {}
+    if addon.databases.global then
+        table.insert(dbs, addon.databases.global)
+    end
+    if addon.databases.capture then
+        table.insert(dbs, addon.databases.capture)
+    end
+    return dbs
 end
 
 local function parseNpcUpdate(data)
@@ -140,12 +147,13 @@ local function parseNpcUpdate(data)
         return
     end
 
-    local db = getCurrentDb()
-    if not db then
+    local dbs = getAllDbs()
+    if #dbs == 0 then
         return
     end
 
-    local npc = db:get(packet.UniqueNo)
+    -- Use global db as source of truth for existing data
+    local npc = addon.databases.global and addon.databases.global:get(packet.UniqueNo)
     if not npc then
         npc = { UniqueNo = packet.UniqueNo }
     end
@@ -263,7 +271,9 @@ local function parseNpcUpdate(data)
         npc.polutils_name = 'NotFound'
     end
 
-    db:add_or_update(packet.UniqueNo, npc)
+    for _, db in ipairs(dbs) do
+        db:add_or_update(packet.UniqueNo, npc)
+    end
 end
 
 local function parseWidescanUpdate(data)
@@ -273,27 +283,33 @@ local function parseWidescanUpdate(data)
         return
     end
 
-    local db = getCurrentDb()
-    if not db then
+    local dbs = getAllDbs()
+    if #dbs == 0 then
         return
     end
 
-    -- WS Packet only contains the index of the NPC, so we need to look it up in the main NPC DB
-    local npc, UniqueNo = db:find_by('ActIndex', packet.ActIndex)
+    -- Use global db as source of truth
+    if not addon.databases.global then
+        return
+    end
+
+    local npc, UniqueNo = addon.databases.global:find_by('ActIndex', packet.ActIndex)
 
     -- If it's a NPC we've already updated, or that we don't know of yet, ignore it
     if not npc or (npc.ws and npc.ws.Level) then
         return
     end
 
-    npc.ws       =
+    npc.ws =
     {
         Level = packet.Level,
         sName = packet.sName,
         Type  = packet.Type,
     }
 
-    db:add_or_update(UniqueNo, npc)
+    for _, db in ipairs(dbs) do
+        db:add_or_update(UniqueNo, npc)
+    end
 end
 
 addon.onIncomingPacket = function(id, data)
