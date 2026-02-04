@@ -6,6 +6,7 @@
 -- - Store TP on mob/players
 -- - Subtle Blow
 -- - Hand to hand mobs
+-- TODO: Hit rate does not count counters
 ---@class AttackDelayAddon : AddonInterface
 local addon =
 {
@@ -22,13 +23,13 @@ local addon =
     settings        = {},
     defaultSettings =
     {
-        showWindow  = true,
-        trackPlayer = false,
+        showWindow = true,
     },
     mobs            = {},
     player          = nil,
     charTp          = 0,
     delayWindow     = nil,
+    showPlayerView  = false,
     files           =
     {
         global  = nil,
@@ -53,7 +54,7 @@ local function updateDelayWindow()
         return
     end
 
-    if addon.settings.trackPlayer and addon.player and #addon.player.delays > 0 then
+    if addon.showPlayerView and addon.player and #addon.player.delays > 0 then
         local sample_count  = #addon.player.delays
         local sorted_delays = utils.deepCopy(addon.player.delays)
         table.sort(sorted_delays)
@@ -72,6 +73,12 @@ local function updateDelayWindow()
         local output = {}
         table.insert(output, string.format('%-18s %d-%d (Med: %d)', 'Delay:', ffxi_min, ffxi_max, ffxi_median))
         table.insert(output, string.format('%-18s %d', 'Attack Rounds:', sample_count))
+
+        -- Add hit rate if available
+        if addon.player.swings and addon.player.swings > 0 then
+            local hitRate = (addon.player.connects / addon.player.swings) * 100
+            table.insert(output, string.format('%-18s %.1f%% (%d/%d)', 'Hit Rate:', hitRate, addon.player.connects, addon.player.swings))
+        end
 
         -- Add multi-hit info
         if addon.player.hitsByRound and #addon.player.hitsByRound > 0 then
@@ -131,6 +138,12 @@ local function updateDelayWindow()
     table.insert(output, string.format('%-18s %d-%d (Med: %d)', 'Delay:', ffxi_min, ffxi_max, ffxi_median))
     table.insert(output, string.format('%-18s %d', 'Attack Rounds:', sample_count))
 
+    -- Add hit rate if available
+    if trackedMob.swings and trackedMob.swings > 0 then
+        local hitRate = (trackedMob.connects / trackedMob.swings) * 100
+        table.insert(output, string.format('%-18s %.1f%% (%d/%d)', 'Hit Rate:', hitRate, trackedMob.connects, trackedMob.swings))
+    end
+
     -- Add TP-derived delay if available
     if trackedMob.delayFromTpGain and #trackedMob.delayFromTpGain > 0 then
         local commonDelay = stats.mode(trackedMob.delayFromTpGain, 10)
@@ -180,10 +193,9 @@ addon.onIncomingPacket = function(id, data, size)
         if not packet or not packet.target then return end
         if packet.cmd_no == 1 then -- Basic Attack
             local playerData = backend.get_player_entity_data()
-            local isPlayerAttack = addon.settings.trackPlayer and playerData and packet.m_uID == playerData.serverId
+            local isPlayerAttack = playerData and packet.m_uID == playerData.serverId
 
             if isPlayerAttack then
-                -- Track player attacks
                 if not addon.player then
                     addon.player =
                     {
@@ -200,6 +212,8 @@ addon.onIncomingPacket = function(id, data, size)
                             rightKick = 0,
                             leftKick  = 0,
                         },
+                        swings          = 0,
+                        connects        = 0,
                         isTracking      = true,
                     }
                 else
@@ -218,6 +232,12 @@ addon.onIncomingPacket = function(id, data, size)
                         if packet.target[1] and packet.target[1].result then
                             for _, result in ipairs(packet.target[1].result) do
                                 roundHitCount = roundHitCount + 1
+
+                                -- Track swings and connects for hit rate
+                                addon.player.swings = addon.player.swings + 1
+                                if result.message == 1 or result.message == 67 then -- 1=hit, 67=crit
+                                    addon.player.connects = addon.player.connects + 1
+                                end
 
                                 if result.sub_kind == 0 then
                                     addon.player.hitsBySlot.mainHand = addon.player.hitsBySlot.mainHand + 1
@@ -244,8 +264,9 @@ addon.onIncomingPacket = function(id, data, size)
                         updateDelayWindow()
                     end
                 end
-            else
-                -- Track mob attacks
+            end
+
+            if not isPlayerAttack then
                 local knownMob = addon.mobs[packet.m_uID]
                 if not knownMob then
                     addon.mobs[packet.m_uID] =
@@ -263,6 +284,8 @@ addon.onIncomingPacket = function(id, data, size)
                             rightKick = 0,      -- sub_kind 2
                             leftKick  = 0,      -- sub_kind 3
                         },
+                        swings          = 0,   -- Total attack attempts
+                        connects        = 0,   -- Attacks that hit (not missed/evaded)
                         isTracking      = true, -- Track whether we should record delays
                     }
                 else
@@ -285,6 +308,13 @@ addon.onIncomingPacket = function(id, data, size)
                         if packet.target[1] and packet.target[1].result then
                             for _, result in ipairs(packet.target[1].result) do
                                 roundHitCount = roundHitCount + 1
+
+                                -- Track swings and connects for hit rate
+                                knownMob.swings = knownMob.swings + 1
+                                -- message 1 = hit, 15 = miss, 14 = evade, etc
+                                if result.message == 1 or result.message == 67 then -- 1=hit, 67=crit
+                                    knownMob.connects = knownMob.connects + 1
+                                end
 
                                 if result.sub_kind == 0 then
                                     knownMob.hitsBySlot.mainHand = knownMob.hitsBySlot.mainHand + 1
@@ -319,7 +349,7 @@ addon.onIncomingPacket = function(id, data, size)
         elseif packet.cmd_no == 4 or packet.cmd_no == 8 or packet.cmd_no == 11 then
             -- Category 4: Magic (finish), 8: Magic (start), 11: Mob TP moves
             local playerData = backend.get_player_entity_data()
-            if addon.settings.trackPlayer and playerData and packet.m_uID == playerData.serverId then
+            if playerData and packet.m_uID == playerData.serverId then
                 -- Pause player tracking
                 if addon.player then
                     addon.player.isTracking = false
@@ -431,7 +461,16 @@ addon.onIncomingPacket = function(id, data, size)
                         ffxi_stats.avg, ffxi_stats.median, ffxi_stats.std_dev
                     ))
 
-                    -- Line 3: TP-derived delay if available
+                    -- Line 3: Hit rate
+                    if trackedMob.swings and trackedMob.swings > 0 then
+                        local hitRate = (trackedMob.connects / trackedMob.swings) * 100
+                        table.insert(output_lines, string.format(
+                            '  Hit Rate: %.1f%% (%d/%d)',
+                            hitRate, trackedMob.connects, trackedMob.swings
+                        ))
+                    end
+
+                    -- TP-derived delay if available
                     if trackedMob.delayFromTpGain and #trackedMob.delayFromTpGain > 0 then
                         local commonDelay = stats.mode(trackedMob.delayFromTpGain, 10)
                         if commonDelay then
@@ -442,7 +481,7 @@ addon.onIncomingPacket = function(id, data, size)
                         end
                     end
 
-                    -- Line 4: Multi-hit percentages
+                    -- Multi-hit percentages
                     if trackedMob.hitsByRound and #trackedMob.hitsByRound > 0 then
                         -- Count rounds by number of hits
                         local hitCounts = {}
@@ -481,7 +520,7 @@ addon.onIncomingPacket = function(id, data, size)
                                 string.format('            %s', table.concat(hit_stats_4plus, ' | ')))
                         end
 
-                        -- Line 5: Slot-based stats
+                        -- Slot-based stats
                         if trackedMob.hitsBySlot then
                             local slot_stats = {}
 
@@ -535,6 +574,98 @@ addon.onIncomingPacket = function(id, data, size)
                     end
                 end
 
+                if addon.player and #addon.player.delays > 0 then
+                    local player_output = {}
+                    local sample_count = #addon.player.delays
+                    local sorted_delays = utils.deepCopy(addon.player.delays)
+                    table.sort(sorted_delays)
+
+                    local sum = 0
+                    for _, delay in ipairs(sorted_delays) do
+                        sum = sum + delay
+                    end
+
+                    local mean = sum / sample_count
+                    local median = stats.median(sorted_delays)
+                    local std_dev = stats.stddev(sorted_delays, mean)
+
+                    local ffxi_stats = {
+                        min     = secondsToFFXIDelay(sorted_delays[1]),
+                        max     = secondsToFFXIDelay(sorted_delays[#sorted_delays]),
+                        avg     = secondsToFFXIDelay(mean),
+                        median  = secondsToFFXIDelay(median),
+                        std_dev = secondsToFFXIDelay(std_dev),
+                    }
+
+                    table.insert(player_output, string.format(
+                        'Player (%d hits) - Delay: %d-%d',
+                        sample_count, ffxi_stats.min, ffxi_stats.max
+                    ))
+
+                    table.insert(player_output, string.format(
+                        '  Avg: %d | Med: %d | StdDev: %d',
+                        ffxi_stats.avg, ffxi_stats.median, ffxi_stats.std_dev
+                    ))
+
+                    if addon.player.swings and addon.player.swings > 0 then
+                        local hitRate = (addon.player.connects / addon.player.swings) * 100
+                        table.insert(player_output, string.format(
+                            '  Hit Rate: %.1f%% (%d/%d)',
+                            hitRate, addon.player.connects, addon.player.swings
+                        ))
+                    end
+
+                    if addon.player.hitsByRound and #addon.player.hitsByRound > 0 then
+                        local hitCounts = {}
+                        for _, hits in ipairs(addon.player.hitsByRound) do
+                            hitCounts[hits] = (hitCounts[hits] or 0) + 1
+                        end
+
+                        local totalRounds = #addon.player.hitsByRound
+                        local hit_stats_1to3 = {}
+                        local hit_stats_4plus = {}
+
+                        for i = 1, 3 do
+                            if hitCounts[i] then
+                                table.insert(hit_stats_1to3,
+                                    string.format('%d-hit: %.0f%%', i, (hitCounts[i] / totalRounds * 100)))
+                            end
+                        end
+
+                        for i = 4, 8 do
+                            if hitCounts[i] then
+                                table.insert(hit_stats_4plus,
+                                    string.format('%d-hit: %.0f%%', i, (hitCounts[i] / totalRounds * 100)))
+                            end
+                        end
+
+                        if #hit_stats_1to3 > 0 then
+                            table.insert(player_output,
+                                string.format('  Multi-hit: %s', table.concat(hit_stats_1to3, ' | ')))
+                        end
+                        if #hit_stats_4plus > 0 then
+                            table.insert(player_output,
+                                string.format('            %s', table.concat(hit_stats_4plus, ' | ')))
+                        end
+                    end
+
+                    for _, line in ipairs(player_output) do
+                        backend.msg('AttackDelay', line)
+                    end
+
+                    local player_log_text = table.concat(player_output, '\n') .. '\n\n'
+
+                    if addon.files.global then
+                        addon.files.global:append(player_log_text)
+                    end
+
+                    if addon.files.capture then
+                        addon.files.capture:append(player_log_text)
+                    end
+
+                    addon.player = nil
+                end
+
                 addon.mobs[defeatedId] = nil
             end
         end
@@ -560,11 +691,22 @@ local function resetStats()
     end
 end
 
+local function toggleView()
+    addon.showPlayerView = not addon.showPlayerView
+    if addon.delayWindow then
+        addon.delayWindow:clearButtons()
+        addon.delayWindow:addButton('Reset', resetStats)
+        addon.delayWindow:addButton(addon.showPlayerView and 'Mob' or 'Player', toggleView)
+    end
+    updateDelayWindow()
+end
+
 addon.onInitialize     = function(rootDir)
     addon.rootDir      = rootDir
     addon.files.global = backend.fileOpen(rootDir .. backend.player_name() .. '/' .. backend.zone_name() .. '.log')
     addon.delayWindow  = backend.textBox('attackdelay')
     addon.delayWindow:addButton('Reset', resetStats)
+    addon.delayWindow:addButton('Player', toggleView)
 end
 
 addon.onClientReady    = function(zoneId)
@@ -588,13 +730,6 @@ addon.onConfigMenu     = function()
             description = 'If enabled, displays a window with current attack delay statistics while fighting.',
             type        = 'checkbox',
             default     = addon.defaultSettings.showWindow,
-        },
-        {
-            key         = 'trackPlayer',
-            title       = 'Track Player Attacks',
-            description = 'If enabled, tracks the player\'s attack delay instead of the target mob.',
-            type        = 'checkbox',
-            default     = addon.defaultSettings.trackPlayer,
         },
     }
 end
