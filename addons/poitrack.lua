@@ -58,12 +58,17 @@ addon.onIncomingPacket = function(id, data)
         return
     end
 
-    -- Get position data from packet
+    -- Check if packet contains position data
+    if not packet.SendFlg or not packet.SendFlg.Position then
+        return
+    end
+
     local x = packet.x
     local y = packet.y
     local z = packet.z
 
-    if not x or not y or not z then
+    -- Skip zero positions
+    if x == 0 and y == 0 and z == 0 then
         return
     end
 
