@@ -1,7 +1,6 @@
 -- Tracks respawn time and position
--- This works on all mobs even past the 50 yalms range relying on CHARREQ2 packet
--- Note: This is very detectable, use throw away accounts.
--- The PC capturing does not have to be the PC killing the mobs, it just needs to see the defeat messages.
+-- Light mode (default): Tracks defeat/despawn/spawn within 50 yalms range using natural packets.
+-- Extended mode: Uses CHARREQ2 to track beyond 50 yalms. Very detectable, use throw away accounts.
 ---@class SpawnTrackAddon : AddonInterface
 local addon =
 {
@@ -18,7 +17,7 @@ local addon =
     settings        = {},
     defaultSettings =
     {
-        thisWillGetMeBanned = false,
+        extendedMode        = false,       -- Use CHARREQ2 for extended range (detectable)
         interval            = 1,           -- How often to send a request until mob spawns.
         expectedRespawn     = 4 * 60 + 30, -- Start tracking around 4:30s
     },
@@ -98,10 +97,6 @@ addon.onIncomingPacket = function(id, data, size)
     ---@type GP_SERV_COMMAND_BATTLE_MESSAGE | GP_SERV_COMMAND_CHAR_NPC | GP_SERV_COMMAND_SCHEDULOR
     local packet = backend.parsePacket('incoming', data)
 
-    if not addon.settings.thisWillGetMeBanned then
-        return
-    end
-
     if id == PacketId.GP_SERV_COMMAND_BATTLE_MESSAGE then -- Mob Defeated. 6 == defeated, 20 == falls to the ground
         if
           packet and
@@ -126,41 +121,46 @@ addon.onIncomingPacket = function(id, data, size)
                     z            = mob.z,
                 }
 
-                -- Start tracking respawn time and position around the expectedRespawn
-                backend.schedule(function()
-                    trackMob(packet.UniqueNoTar, packet.ActIndexTar)
-                end, addon.settings.expectedRespawn)
+                -- Extended mode: Start polling with CHARREQ2 around expectedRespawn
+                if addon.settings.extendedMode then
+                    backend.schedule(function()
+                        trackMob(packet.UniqueNoTar, packet.ActIndexTar)
+                    end, addon.settings.expectedRespawn)
+                end
             end
         end
     elseif id == PacketId.GP_SERV_COMMAND_CHAR_NPC then
         if addon.mobs[packet.UniqueNo] then
+            local mob = addon.mobs[packet.UniqueNo]
+
+
             -- Filter out unwanted packets
             if
-              not packet.SendFlg.Position or                            -- Packet does not have position
-              packet.server_status ~= 0 or                              -- Mob is not alive
-              not addon.mobs[packet.UniqueNo].despawnTime or            -- Mob has not despawned
-              os.time() < addon.mobs[packet.UniqueNo].defeatedTime + 20 -- Mob has not been defeated long enough
+              not packet.SendFlg.Position or                -- Packet does not have position
+              packet.server_status ~= 0 or                  -- Mob is not alive
+              os.time() < mob.defeatedTime + 20             -- Mob has not been defeated long enough
             then
                 return
             end
 
             local outputLines      = {}
             local spawnTime        = os.time()
-            local despawnTime      = addon.mobs[packet.UniqueNo].despawnTime
-            local defeatedTime     = addon.mobs[packet.UniqueNo].defeatedTime
-            local despawnTimeDiff  = spawnTime - despawnTime
+            local despawnTime      = mob.despawnTime
+            local defeatedTime     = mob.defeatedTime
+            local despawnTimeDiff  = despawnTime and (spawnTime - despawnTime) or nil
             local defeatedTimeDiff = spawnTime - defeatedTime
-            local xDiff            = packet.x - addon.mobs[packet.UniqueNo].x
-            local yDiff            = packet.y - addon.mobs[packet.UniqueNo].y
-            local zDiff            = packet.z - addon.mobs[packet.UniqueNo].z
+            local xDiff            = packet.x - mob.x
+            local yDiff            = packet.y - mob.y
+            local zDiff            = packet.z - mob.z
 
             table.insert(outputLines,
                 string.format('%s (%d) respawned at %s (X: %d, Y: %d, Z: %d)',
-                    addon.mobs[packet.UniqueNo].name,
-                    packet.UniqueNo, os.date('%H:%M:%S', spawnTime), packet.x, packet.y, packet.z))
+                    mob.name, packet.UniqueNo, os.date('%H:%M:%S', spawnTime), packet.x, packet.y, packet.z))
             table.insert(outputLines,
                 string.format('Defeat-to-spawn: %s, Despawn-to-spawn: %s, X diff: %d, Y diff: %d, Z diff: %d',
-                    secondsToTimeString(defeatedTimeDiff), secondsToTimeString(despawnTimeDiff), xDiff, yDiff, zDiff))
+                    secondsToTimeString(defeatedTimeDiff),
+                    despawnTimeDiff and secondsToTimeString(despawnTimeDiff) or 'N/A',
+                    xDiff, yDiff, zDiff))
 
             for _, line in ipairs(outputLines) do
                 backend.msg('SpawnTrack', line)
@@ -169,16 +169,16 @@ addon.onIncomingPacket = function(id, data, size)
             -- Write to CSV
             local csvRow =
             {
-                MobName            = addon.mobs[packet.UniqueNo].name,
+                MobName            = mob.name,
                 UniqueNo           = packet.UniqueNo,
                 DefeatedAt         = os.date('%Y-%m-%d %H:%M:%S', defeatedTime),
-                DespawnedAt        = os.date('%Y-%m-%d %H:%M:%S', despawnTime),
+                DespawnedAt        = despawnTime and os.date('%Y-%m-%d %H:%M:%S', despawnTime) or '',
                 SpawnedAt          = os.date('%Y-%m-%d %H:%M:%S', spawnTime),
                 DefeatToSpawnDiff  = defeatedTimeDiff,
-                DespawnToSpawnDiff = despawnTimeDiff,
-                XDefeated          = addon.mobs[packet.UniqueNo].x,
-                YDefeated          = addon.mobs[packet.UniqueNo].y,
-                ZDefeated          = addon.mobs[packet.UniqueNo].z,
+                DespawnToSpawnDiff = despawnTimeDiff or '',
+                XDefeated          = mob.x,
+                YDefeated          = mob.y,
+                ZDefeated          = mob.z,
                 XSpawn             = packet.x,
                 YSpawn             = packet.y,
                 ZSpawn             = packet.z,
@@ -263,16 +263,16 @@ addon.onConfigMenu     = function()
     return
     {
         {
-            key         = 'thisWillGetMeBanned',
-            title       = 'I understand this is highly detectable and will get me banned.',
-            description = 'Addon will not work without checking this setting.',
+            key         = 'extendedMode',
+            title       = 'EXTENDED MODE - THIS WILL GET YOU BANNED',
+            description = 'Injects packets to track beyond 50 yalms. EXTREMELY DETECTABLE. Use throw-away accounts ONLY.',
             type        = 'checkbox',
-            default     = addon.defaultSettings.thisWillGetMeBanned,
+            default     = addon.defaultSettings.extendedMode,
         },
         {
             key         = 'interval',
-            title       = 'Interval',
-            description = 'How often to send CHARREQ2 packets when monitoring respawn',
+            title       = 'Polling Interval (Extended Mode)',
+            description = 'How often to send CHARREQ2 packets when monitoring respawn.',
             type        = 'slider',
             min         = 1,
             max         = 20,
@@ -281,11 +281,11 @@ addon.onConfigMenu     = function()
         },
         {
             key         = 'expectedRespawn',
-            title       = 'Expected respawn time',
-            description = 'How soon after death we should start sending packets. Adjust based on zone respawn time.',
+            title       = 'Expected Respawn (Extended Mode)',
+            description = 'How soon after death to start polling. Adjust based on zone respawn time.',
             type        = 'slider',
             min         = 5,
-            max         = 30 * 60, -- 30 minutes max, may need to adjust
+            max         = 30 * 60,
             steps       = 5,
             default     = addon.defaultSettings.expectedRespawn,
         },
