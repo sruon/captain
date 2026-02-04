@@ -37,7 +37,6 @@ addon.onPrerender  = function()
             playerData.sJob)
     end
 
-    local zoneInfo    = string.format('%s (%03d)', backend.zone_name(), backend.zone())
     local retailCheck = { text = '\u{F057}', color = { 1.0, 0.0, 0.0, 1.0 } }
     if addon.isRetail then
         retailCheck = { text = '\u{F058}', color = { 0.0, 1.0, 0.0, 1.0 } }
@@ -50,6 +49,10 @@ addon.onPrerender  = function()
                 playerData.name, playerData.serverId, playerData.targIndex, playerJobString),
             color = { 1.0, 0.65, 0.26, 1.0 },
         },
+        {
+            text  = string.format('- %s (%03d) ', backend.zone_name(), backend.zone()),
+            color = { 1.0, 0.65, 0.26, 1.0 },
+        },
         retailCheck,
     }
     if captain.isCapturing then
@@ -57,18 +60,12 @@ addon.onPrerender  = function()
         table.insert(title, { text = '\u{F0C7}', color = { 1.0, 0.0, 0.0, alpha } })
     end
 
-    local body =
-    {
-        { text = 'X: ' .. playerData.x .. ' ' },
-        { text = 'Y: ' .. playerData.y .. ' ' },
-        { text = 'Z: ' .. playerData.z .. ' ' },
-        { text = 'R: ' .. playerData.r .. ' - ' },
-        { text = zoneInfo },
-    }
+    local row1 = string.format('X: %s  Y: %s  Z: %s  R: %s', playerData.x, playerData.y, playerData.z, playerData.r)
+    local row2 = string.format('%s · %s %d%% · %s', backend.get_vana_weekday_name(), backend.get_moon_phase_name(), backend.get_moon_percent(), os.date('%H:%M:%S'))
 
     if addon.playerInfo then
         addon.playerInfo:updateTitle(title)
-        addon.playerInfo:updateText(body)
+        addon.playerInfo:updateText(row1 .. '\n' .. row2)
     end
 end
 

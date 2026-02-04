@@ -11,6 +11,8 @@ addon         = addon
 
 local backend = {}
 
+local ashita_version = ashita.interface_version or 0
+
 require('common')
 local chat                             = require('chat')
 local imgui                            = require('imgui')
@@ -214,7 +216,7 @@ backend.register_event_prerender = function(func)
             if box.text ~= nil and box.visible and imgui.Begin(box.name, true, flags) then
                 local scale = (captain.settings and captain.settings.textBox and captain.settings.textBox.scale) or 1.0
                 -- SetWindowFontScale removed in 4.30
-                if ashita.interface_version >= 4.30 then
+                if ashita_version >= 4.30 then
                     imgui.PushFont(nil, imgui.GetFontSize() * scale)
                 else
                     imgui.SetWindowFontScale(scale)
@@ -248,7 +250,7 @@ backend.register_event_prerender = function(func)
                     captain.settings.textBox.positions[box.name] = { x = posX, y = posY }
                 end
 
-                if ashita.interface_version >= 4.30 then
+                if ashita_version >= 4.30 then
                     imgui.PopFont()
                 end
 
@@ -797,7 +799,7 @@ backend.registerKeyBind          = function(params, command)
     end
 
     -- Ashita 4.30+ added req_input_closed and req_input_open parameters
-    if ashita.interface_version >= 4.30 then
+    if ashita_version >= 4.30 then
         kb:Bind(
             kb:S2D(params.key),
             params.down and params.down or false,
@@ -828,7 +830,7 @@ backend.deregisterKeyBind        = function(params)
     local kb = AshitaCore:GetInputManager():GetKeyboard()
 
     -- Ashita 4.30+ added req_input_closed and req_input_open parameters
-    if ashita.interface_version >= 4.30 then
+    if ashita_version >= 4.30 then
         kb:Unbind(
             kb:S2D(params.key),
             params.down and params.down or false,
@@ -972,7 +974,7 @@ backend.notificationsRender = function(notifications)
         local window_id = string.format('##TOAST_%s', toast.id or i)
         if imgui.Begin(window_id, { true }, NOTIFY_TOAST_FLAGS) then
             -- SetWindowFontScale removed in 4.30
-            if ashita.interface_version >= 4.30 then
+            if ashita_version >= 4.30 then
                 imgui.PushFont(nil, imgui.GetFontSize() * captain.settings.notifications.scale)
             else
                 imgui.SetWindowFontScale(captain.settings.notifications.scale)
@@ -1058,7 +1060,7 @@ backend.notificationsRender = function(notifications)
             end
 
             imgui.PopTextWrapPos()
-            if ashita.interface_version >= 4.30 then
+            if ashita_version >= 4.30 then
                 imgui.PopFont()
             end
             height = height + imgui.GetWindowHeight() + captain.settings.notifications.spacing
@@ -1081,6 +1083,62 @@ end
 
 backend.get_resolution_height = function()
     return AshitaCore:GetConfigurationManager():GetUInt32('boot', 'ffxi.registry', '0002', 1080)
+end
+
+local jit_available, jit = pcall(require, 'jit')
+
+ffi.cdef[[
+    typedef uint32_t (__stdcall* ntGameTimeGet_f)(void);
+    typedef uint32_t (__stdcall* ntGameTimeFunc_f)(uint32_t);
+]]
+
+local vanatime_ptrs = {
+    game_time    = ashita.memory.find(0, 0, 'E8????????0305????????C3', 0, 0),
+    weekday      = ashita.memory.find(0, 0, '8B44240433D2B9006C0000F7F1', 0, 0),
+    moon         = ashita.memory.find(0, 0, '8B4C2404B8DB4B682FF7E12BCA', 0, 0),
+    moon_percent = ashita.memory.find(0, 0, '8B4C2404B8DB4B682FF7E18BC1', 0, 0),
+}
+
+local vanatime_available = vanatime_ptrs.game_time and vanatime_ptrs.game_time ~= 0
+    and vanatime_ptrs.weekday and vanatime_ptrs.weekday ~= 0
+    and vanatime_ptrs.moon and vanatime_ptrs.moon ~= 0
+    and vanatime_ptrs.moon_percent and vanatime_ptrs.moon_percent ~= 0
+
+local function get_game_time_raw()
+    if not vanatime_available then return 0 end
+    return ffi.cast('ntGameTimeGet_f', vanatime_ptrs.game_time)()
+end
+if jit_available then jit.off(get_game_time_raw) end
+
+backend.get_vana_weekday = function()
+    if not vanatime_available then return 0 end
+    local time = get_game_time_raw()
+    return ffi.cast('ntGameTimeFunc_f', vanatime_ptrs.weekday)(time)
+end
+if jit_available then jit.off(backend.get_vana_weekday) end
+
+backend.get_moon_phase = function()
+    if not vanatime_available then return 0 end
+    local time = get_game_time_raw()
+    return ffi.cast('ntGameTimeFunc_f', vanatime_ptrs.moon)(time)
+end
+if jit_available then jit.off(backend.get_moon_phase) end
+
+backend.get_moon_percent = function()
+    if not vanatime_available then return 0 end
+    local time = get_game_time_raw()
+    return ffi.cast('ntGameTimeFunc_f', vanatime_ptrs.moon_percent)(time)
+end
+if jit_available then jit.off(backend.get_moon_percent) end
+
+local vana_weekdays = { 'Firesday', 'Earthsday', 'Watersday', 'Windsday', 'Iceday', 'Lightningday', 'Lightsday', 'Darksday' }
+backend.get_vana_weekday_name = function()
+    return vana_weekdays[backend.get_vana_weekday() + 1] or '?'
+end
+
+local moon_phases = { 'New Moon', 'Waxing Crescent', 'First Quarter', 'Waxing Gibbous', 'Full Moon', 'Waning Gibbous', 'Last Quarter', 'Waning Crescent' }
+backend.get_moon_phase_name = function()
+    return moon_phases[backend.get_moon_phase() + 1] or '?'
 end
 
 backend.reload                = function()
