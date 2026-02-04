@@ -295,15 +295,19 @@ local addon            =
         simple  = nil,
         capture = nil,
     },
+    lastMusic       = nil, -- Track last music packet for deduplication
 }
 
 addon.onClientReady    = function(zoneId)
-    addon.files.simple = backend.fileOpen(string.format('%s/%s/%s.log', addon.rootDir, backend.player_name(),
+    addon.files.simple  = backend.fileOpen(string.format('%s/%s/%s.log', addon.rootDir, backend.player_name(),
         backend.zone_name(zoneId)))
     if addon.files.capture then
         addon.files.capture = backend.fileOpen(string.format('%s/%s/%s.log', addon.captureDir, backend.player_name(),
             backend.zone_name(zoneId)))
     end
+
+    -- Reset music deduplication state on zone change
+    addon.lastMusic = nil
 end
 
 -- Shared function for processing both incoming and outgoing packets
@@ -317,6 +321,15 @@ addon.processPacket    = function(direction, id, data)
     -- Only care about zone packets with events when direction is incoming
     if id == PacketId.GP_SERV_COMMAND_LOGIN and packet.EventNum == 0 then
         return
+    end
+
+    -- Deduplicate music packets (SE spams these in certain zones like Dynamis-Xarcabard)
+    if id == PacketId.GP_SERV_COMMAND_MUSIC then
+        local key = string.format('%d:%d', packet.Slot or 0, packet.MusicNum or 0)
+        if addon.lastMusic == key then
+            return
+        end
+        addon.lastMusic = key
     end
 
     local dirPrefix  = (direction == 'incoming') and '<< ' or '>> '
