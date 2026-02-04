@@ -213,7 +213,12 @@ backend.register_event_prerender = function(func)
 
             if box.text ~= nil and box.visible and imgui.Begin(box.name, true, flags) then
                 local scale = (captain.settings and captain.settings.textBox and captain.settings.textBox.scale) or 1.0
-                imgui.SetWindowFontScale(scale)
+                -- SetWindowFontScale removed in 4.30
+                if ashita.interface_version >= 4.30 then
+                    imgui.PushFont(nil, imgui.GetFontSize() * scale)
+                else
+                    imgui.SetWindowFontScale(scale)
+                end
 
                 if box.title then
                     colored_text(box.title)
@@ -241,6 +246,10 @@ backend.register_event_prerender = function(func)
                     end
                     local posX, posY = imgui.GetWindowPos()
                     captain.settings.textBox.positions[box.name] = { x = posX, y = posY }
+                end
+
+                if ashita.interface_version >= 4.30 then
+                    imgui.PopFont()
                 end
 
                 imgui.End()
@@ -787,29 +796,61 @@ backend.registerKeyBind          = function(params, command)
         command = '/' .. command
     end
 
-    kb:Bind(
-        kb:S2D(params.key),
-        params.down and params.down or false,
-        params.alt and params.alt or false,
-        params.apps and params.apps or false,
-        params.ctrl and params.ctrl or false,
-        params.shift and params.shift or false,
-        params.win and params.win or false,
-        command
-    )
+    -- Ashita 4.30+ added req_input_closed and req_input_open parameters
+    if ashita.interface_version >= 4.30 then
+        kb:Bind(
+            kb:S2D(params.key),
+            params.down and params.down or false,
+            params.alt and params.alt or false,
+            params.apps and params.apps or false,
+            params.ctrl and params.ctrl or false,
+            params.shift and params.shift or false,
+            params.win and params.win or false,
+            params.req_input_closed and params.req_input_closed or false,
+            params.req_input_open and params.req_input_open or false,
+            command
+        )
+    else
+        kb:Bind(
+            kb:S2D(params.key),
+            params.down and params.down or false,
+            params.alt and params.alt or false,
+            params.apps and params.apps or false,
+            params.ctrl and params.ctrl or false,
+            params.shift and params.shift or false,
+            params.win and params.win or false,
+            command
+        )
+    end
 end
 
 backend.deregisterKeyBind        = function(params)
     local kb = AshitaCore:GetInputManager():GetKeyboard()
-    kb:Unbind(
-        kb:S2D(params.key),
-        params.down and params.down or false,
-        params.alt and params.alt or false,
-        params.apps and params.apps or false,
-        params.ctrl and params.ctrl or false,
-        params.shift and params.shift or false,
-        params.win and params.win or false
-    )
+
+    -- Ashita 4.30+ added req_input_closed and req_input_open parameters
+    if ashita.interface_version >= 4.30 then
+        kb:Unbind(
+            kb:S2D(params.key),
+            params.down and params.down or false,
+            params.alt and params.alt or false,
+            params.apps and params.apps or false,
+            params.ctrl and params.ctrl or false,
+            params.shift and params.shift or false,
+            params.win and params.win or false,
+            params.req_input_closed and params.req_input_closed or false,
+            params.req_input_open and params.req_input_open or false
+        )
+    else
+        kb:Unbind(
+            kb:S2D(params.key),
+            params.down and params.down or false,
+            params.alt and params.alt or false,
+            params.apps and params.apps or false,
+            params.ctrl and params.ctrl or false,
+            params.shift and params.shift or false,
+            params.win and params.win or false
+        )
+    end
 end
 
 backend.loadConfig               = function(name, defaults)
@@ -930,7 +971,12 @@ backend.notificationsRender = function(notifications)
         -- Create window with stable ID based on notification ID
         local window_id = string.format('##TOAST_%s', toast.id or i)
         if imgui.Begin(window_id, { true }, NOTIFY_TOAST_FLAGS) then
-            imgui.SetWindowFontScale(captain.settings.notifications.scale)
+            -- SetWindowFontScale removed in 4.30
+            if ashita.interface_version >= 4.30 then
+                imgui.PushFont(nil, imgui.GetFontSize() * captain.settings.notifications.scale)
+            else
+                imgui.SetWindowFontScale(captain.settings.notifications.scale)
+            end
             imgui.PushTextWrapPos(uniform_width)
 
             -- Handle dragging
@@ -1012,6 +1058,9 @@ backend.notificationsRender = function(notifications)
             end
 
             imgui.PopTextWrapPos()
+            if ashita.interface_version >= 4.30 then
+                imgui.PopFont()
+            end
             height = height + imgui.GetWindowHeight() + captain.settings.notifications.spacing
             imgui.End()
         end
