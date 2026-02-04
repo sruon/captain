@@ -70,7 +70,7 @@ local function updateDelayWindow()
         local ffxi_median = secondsToFFXIDelay(median)
 
         local output = {}
-        table.insert(output, string.format('%-18s %.3f-%.3f (Med: %.3f)', 'Delay:', ffxi_min, ffxi_max, ffxi_median))
+        table.insert(output, string.format('%-18s %d-%d (Med: %d)', 'Delay:', ffxi_min, ffxi_max, ffxi_median))
         table.insert(output, string.format('%-18s %d', 'Attack Rounds:', sample_count))
 
         -- Add multi-hit info
@@ -84,7 +84,7 @@ local function updateDelayWindow()
             local hit_stats   = {}
             for i = 1, 8 do
                 if hitCounts[i] then
-                    table.insert(hit_stats, string.format('%d:%.3f%%', i, (hitCounts[i] / totalRounds * 100)))
+                    table.insert(hit_stats, string.format('%d:%.1f%%', i, (hitCounts[i] / totalRounds * 100)))
                 end
             end
 
@@ -128,14 +128,14 @@ local function updateDelayWindow()
 
     -- Build output
     local output      = {}
-    table.insert(output, string.format('%-18s %.3f-%.3f (Med: %.3f)', 'Delay:', ffxi_min, ffxi_max, ffxi_median))
+    table.insert(output, string.format('%-18s %d-%d (Med: %d)', 'Delay:', ffxi_min, ffxi_max, ffxi_median))
     table.insert(output, string.format('%-18s %d', 'Attack Rounds:', sample_count))
 
     -- Add TP-derived delay if available
     if trackedMob.delayFromTpGain and #trackedMob.delayFromTpGain > 0 then
         local commonDelay = stats.mode(trackedMob.delayFromTpGain, 10)
         if commonDelay then
-            table.insert(output, string.format('%-18s %.3f', 'Delay (TP Return):', commonDelay))
+            table.insert(output, string.format('%-18s %d', 'Delay (TP Return):', commonDelay))
         end
     end
 
@@ -150,7 +150,7 @@ local function updateDelayWindow()
         local hit_stats   = {}
         for i = 1, 8 do
             if hitCounts[i] then
-                table.insert(hit_stats, string.format('%d:%.3f%%', i, (hitCounts[i] / totalRounds * 100)))
+                table.insert(hit_stats, string.format('%d:%.1f%%', i, (hitCounts[i] / totalRounds * 100)))
             end
         end
 
