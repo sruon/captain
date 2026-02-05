@@ -1,5 +1,31 @@
 # Changelog
 
+## [1.9.0](https://github.com/sruon/captain/compare/v1.8.0...v1.9.0) (2026-02-05)
+
+
+### Features
+
+* **addon:** missiontrack, notifies of changes in quest/mission log ([b9e3d70](https://github.com/sruon/captain/commit/b9e3d7097aa174431c237a62edfa9f128a01fb50))
+* **addon:** turbopathlog for roam data, disabled by default ([7b1376b](https://github.com/sruon/captain/commit/7b1376b4bfcb50c03ca789d14da89e9beb8b5f57))
+* **attackdelay:** track mob and player hitrate, allow toggling view between mob/player. ([58b14ed](https://github.com/sruon/captain/commit/58b14ed3945ed8c7b1656ed27fbbc414c7b1b848))
+* **attackdelay:** wald CI for nerds ([cf2b8e7](https://github.com/sruon/captain/commit/cf2b8e7e49ffcb8a2f7ac0d54a706a5a1a63e594))
+* **eventview:** Display LSB binding for messages ([04cdb83](https://github.com/sruon/captain/commit/04cdb83361ea3b77b39d86a0d15fd8f5649e41af))
+* **eventview:** Thris-ified display. Shows onEventUpdate/onEventFinish. Consistent field ordering and aliased option ([c476024](https://github.com/sruon/captain/commit/c47602402287882b6584402b527f2039ab8526d2))
+* **playerinfo:** display RL clock, vanaday, moon phase ([0472684](https://github.com/sruon/captain/commit/047268404a212fdd85cb26b606688993bb4e0c7b))
+* **spawntrack:** light mode by default using natural packets ([af186f9](https://github.com/sruon/captain/commit/af186f9720da395a39e571125e960e73c4573eed))
+* **zonedump:** expose whereis command to query specific ID ([411d0be](https://github.com/sruon/captain/commit/411d0bee4f37e6d094eca9226fbf4c6c204b3f46))
+
+
+### Bug Fixes
+
+* **attackdelay:** no FP for delay ([0ab800e](https://github.com/sruon/captain/commit/0ab800e59c7ed0cd1549c4aeacf156307924af6d))
+* **eventview:** dedup music packets being spammed in Dynamis-Xarcabard ([ea04467](https://github.com/sruon/captain/commit/ea044677cc547ed4246e5d0642b07d16e7b294d3))
+* **hptrack:** track HP healed separately ([3488572](https://github.com/sruon/captain/commit/34885726a69152a97fe949ecff2d77eadb003203))
+* **hptrack:** track pet damaging abilities ([34911a0](https://github.com/sruon/captain/commit/34911a0e93c1ca81080cfa8d538bb4c1ca1576a4))
+* **levelrangetrack:** save to global DB as well ([ff11331](https://github.com/sruon/captain/commit/ff11331c09dfb3fd7c77a22fe6498dff3c68622d))
+* **npclogger:** save to both capture DB and global DB ([92b8c73](https://github.com/sruon/captain/commit/92b8c733892f646827f39a6e9cf7d0c735a403cc))
+* **poitrack:** ensure SendFlg.Position is set before capturing ([661852a](https://github.com/sruon/captain/commit/661852a170c957cf82be9e65f0c8e7ee604d02fc))
+
 ## [1.8.0](https://github.com/sruon/captain/compare/v1.7.1...v1.8.0) (2026-01-13)
 
 
