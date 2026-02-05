@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.8.0](https://github.com/sruon/captain/compare/v1.7.1...v1.8.0) (2026-01-13)
+
+
+### Features
+
+* **attackdelay:** track player own stats ([e0d15d1](https://github.com/sruon/captain/commit/e0d15d1be66aa7f3c5ff0b178f09ddea2b3d4b10))
+* **core:** support buttons in text boxes ([3b444a7](https://github.com/sruon/captain/commit/3b444a73ced5b2a6dc0290a600b7916b470f4187))
+
 ## [1.7.1](https://github.com/sruon/captain/compare/v1.7.0...v1.7.1) (2025-12-02)
 
 
