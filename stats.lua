@@ -119,6 +119,27 @@ stats.median       = function(sorted_values)
     end
 end
 
+---Calculate Wald confidence interval for a proportion
+---@param successes number -- Number of successes (e.g., hits)
+---@param trials    number -- Total number of trials (e.g., attacks)
+---@param z         number? -- Z-score for confidence level (default 1.96 for 95% CI)
+---@return          number -- Lower bound of the confidence interval
+---@return          number -- Upper bound of the confidence interval
+---@return          number -- Point estimate (proportion)
+stats.waldCI       = function(successes, trials, z)
+    if trials == 0 then
+        return 0, 0, 0
+    end
+
+    z           = z or 1.96
+    local p     = successes / trials
+    local se    = math.sqrt((p * (1 - p)) / trials)
+    local lower = math.max(0, p - z * se)
+    local upper = math.min(1, p + z * se)
+
+    return lower, upper, p
+end
+
 ---Calculate comprehensive statistics from an array of values
 ---@param values number[] -- Array of values to analyze
 ---@return      table    -- A table containing min, max, percentiles, average, median and standard deviation

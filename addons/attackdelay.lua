@@ -59,11 +59,6 @@ local function updateDelayWindow()
         local sorted_delays = utils.deepCopy(addon.player.delays)
         table.sort(sorted_delays)
 
-        local sum = 0
-        for _, delay in ipairs(sorted_delays) do
-            sum = sum + delay
-        end
-
         local median      = stats.median(sorted_delays)
 
         local ffxi_min    = secondsToFFXIDelay(sorted_delays[1])
@@ -71,16 +66,17 @@ local function updateDelayWindow()
         local ffxi_median = secondsToFFXIDelay(median)
 
         local output = {}
-        table.insert(output, string.format('%-18s %d-%d (Med: %d)', 'Delay:', ffxi_min, ffxi_max, ffxi_median))
-        table.insert(output, string.format('%-18s %d', 'Attack Rounds:', sample_count))
+        table.insert(output, string.format('%-14s %-18s', 'Delay:',
+            string.format('%d-%d (Med: %d)', ffxi_min, ffxi_max, ffxi_median)))
+        table.insert(output, string.format('%-14s %-18s', 'Rounds:',
+            string.format('%d (%d/%d hits)', sample_count, addon.player.connects or 0, addon.player.swings or 0)))
 
-        -- Add hit rate if available
         if addon.player.swings and addon.player.swings > 0 then
-            local hitRate = (addon.player.connects / addon.player.swings) * 100
-            table.insert(output, string.format('%-18s %.1f%% (%d/%d)', 'Hit Rate:', hitRate, addon.player.connects, addon.player.swings))
+            local lower, upper, p = stats.waldCI(addon.player.connects, addon.player.swings)
+            table.insert(output, string.format('%-14s %-18s [%5.1f-%5.1f]',
+                'Hit Rate:', string.format('%.1f%%', p * 100), lower * 100, upper * 100))
         end
 
-        -- Add multi-hit info
         if addon.player.hitsByRound and #addon.player.hitsByRound > 0 then
             local hitCounts = {}
             for _, hits in ipairs(addon.player.hitsByRound) do
@@ -88,15 +84,12 @@ local function updateDelayWindow()
             end
 
             local totalRounds = #addon.player.hitsByRound
-            local hit_stats   = {}
             for i = 1, 8 do
                 if hitCounts[i] then
-                    table.insert(hit_stats, string.format('%d:%.1f%%', i, (hitCounts[i] / totalRounds * 100)))
+                    local lower, upper, p = stats.waldCI(hitCounts[i], totalRounds)
+                    table.insert(output, string.format('%-14s %-18s [%5.1f-%5.1f]',
+                        i .. '-hit:', string.format('%.0f%%', p * 100), lower * 100, upper * 100))
                 end
-            end
-
-            if #hit_stats > 0 then
-                table.insert(output, string.format('%-18s %s', 'Multi:', table.concat(hit_stats, ' ')))
             end
         end
 
@@ -122,37 +115,30 @@ local function updateDelayWindow()
     local sorted_delays = utils.deepCopy(trackedMob.delays)
     table.sort(sorted_delays)
 
-    local sum = 0
-    for _, delay in ipairs(sorted_delays) do
-        sum = sum + delay
-    end
-
     local median      = stats.median(sorted_delays)
-
     local ffxi_min    = secondsToFFXIDelay(sorted_delays[1])
     local ffxi_max    = secondsToFFXIDelay(sorted_delays[#sorted_delays])
     local ffxi_median = secondsToFFXIDelay(median)
 
-    -- Build output
     local output      = {}
-    table.insert(output, string.format('%-18s %d-%d (Med: %d)', 'Delay:', ffxi_min, ffxi_max, ffxi_median))
-    table.insert(output, string.format('%-18s %d', 'Attack Rounds:', sample_count))
+    table.insert(output, string.format('%-14s %-18s', 'Delay:',
+        string.format('%d-%d (Med: %d)', ffxi_min, ffxi_max, ffxi_median)))
+    table.insert(output, string.format('%-14s %-18s', 'Rounds:',
+        string.format('%d (%d/%d hits)', sample_count, trackedMob.connects or 0, trackedMob.swings or 0)))
 
-    -- Add hit rate if available
     if trackedMob.swings and trackedMob.swings > 0 then
-        local hitRate = (trackedMob.connects / trackedMob.swings) * 100
-        table.insert(output, string.format('%-18s %.1f%% (%d/%d)', 'Hit Rate:', hitRate, trackedMob.connects, trackedMob.swings))
+        local lower, upper, p = stats.waldCI(trackedMob.connects, trackedMob.swings)
+        table.insert(output, string.format('%-14s %-18s [%5.1f-%5.1f]',
+            'Hit Rate:', string.format('%.1f%%', p * 100), lower * 100, upper * 100))
     end
 
-    -- Add TP-derived delay if available
     if trackedMob.delayFromTpGain and #trackedMob.delayFromTpGain > 0 then
         local commonDelay = stats.mode(trackedMob.delayFromTpGain, 10)
         if commonDelay then
-            table.insert(output, string.format('%-18s %d', 'Delay (TP Return):', commonDelay))
+            table.insert(output, string.format('%-14s %-18s', 'TP Delay:', commonDelay))
         end
     end
 
-    -- Add multi-hit info
     if trackedMob.hitsByRound and #trackedMob.hitsByRound > 0 then
         local hitCounts = {}
         for _, hits in ipairs(trackedMob.hitsByRound) do
@@ -160,15 +146,12 @@ local function updateDelayWindow()
         end
 
         local totalRounds = #trackedMob.hitsByRound
-        local hit_stats   = {}
         for i = 1, 8 do
             if hitCounts[i] then
-                table.insert(hit_stats, string.format('%d:%.1f%%', i, (hitCounts[i] / totalRounds * 100)))
+                local lower, upper, p = stats.waldCI(hitCounts[i], totalRounds)
+                table.insert(output, string.format('%-14s %-18s [%5.1f-%5.1f]',
+                    i .. '-hit:', string.format('%.0f%%', p * 100), lower * 100, upper * 100))
             end
-        end
-
-        if #hit_stats > 0 then
-            table.insert(output, string.format('%-18s %s', 'Multi:', table.concat(hit_stats, ' ')))
         end
     end
 
@@ -448,28 +431,24 @@ addon.onIncomingPacket = function(id, data, size, packet)
 
                     local output_lines = {}
 
-                    -- Line 1: Entity name with sample count and delay range
                     table.insert(output_lines, string.format(
                         '%s (%d hits) - Delay: %d-%d',
                         mob_name, sample_count, ffxi_stats.min, ffxi_stats.max
                     ))
 
-                    -- Line 2: Detailed statistics
                     table.insert(output_lines, string.format(
                         '  Avg: %d | Med: %d | StdDev: %d',
                         ffxi_stats.avg, ffxi_stats.median, ffxi_stats.std_dev
                     ))
 
-                    -- Line 3: Hit rate
                     if trackedMob.swings and trackedMob.swings > 0 then
-                        local hitRate = (trackedMob.connects / trackedMob.swings) * 100
+                        local lower, upper, p = stats.waldCI(trackedMob.connects, trackedMob.swings)
                         table.insert(output_lines, string.format(
-                            '  Hit Rate: %.1f%% (%d/%d)',
-                            hitRate, trackedMob.connects, trackedMob.swings
+                            '  Hit Rate: %.1f%% [%.1f-%.1f] (%d/%d)',
+                            p * 100, lower * 100, upper * 100, trackedMob.connects, trackedMob.swings
                         ))
                     end
 
-                    -- TP-derived delay if available
                     if trackedMob.delayFromTpGain and #trackedMob.delayFromTpGain > 0 then
                         local commonDelay = stats.mode(trackedMob.delayFromTpGain, 10)
                         if commonDelay then
@@ -480,33 +459,29 @@ addon.onIncomingPacket = function(id, data, size, packet)
                         end
                     end
 
-                    -- Multi-hit percentages
                     if trackedMob.hitsByRound and #trackedMob.hitsByRound > 0 then
-                        -- Count rounds by number of hits
                         local hitCounts = {}
                         for _, hits in ipairs(trackedMob.hitsByRound) do
                             hitCounts[hits] = (hitCounts[hits] or 0) + 1
                         end
 
-                        -- Build multi-hit statistics
-                        local hit_stats       = {}
                         local totalRounds     = #trackedMob.hitsByRound
-
-                        -- Show percentages for each hit count up to 8
                         local hit_stats_1to3  = {}
                         local hit_stats_4plus = {}
 
                         for i = 1, 3 do
                             if hitCounts[i] then
+                                local lower, upper, p = stats.waldCI(hitCounts[i], totalRounds)
                                 table.insert(hit_stats_1to3,
-                                    string.format('%d-hit: %.0f%%', i, (hitCounts[i] / totalRounds * 100)))
+                                    string.format('%d-hit: %.0f%% [%.0f-%.0f]', i, p * 100, lower * 100, upper * 100))
                             end
                         end
 
                         for i = 4, 8 do
                             if hitCounts[i] then
+                                local lower, upper, p = stats.waldCI(hitCounts[i], totalRounds)
                                 table.insert(hit_stats_4plus,
-                                    string.format('%d-hit: %.0f%%', i, (hitCounts[i] / totalRounds * 100)))
+                                    string.format('%d-hit: %.0f%% [%.0f-%.0f]', i, p * 100, lower * 100, upper * 100))
                             end
                         end
 
@@ -519,11 +494,9 @@ addon.onIncomingPacket = function(id, data, size, packet)
                                 string.format('            %s', table.concat(hit_stats_4plus, ' | ')))
                         end
 
-                        -- Slot-based stats
                         if trackedMob.hitsBySlot then
                             local slot_stats = {}
 
-                            -- Calculate hits per slot per round
                             if trackedMob.hitsBySlot.mainHand > 0 then
                                 table.insert(slot_stats,
                                     string.format('MH:%.2f', trackedMob.hitsBySlot.mainHand / totalRounds))
@@ -534,7 +507,6 @@ addon.onIncomingPacket = function(id, data, size, packet)
                                     string.format('OH:%.2f', trackedMob.hitsBySlot.offHand / totalRounds))
                             end
 
-                            -- Add individual kick slot stats
                             if trackedMob.hitsBySlot.rightKick > 0 then
                                 table.insert(slot_stats,
                                     string.format('RK:%.2f', trackedMob.hitsBySlot.rightKick / totalRounds))
@@ -545,7 +517,6 @@ addon.onIncomingPacket = function(id, data, size, packet)
                                     string.format('LK:%.2f', trackedMob.hitsBySlot.leftKick / totalRounds))
                             end
 
-                            -- Add kick round percentage
                             if trackedMob.roundsWithKicks and trackedMob.roundsWithKicks > 0 then
                                 table.insert(slot_stats,
                                     string.format('Kicks:%.0f%%', trackedMob.roundsWithKicks / totalRounds * 100))
@@ -607,10 +578,10 @@ addon.onIncomingPacket = function(id, data, size, packet)
                     ))
 
                     if addon.player.swings and addon.player.swings > 0 then
-                        local hitRate = (addon.player.connects / addon.player.swings) * 100
+                        local lower, upper, p = stats.waldCI(addon.player.connects, addon.player.swings)
                         table.insert(player_output, string.format(
-                            '  Hit Rate: %.1f%% (%d/%d)',
-                            hitRate, addon.player.connects, addon.player.swings
+                            '  Hit Rate: %.1f%% [%.1f-%.1f] (%d/%d)',
+                            p * 100, lower * 100, upper * 100, addon.player.connects, addon.player.swings
                         ))
                     end
 
@@ -626,15 +597,17 @@ addon.onIncomingPacket = function(id, data, size, packet)
 
                         for i = 1, 3 do
                             if hitCounts[i] then
+                                local lower, upper, p = stats.waldCI(hitCounts[i], totalRounds)
                                 table.insert(hit_stats_1to3,
-                                    string.format('%d-hit: %.0f%%', i, (hitCounts[i] / totalRounds * 100)))
+                                    string.format('%d-hit: %.0f%% [%.0f-%.0f]', i, p * 100, lower * 100, upper * 100))
                             end
                         end
 
                         for i = 4, 8 do
                             if hitCounts[i] then
+                                local lower, upper, p = stats.waldCI(hitCounts[i], totalRounds)
                                 table.insert(hit_stats_4plus,
-                                    string.format('%d-hit: %.0f%%', i, (hitCounts[i] / totalRounds * 100)))
+                                    string.format('%d-hit: %.0f%% [%.0f-%.0f]', i, p * 100, lower * 100, upper * 100))
                             end
                         end
 
