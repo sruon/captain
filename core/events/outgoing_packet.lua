@@ -32,10 +32,8 @@ function OutgoingPacketHandler:handle(id, data, size)
     end
 
     for addonName, addon in pairs(self.captain.addons) do
-        if
-          (addon.filters and addon.filters.outgoing and addon.filters.outgoing[id]) or
-          (addon.filters and addon.filters.outgoing and addon.filters.outgoing[0x255])
-        then
+        local filters = addon.filters and addon.filters.outgoing
+        if filters and (filters[id] or filters[0x255]) then
             if type(addon.onOutgoingPacket) == 'function' then
                 local ok, result = utils.withPerformanceMonitoring(addonName .. '.onOutgoingPacket', function()
                     return utils.safe_call(addonName .. '.onOutgoingPacket', addon.onOutgoingPacket, id, data, size, parsed)

@@ -346,8 +346,7 @@ local function processProcDamage(mobId, procData)
         mobId, procData.value, getProcEffectName(procData.message))
 end
 
--- Helper function to process react damage from battle actions
-local function processReactDamage(targetMobId, actorId, reactData)
+local function processReactDamage(_, actorId, reactData)
     local mobId      = actorId
     local damage     = reactData.value
 
@@ -375,7 +374,6 @@ local function processReactDamage(targetMobId, actorId, reactData)
         mobId, damage, getReactEffectName(reactData.message))
 end
 
--- Create action data from packet fields
 local function createActionData(cmd_no, effect, actor_id)
     return
     {
@@ -390,7 +388,6 @@ local function createActionData(cmd_no, effect, actor_id)
     }
 end
 
--- Create proc data object from effect fields
 local function createProcData(effect, mobId)
     if effect.has_proc and effect.proc then
         if not isKnownProc(effect.proc.message) then
@@ -411,7 +408,6 @@ local function createProcData(effect, mobId)
     return nil
 end
 
--- Create react data object from effect fields
 local function createReactData(effect, mobId, actorId)
     if effect.has_react and effect.react then
         if not isKnownReact(effect.react.message) then
@@ -433,9 +429,7 @@ local function createReactData(effect, mobId, actorId)
     return nil
 end
 
-
-
-addon.onIncomingPacket = function(id, data, size, packet)
+addon.onIncomingPacket = function(id, _, _, packet)
     if id == PacketId.GP_SERV_COMMAND_BATTLE2 then -- Action Message
         if not packet or not packet.target then return end
         local cmd_no   = packet.cmd_no
@@ -524,7 +518,7 @@ addon.onInitialize     = function(rootDir)
     addon.files.global = backend.fileOpen(rootDir .. backend.player_name() .. '/' .. backend.zone_name() .. '.log')
 end
 
-addon.onClientReady    = function(zoneId)
+addon.onClientReady    = function()
     addon.mobs         = {}
     addon.files.global = backend.fileOpen(addon.rootDir .. backend.player_name() .. '/' .. backend.zone_name() .. '.log')
     if addon.files.capture then

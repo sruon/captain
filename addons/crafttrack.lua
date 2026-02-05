@@ -82,7 +82,6 @@ local addon =
     },
 }
 
--- Helper function to get item name with fallback to ID
 local function getItemName(id)
     if not id or id == 0 then
         return ''

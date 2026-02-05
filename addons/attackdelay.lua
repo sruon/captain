@@ -473,7 +473,7 @@ addon.onIncomingPacket = function(id, data, size, packet)
                             if hitCounts[i] then
                                 local lower, upper, p = stats.waldCI(hitCounts[i], totalRounds)
                                 table.insert(hit_stats_1to3,
-                                    string.format('%d-hit: %.0f%% [%.0f-%.0f]', i, p * 100, lower * 100, upper * 100))
+                                    string.format('%d-hit: %.1f%% [%.1f-%.1f]', i, p * 100, lower * 100, upper * 100))
                             end
                         end
 
@@ -481,7 +481,7 @@ addon.onIncomingPacket = function(id, data, size, packet)
                             if hitCounts[i] then
                                 local lower, upper, p = stats.waldCI(hitCounts[i], totalRounds)
                                 table.insert(hit_stats_4plus,
-                                    string.format('%d-hit: %.0f%% [%.0f-%.0f]', i, p * 100, lower * 100, upper * 100))
+                                    string.format('%d-hit: %.1f%% [%.1f-%.1f]', i, p * 100, lower * 100, upper * 100))
                             end
                         end
 
@@ -599,7 +599,7 @@ addon.onIncomingPacket = function(id, data, size, packet)
                             if hitCounts[i] then
                                 local lower, upper, p = stats.waldCI(hitCounts[i], totalRounds)
                                 table.insert(hit_stats_1to3,
-                                    string.format('%d-hit: %.0f%% [%.0f-%.0f]', i, p * 100, lower * 100, upper * 100))
+                                    string.format('%d-hit: %.1f%% [%.1f-%.1f]', i, p * 100, lower * 100, upper * 100))
                             end
                         end
 
@@ -607,7 +607,7 @@ addon.onIncomingPacket = function(id, data, size, packet)
                             if hitCounts[i] then
                                 local lower, upper, p = stats.waldCI(hitCounts[i], totalRounds)
                                 table.insert(hit_stats_4plus,
-                                    string.format('%d-hit: %.0f%% [%.0f-%.0f]', i, p * 100, lower * 100, upper * 100))
+                                    string.format('%d-hit: %.1f%% [%.1f-%.1f]', i, p * 100, lower * 100, upper * 100))
                             end
                         end
 

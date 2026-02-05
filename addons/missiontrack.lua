@@ -202,6 +202,18 @@ local function writeLog(file, tstamp, title, notificationData)
     end
 end
 
+local function notify(title, fields, player, tstamp)
+    table.insert(fields, { 'X', player and player.x or '?' })
+    table.insert(fields, { 'Y', player and player.y or '?' })
+    table.insert(fields, { 'Z', player and player.z or '?' })
+    table.insert(fields, { 'Zone', player and player.zoneName or '?' })
+    table.insert(fields, { 'Timestamp', os.time() })
+
+    writeLog(addon.files.global, tstamp, title, fields)
+    writeLog(addon.files.capture, tstamp, title, fields)
+    backend.notificationCreate('MissionTrack', title, fields)
+end
+
 addon.onInitialize     = function(rootDir)
     addon.files.global = backend.fileOpen(string.format('%s/%s_missions.log', rootDir, backend.player_name()))
 end
@@ -248,86 +260,42 @@ addon.onIncomingPacket = function(id, data, size, packet)
             if port == PORT_MAIN_MISSION then
                 for _, change in ipairs(changes) do
                     local fieldName, detail = formatMainMissionChange(change)
-                    local notificationData  =
-                    {
-                        { 'Field',     fieldName },
-                        { 'Change',    detail },
-                        { 'X',         player and player.x or '?' },
-                        { 'Y',         player and player.y or '?' },
-                        { 'Z',         player and player.z or '?' },
-                        { 'Zone',      player and player.zoneName or '?' },
-                        { 'Timestamp', os.time() },
-                    }
-
-                    writeLog(addon.files.global, tstamp, title, notificationData)
-                    writeLog(addon.files.capture, tstamp, title, notificationData)
-                    backend.notificationCreate('MissionTrack', title, notificationData)
+                    notify(title, { { 'Field', fieldName }, { 'Change', detail } }, player, tstamp)
                 end
             elseif port == 0x00D8 then
                 for _, change in ipairs(changes) do
                     if change.bits and #change.bits > 0 then
                         for _, bitChange in ipairs(change.bits) do
-                            local missionType      = getToAUWoTGMissionType(change.index)
-                            local missionId        = calculateToAUWoTGMissionId(change.index, bitChange.bit)
-                            local action           = bitChange.nowSet and 'Completed' or 'Reset'
-                            local notificationData =
-                            {
-                                { 'Region',    region or portType },
-                                { 'Type',      missionType },
-                                { 'Mission',   missionId },
-                                { 'Action',    action },
-                                { 'X',         player and player.x or '?' },
-                                { 'Y',         player and player.y or '?' },
-                                { 'Z',         player and player.z or '?' },
-                                { 'Zone',      player and player.zoneName or '?' },
-                                { 'Timestamp', os.time() },
-                            }
-
-                            writeLog(addon.files.global, tstamp, title, notificationData)
-                            writeLog(addon.files.capture, tstamp, title, notificationData)
-                            backend.notificationCreate('MissionTrack', title, notificationData)
+                            local missionType = getToAUWoTGMissionType(change.index)
+                            local missionId   = calculateToAUWoTGMissionId(change.index, bitChange.bit)
+                            local action      = bitChange.nowSet and 'Completed' or 'Reset'
+                            notify(title, {
+                                { 'Region', region or portType },
+                                { 'Type', missionType },
+                                { 'Mission', missionId },
+                                { 'Action', action },
+                            }, player, tstamp)
                         end
                     end
                 end
             elseif port == 0x0080 then
                 for _, change in ipairs(changes) do
                     if isAhtUrhganMissionField(port, change.index) then
-                        local fieldName        = AhtUrhganMissionFields[change.index] or
-                        string.format('Field %d', change.index)
-                        local notificationData =
-                        {
-                            { 'Region',    region or portType },
-                            { 'Mission',   fieldName },
-                            { 'Progress',  string.format('%d -> %d', change.old, change.new) },
-                            { 'X',         player and player.x or '?' },
-                            { 'Y',         player and player.y or '?' },
-                            { 'Z',         player and player.z or '?' },
-                            { 'Zone',      player and player.zoneName or '?' },
-                            { 'Timestamp', os.time() },
-                        }
-
-                        writeLog(addon.files.global, tstamp, title, notificationData)
-                        writeLog(addon.files.capture, tstamp, title, notificationData)
-                        backend.notificationCreate('MissionTrack', title, notificationData)
+                        local fieldName = AhtUrhganMissionFields[change.index] or string.format('Field %d', change.index)
+                        notify(title, {
+                            { 'Region', region or portType },
+                            { 'Mission', fieldName },
+                            { 'Progress', string.format('%d -> %d', change.old, change.new) },
+                        }, player, tstamp)
                     elseif change.bits and #change.bits > 0 then
                         for _, bitChange in ipairs(change.bits) do
-                            local questId          = calculateBitId(change.index, bitChange.bit)
-                            local action           = bitChange.nowSet and 'Accepted' or 'Removed'
-                            local notificationData =
-                            {
-                                { 'Region',    region or portType },
-                                { 'Quest ID',  questId },
-                                { 'Action',    action },
-                                { 'X',         player and player.x or '?' },
-                                { 'Y',         player and player.y or '?' },
-                                { 'Z',         player and player.z or '?' },
-                                { 'Zone',      player and player.zoneName or '?' },
-                                { 'Timestamp', os.time() },
-                            }
-
-                            writeLog(addon.files.global, tstamp, title, notificationData)
-                            writeLog(addon.files.capture, tstamp, title, notificationData)
-                            backend.notificationCreate('MissionTrack', title, notificationData)
+                            local questId = calculateBitId(change.index, bitChange.bit)
+                            local action  = bitChange.nowSet and 'Accepted' or 'Removed'
+                            notify(title, {
+                                { 'Region', region or portType },
+                                { 'Quest ID', questId },
+                                { 'Action', action },
+                            }, player, tstamp)
                         end
                     end
                 end
@@ -338,35 +306,21 @@ addon.onIncomingPacket = function(id, data, size, packet)
                 for _, change in ipairs(changes) do
                     if change.bits and #change.bits > 0 then
                         for _, bitChange in ipairs(change.bits) do
-                            local bitId = calculateBitId(change.index, bitChange.bit)
-                            local idLabel, action
+                            local bitId   = calculateBitId(change.index, bitChange.bit)
+                            local idLabel = isMission and 'Mission ID' or 'Quest ID'
+                            local action
 
-                            if isMission then
-                                idLabel = 'Mission ID'
-                                action  = bitChange.nowSet and 'Completed' or 'Reset'
-                            elseif isQuestComplete then
-                                idLabel = 'Quest ID'
-                                action  = bitChange.nowSet and 'Completed' or 'Reset'
+                            if isMission or isQuestComplete then
+                                action = bitChange.nowSet and 'Completed' or 'Reset'
                             else
-                                idLabel = 'Quest ID'
-                                action  = bitChange.nowSet and 'Accepted' or 'Removed'
+                                action = bitChange.nowSet and 'Accepted' or 'Removed'
                             end
 
-                            local notificationData =
-                            {
-                                { 'Region',    region or portType },
-                                { idLabel,     bitId },
-                                { 'Action',    action },
-                                { 'X',         player and player.x or '?' },
-                                { 'Y',         player and player.y or '?' },
-                                { 'Z',         player and player.z or '?' },
-                                { 'Zone',      player and player.zoneName or '?' },
-                                { 'Timestamp', os.time() },
-                            }
-
-                            writeLog(addon.files.global, tstamp, title, notificationData)
-                            writeLog(addon.files.capture, tstamp, title, notificationData)
-                            backend.notificationCreate('MissionTrack', title, notificationData)
+                            notify(title, {
+                                { 'Region', region or portType },
+                                { idLabel, bitId },
+                                { 'Action', action },
+                            }, player, tstamp)
                         end
                     end
                 end
