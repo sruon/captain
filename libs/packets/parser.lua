@@ -89,16 +89,32 @@ type_handlers.array       = function(reader, field, result, context, header, dat
 end
 
 type_handlers.string      = function(reader, field, result, context, header, data)
+    local size = field.size
+    if type(size) == 'function' then
+        size = size(result, data, header)
+    end
+    if not size or size <= 0 then
+        result[field.name] = ''
+        return
+    end
     local chars = {}
-    for _ = 1, field.size do
+    for _ = 1, size do
         chars[#chars+1] = string.char(reader:read(8))
     end
     result[field.name] = table.concat(chars):gsub('%z.*$', '')
 end
 
 type_handlers.raw         = function(reader, field, result, context, header, data)
+    local size = field.size
+    if type(size) == 'function' then
+        size = size(result, data, header)
+    end
+    if not size or size <= 0 then
+        result[field.name] = ''
+        return
+    end
     local raw = {}
-    for _ = 1, field.size do
+    for _ = 1, size do
         raw[#raw+1] = string.char(reader:read(8))
     end
     result[field.name] = table.concat(raw)
@@ -163,6 +179,14 @@ parse_layout              = function(reader, layout, context, header, data)
     result._parent = nil
 
     return result
+end
+
+---Check if a packet definition exists
+---@param dir string -- 'outgoing' or 'incoming'
+---@param id number  -- The packet ID
+---@return boolean   -- True if definition exists
+parser.hasDefinition      = function(dir, id)
+    return definitions[dir] ~= nil and definitions[dir][id] ~= nil
 end
 
 ---@param dir string       -- 'outgoing' or 'incoming'

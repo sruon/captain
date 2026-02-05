@@ -439,11 +439,11 @@ local function createActionNotification(result)
     backend.notificationCreate('AView', title, dataFields)
 end
 
-local function checkAction(data)
-    local action = backend.parsePacket('incoming', data)
-    if not action then
+local function checkAction(packet)
+    if not packet then
         return
     end
+    local action = packet
 
     local result, str_info = parseAction(action)
     if not result or result.message == 84 then
@@ -559,19 +559,18 @@ end
 
 addon.onClientReady    = setupZone
 
-addon.onIncomingPacket = function(id, data)
+addon.onIncomingPacket = function(id, data, size, packet)
     -- Always track start times for timing purposes, even if category is disabled
-    local action = backend.parsePacket('incoming', data)
-    if action then
+    if packet then
         -- Track start times for timing (category 7: TP-St, 8: MA-St, 12: RA-St)
-        if action.cmd_no == 7 or action.cmd_no == 8 or action.cmd_no == 12 then
+        if packet.cmd_no == 7 or packet.cmd_no == 8 or packet.cmd_no == 12 then
             -- Since only one action can be in progress per actor, key by actor ID only
-            local key                   = tostring(action.m_uID)
+            local key                   = tostring(packet.m_uID)
             addon.actionStartTimes[key] = socket.gettime() * 1000
         end
     end
 
-    checkAction(data)
+    checkAction(packet)
 end
 
 addon.onCaptureStart   = function(captureDir)

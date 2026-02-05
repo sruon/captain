@@ -35,8 +35,7 @@ local function ensureMobTable(table, mobId)
     end
 end
 
-addon.onIncomingPacket = function(id, data)
-    local packet = backend.parsePacket('incoming', data)
+addon.onIncomingPacket = function(id, data, size, packet)
     if not packet then
         return
     end

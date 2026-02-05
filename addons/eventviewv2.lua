@@ -336,8 +336,7 @@ addon.onClientReady    = function(zoneId)
 end
 
 -- Shared function for processing both incoming and outgoing packets
-addon.processPacket    = function(direction, id, data)
-    local packet = backend.parsePacket(direction, data)
+addon.processPacket    = function(direction, id, data, packet)
     if not packet then
         backend.msg('EView', string.format('Could not parse packet %s', id))
         return
@@ -427,12 +426,12 @@ addon.processPacket    = function(direction, id, data)
     backend.notificationCreate('EView', title, dataFields)
 end
 
-addon.onIncomingPacket = function(id, data)
-    addon.processPacket('incoming', id, data)
+addon.onIncomingPacket = function(id, data, size, packet)
+    addon.processPacket('incoming', id, data, packet)
 end
 
-addon.onOutgoingPacket = function(id, data)
-    addon.processPacket('outgoing', id, data)
+addon.onOutgoingPacket = function(id, data, size, packet)
+    addon.processPacket('outgoing', id, data, packet)
 end
 
 addon.onCaptureStart   = function(captureDir)

@@ -1,5 +1,6 @@
 -- Outgoing packet event handler class
-local utils = require('utils')
+local utils   = require('utils')
+local packets = require('packets.parser')
 
 ---@class OutgoingPacketHandler
 ---@field captain table The captain instance this handler is bound to
@@ -23,6 +24,13 @@ end
 function OutgoingPacketHandler:handle(id, data, size)
 
     local shouldBlock = false
+
+    -- Parse packet once for all addons (only if definition exists)
+    local parsed = nil
+    if packets.hasDefinition('outgoing', id) then
+        parsed = packets.parse('outgoing', data)
+    end
+
     for addonName, addon in pairs(self.captain.addons) do
         if
           (addon.filters and addon.filters.outgoing and addon.filters.outgoing[id]) or
@@ -30,7 +38,7 @@ function OutgoingPacketHandler:handle(id, data, size)
         then
             if type(addon.onOutgoingPacket) == 'function' then
                 local ok, result = utils.withPerformanceMonitoring(addonName .. '.onOutgoingPacket', function()
-                    return utils.safe_call(addonName .. '.onOutgoingPacket', addon.onOutgoingPacket, id, data, size)
+                    return utils.safe_call(addonName .. '.onOutgoingPacket', addon.onOutgoingPacket, id, data, size, parsed)
                 end)
                 if result == true then
                     shouldBlock = true

@@ -93,13 +93,13 @@ local function trackMob(UniqueNo, ActIndex)
     end, addon.settings.interval)
 end
 
-addon.onIncomingPacket = function(id, data, size)
-    ---@type GP_SERV_COMMAND_BATTLE_MESSAGE | GP_SERV_COMMAND_CHAR_NPC | GP_SERV_COMMAND_SCHEDULOR
-    local packet = backend.parsePacket('incoming', data)
+addon.onIncomingPacket = function(id, data, size, packet)
+    if not packet then
+        return
+    end
 
     if id == PacketId.GP_SERV_COMMAND_BATTLE_MESSAGE then -- Mob Defeated. 6 == defeated, 20 == falls to the ground
         if
-          packet and
           (packet.MessageNum == 6 or packet.MessageNum == 20) and
           packet.UniqueNoTar
         then

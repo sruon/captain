@@ -1,5 +1,6 @@
 -- Incoming packet event handler class
-local utils = require('utils')
+local utils   = require('utils')
+local packets = require('packets.parser')
 
 ---@class IncomingPacketHandler
 ---@field captain table The captain instance this handler is bound to
@@ -26,6 +27,12 @@ function IncomingPacketHandler:handle(id, data, size)
     local shouldBlock    = false
     local modifiedPacket = nil
 
+    -- Parse packet once for all addons (only if definition exists)
+    local parsed = nil
+    if packets.hasDefinition('incoming', id) then
+        parsed = packets.parse('incoming', data)
+    end
+
     for addonName, addon in pairs(self.captain.addons) do
         if
           (addon.filters and addon.filters.incoming and addon.filters.incoming[id]) or
@@ -34,7 +41,7 @@ function IncomingPacketHandler:handle(id, data, size)
             if type(addon.onIncomingPacket) == 'function' then
                 local ok, result = utils.withPerformanceMonitoring(addonName .. '.onIncomingPacket', function()
                     return utils.safe_call(addonName .. '.onIncomingPacket', addon.onIncomingPacket, id,
-                        modifiedPacket or data, size)
+                        modifiedPacket or data, size, parsed)
                 end)
                 if result == true then
                     shouldBlock = true

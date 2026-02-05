@@ -435,9 +435,7 @@ end
 
 
 
-addon.onIncomingPacket = function(id, data, size)
-    local packet = backend.parsePacket('incoming', data)
-
+addon.onIncomingPacket = function(id, data, size, packet)
     if id == PacketId.GP_SERV_COMMAND_BATTLE2 then -- Action Message
         if not packet or not packet.target then return end
         local cmd_no   = packet.cmd_no

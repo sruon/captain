@@ -49,10 +49,8 @@ local function getAllDbs()
     return dbs
 end
 
-addon.onIncomingPacket = function(id, data)
+addon.onIncomingPacket = function(id, data, size, packet)
     if id == PacketId.GP_SERV_COMMAND_TRACKING_LIST then
-        ---@type GP_SERV_COMMAND_TRACKING_LIST
-        local packet = backend.parsePacket('incoming', data)
         if not packet then
             return
         end

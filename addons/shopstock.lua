@@ -117,15 +117,14 @@ addon.onCaptureStop    = function()
     end
 end
 
-addon.onOutgoingPacket = function(id, data)
+addon.onOutgoingPacket = function(id, data, size, packet)
     if id == PacketId.GP_CLI_COMMAND_ACTION then
-        local actionPacket = backend.parsePacket('outgoing', data)
-        if actionPacket.ActionID == 0 then
-            local npc = backend.get_mob_by_index(actionPacket.ActIndex)
+        if packet and packet.ActionID == 0 then
+            local npc = backend.get_mob_by_index(packet.ActIndex)
             if npc then
                 addon.shopNpc =
                 {
-                    UniqueNo = actionPacket.UniqueNo,
+                    UniqueNo = packet.UniqueNo,
                     Name     = npc.name,
                 }
             end
@@ -177,7 +176,7 @@ local function autoAppraise()
     end
 end
 
-addon.onIncomingPacket = function(id, data)
+addon.onIncomingPacket = function(id, data, size, packet)
     if not backend.is_retail() then
         return
     end
@@ -186,6 +185,11 @@ addon.onIncomingPacket = function(id, data)
         if addon.settings.autoAppraise then
             autoAppraise()
         end
+        return
+    end
+
+    if not packet then
+        return
     end
 
     if id == PacketId.GP_SERV_COMMAND_SHOP_LIST then
@@ -194,9 +198,11 @@ addon.onIncomingPacket = function(id, data)
             return
         end
 
-        ---@type GP_SERV_COMMAND_SHOP_LIST
-        local buyListPacket = backend.parsePacket('incoming', data)
-        for _, item in ipairs(buyListPacket.ShopItemTbl) do
+        if not packet.ShopItemTbl then
+            return
+        end
+
+        for _, item in ipairs(packet.ShopItemTbl) do
             if bit.band(item.ItemPrice, 0x80000000) ~= 0 then
                 backend.msg('ShopStock', string.format('Item %s has MSB set - Unknown meaning.', backend.get_item_name(item.ItemNo)))
             end
@@ -224,21 +230,18 @@ addon.onIncomingPacket = function(id, data)
         end
 
         backend.msg('ShopStock',
-            string.format('Recorded %d items sold by %s', #buyListPacket.ShopItemTbl, addon.shopNpc.Name))
-    end
-
-    if id == PacketId.GP_SERV_COMMAND_SHOP_SELL then
+            string.format('Recorded %d items sold by %s', #packet.ShopItemTbl, addon.shopNpc.Name))
+    elseif id == PacketId.GP_SERV_COMMAND_SHOP_SELL then
         if addon.shopNpc.UniqueNo == 0 then
             backend.errMsg('ShopStock', 'SHOP_SELL without NPC - talk to the NPC Shop again.')
             return
         end
-        ---@type GP_SERV_COMMAND_SHOP_SELL
-        local sellPacket = backend.parsePacket('incoming', data)
-        if sellPacket.Type ~= 0 then -- We only care about appraisals
+
+        if packet.Type ~= 0 then -- We only care about appraisals
             return
         end
 
-        local invItem = backend.get_inventory_item(0, sellPacket.PropertyItemIndex)
+        local invItem = backend.get_inventory_item(0, packet.PropertyItemIndex)
         if invItem then
             local itemKey   = string.format('%s-%d', addon.shopNpc.Name, invItem.Id)
             local itemEntry =
@@ -248,7 +251,7 @@ addon.onIncomingPacket = function(id, data)
                 NpcZone     = backend.zone_name(),
                 ItemNo      = invItem.Id,
                 ItemName    = backend.get_item_name(invItem.Id),
-                Price       = bit.band(sellPacket.Price, 0x3FFFFFFF), -- Not sure if MSB can be set in shop packets but just in case
+                Price       = bit.band(packet.Price, 0x3FFFFFFF), -- Not sure if MSB can be set in shop packets but just in case
             }
             if addon.databases.global.sellList then
                 addon.databases.global.sellList:add_or_update(itemKey, itemEntry)

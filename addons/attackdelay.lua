@@ -177,8 +177,7 @@ local function updateDelayWindow()
     addon.delayWindow:show()
 end
 
-addon.onIncomingPacket = function(id, data, size)
-    local packet = backend.parsePacket('incoming', data)
+addon.onIncomingPacket = function(id, data, size, packet)
     if not packet then return end
 
     if id == PacketId.GP_SERV_COMMAND_BATTLE2 then

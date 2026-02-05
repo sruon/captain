@@ -153,9 +153,8 @@ local function trackPosition(id, x, y, z, dir, csvFile)
     end
 end
 
-addon.onIncomingPacket = function(id, data)
+addon.onIncomingPacket = function(id, data, size, packet)
     if id == PacketId.GP_SERV_COMMAND_CHAR_NPC then
-        local packet = backend.parsePacket('incoming', data)
         if not packet or not packet.SendFlg.Position then
             return
         end
@@ -196,9 +195,8 @@ addon.onIncomingPacket = function(id, data)
     end
 end
 
-addon.onOutgoingPacket = function(id, data)
+addon.onOutgoingPacket = function(id, data, size, packet)
     if id == PacketId.GP_CLI_COMMAND_POS then
-        local packet = backend.parsePacket('outgoing', data)
         if not packet then
             return
         end

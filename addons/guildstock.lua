@@ -119,15 +119,14 @@ addon.onCaptureStop  = function()
 end
 
 
-addon.onOutgoingPacket = function(id, data)
+addon.onOutgoingPacket = function(id, data, size, packet)
     if id == PacketId.GP_CLI_COMMAND_ACTION then
-        local actionPacket = backend.parsePacket('outgoing', data)
-        if actionPacket.ActionID == 0 then
-            local npc = backend.get_mob_by_index(actionPacket.ActIndex)
+        if packet and packet.ActionID == 0 then
+            local npc = backend.get_mob_by_index(packet.ActIndex)
             if npc then
                 addon.guildNpc =
                 {
-                    UniqueNo = actionPacket.UniqueNo,
+                    UniqueNo = packet.UniqueNo,
                     Name     = npc.name,
                 }
             end
@@ -135,8 +134,12 @@ addon.onOutgoingPacket = function(id, data)
     end
 end
 
-addon.onIncomingPacket = function(id, data)
+addon.onIncomingPacket = function(id, data, size, packet)
     if not backend.is_retail() then
+        return
+    end
+
+    if not packet then
         return
     end
 
@@ -146,10 +149,12 @@ addon.onIncomingPacket = function(id, data)
             return
         end
 
-        ---@type GP_SERV_COMMAND_GUILD_BUYLIST
-        local buyListPacket = backend.parsePacket('incoming', data)
-        for i = 1, buyListPacket.Count do
-            local itemEntry = buyListPacket.List[i]
+        if not packet.Count or not packet.List then
+            return
+        end
+
+        for i = 1, packet.Count do
+            local itemEntry = packet.List[i]
             local itemKey   = string.format('%s-%d', addon.guildNpc.Name, itemEntry.ItemNo)
             local dbEntry   =
             {
@@ -182,19 +187,19 @@ addon.onIncomingPacket = function(id, data)
         end
 
         backend.msg('GuildStock',
-            string.format('Recorded %d items sold by %s', buyListPacket.Count, addon.guildNpc.Name))
-    end
-
-    if id == PacketId.GP_SERV_COMMAND_GUILD_SELLLIST then
+            string.format('Recorded %d items sold by %s', packet.Count, addon.guildNpc.Name))
+    elseif id == PacketId.GP_SERV_COMMAND_GUILD_SELLLIST then
         if addon.guildNpc.UniqueNo == 0 then
             backend.errMsg('GuildStock', 'GUILD_SELLLIST without NPC - talk to the Guild Shop again.')
             return
         end
 
-        ---@type GP_SERV_COMMAND_GUILD_SELLLIST
-        local sellListPacket = backend.parsePacket('incoming', data)
-        for i = 1, sellListPacket.Count do
-            local itemEntry = sellListPacket.List[i]
+        if not packet.Count or not packet.List then
+            return
+        end
+
+        for i = 1, packet.Count do
+            local itemEntry = packet.List[i]
             local itemKey   = string.format('%s-%d', addon.guildNpc.Name, itemEntry.ItemNo)
             local dbEntry   =
             {
@@ -219,7 +224,7 @@ addon.onIncomingPacket = function(id, data)
         end
 
         backend.msg('GuildStock',
-            string.format('Recorded %d items purchased by %s', sellListPacket.Count, addon.guildNpc.Name))
+            string.format('Recorded %d items purchased by %s', packet.Count, addon.guildNpc.Name))
     end
 end
 

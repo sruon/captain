@@ -104,9 +104,11 @@ addon.onCommand    = function(cmdArgs)
     end
 end
 
-addon.onIncomingPacket = function(id, data)
+addon.onIncomingPacket = function(id, data, size, packet)
     if id == PacketId.GP_SERV_COMMAND_CHAR_NPC then
-        local packet = backend.parsePacket('incoming', data)
+        if not packet then
+            return
+        end
 
         if addon.pendingWhereIs[packet.UniqueNo] then
             addon.pendingWhereIs[packet.UniqueNo] = nil

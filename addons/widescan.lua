@@ -34,12 +34,9 @@ local addon            =
     zonedOut         = false,
 }
 
-addon.onIncomingPacket = function(id, data)
-    local packet = backend.parsePacket('incoming', data)
+addon.onIncomingPacket = function(id, data, size, packet)
     if id == PacketId.GP_SERV_COMMAND_TRACKING_STATE then
-        ---@type GP_SERV_COMMAND_TRACKING_STATE
-        packet = packet
-        if packet.State == GP_TRACKING_STATE.GP_TRACKING_STATE_LIST_START then
+        if packet and packet.State == GP_TRACKING_STATE.GP_TRACKING_STATE_LIST_START then
             addon.entitiesCount = 0
         end
     elseif id == PacketId.GP_SERV_COMMAND_TRACKING_LIST then
@@ -50,7 +47,7 @@ addon.onIncomingPacket = function(id, data)
     end
 end
 
-addon.onOutgoingPacket = function(id, data)
+addon.onOutgoingPacket = function(id, data, size, packet)
     -- Client is ready to receive additional packets
     if id == PacketId.GP_CLI_COMMAND_GAMEOK then
         addon.zonedOut         = false

@@ -146,15 +146,12 @@ local ANIMATION_QUALITY =
     [4] = 'High-Quality',
 }
 
-addon.onIncomingPacket  = function(id, data)
+addon.onIncomingPacket  = function(id, data, size, packet)
+    if not packet then
+        return
+    end
+
     if id == PacketId.GP_SERV_COMMAND_EFFECT then
-        ---@type GP_SERV_COMMAND_EFFECT
-        local packet = backend.parsePacket('incoming', data)
-
-        if not packet then
-            return
-        end
-
         -- Only track effects for the player
         local player = backend.get_player_entity_data()
         if player and packet.UniqueNo == player.serverId then
@@ -168,12 +165,6 @@ addon.onIncomingPacket  = function(id, data)
             }
         end
     elseif id == PacketId.GP_SERV_COMMAND_COMBINE_ANS then
-        ---@type GP_SERV_COMMAND_COMBINE_ANS
-        local packet = backend.parsePacket('incoming', data)
-
-        if not packet then
-            return
-        end
 
         -- Only log actual synthesis attempts (0x00 success, 0x01 fail, 0x0C success)
         if packet.Result ~= 0x00 and packet.Result ~= 0x01 and packet.Result ~= 0x0C then

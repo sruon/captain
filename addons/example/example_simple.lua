@@ -78,10 +78,10 @@ end
 
 -- captain notifies addons of incoming packets but only if you opted in to the specific ID (addon.filters)
 -- This is where the bulk of your logic will go if dealing with packets
-addon.onIncomingPacket = function(id, data)
+-- The packet parameter is pre-parsed by captain for efficiency
+addon.onIncomingPacket = function(id, data, size, packet)
     if id == PacketId.GP_SERV_COMMAND_TRACKING_LIST then
-        -- This is the widescan update packet, we can parse it and store the data
-        local packet = backend.parsePacket('incoming', data)
+        -- This is the widescan update packet, captain has already parsed it for us
         if packet then
             -- The parser returned a table with all fields parsed
             -- Each packet type will look different, see libs/packets/definitions.lua
@@ -100,7 +100,8 @@ addon.onIncomingPacket = function(id, data)
 end
 
 -- captain notifies addons of outgoing packets but only if you opted in to the specific ID (addon.filters)
-addon.onOutgoingPacket = function(id, data)
+-- The packet parameter is pre-parsed by captain for efficiency
+addon.onOutgoingPacket = function(id, data, size, packet)
 end
 
 -- captain notifies addons of incoming text events

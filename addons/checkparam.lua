@@ -69,10 +69,7 @@ local function checkParam()
     end, addon.settings.delay)
 end
 
-addon.onIncomingPacket = function(id, data, size)
-    ---@type GP_SERV_COMMAND_BATTLE_MESSAGE
-    local packet = backend.parsePacket('incoming', data)
-
+addon.onIncomingPacket = function(id, data, size, packet)
     if not addon.settings.enabled or not captain.isCapturing then
         return false
     end

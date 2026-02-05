@@ -141,8 +141,7 @@ local function getAllDbs()
     return dbs
 end
 
-local function parseNpcUpdate(data)
-    local packet = backend.parsePacket('incoming', data)
+local function parseNpcUpdate(packet)
     if not packet then
         return
     end
@@ -276,9 +275,7 @@ local function parseNpcUpdate(data)
     end
 end
 
-local function parseWidescanUpdate(data)
-    ---@type GP_SERV_COMMAND_TRACKING_LIST?
-    local packet = backend.parsePacket('incoming', data)
+local function parseWidescanUpdate(packet)
     if not packet then
         return
     end
@@ -312,11 +309,11 @@ local function parseWidescanUpdate(data)
     end
 end
 
-addon.onIncomingPacket = function(id, data)
+addon.onIncomingPacket = function(id, data, size, packet)
     if id == PacketId.GP_SERV_COMMAND_CHAR_NPC then
-        parseNpcUpdate(data)
+        parseNpcUpdate(packet)
     elseif id == PacketId.GP_SERV_COMMAND_TRACKING_LIST then
-        parseWidescanUpdate(data)
+        parseWidescanUpdate(packet)
     end
 end
 

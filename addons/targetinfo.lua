@@ -32,8 +32,8 @@ local addon            =
     animationSubs   = {},
 }
 
-addon.onIncomingPacket = function(id, data)
-    local packet = backend.parsePacket('incoming', data)
+addon.onIncomingPacket = function(id, data, size, packet)
+    if not packet then return end
 
     if id == PacketId.GP_SERV_COMMAND_CHAR_PC then
         ---@type GP_SERV_COMMAND_CHAR_PC

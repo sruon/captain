@@ -33,8 +33,8 @@
 ---@field onPrerender? fun()                               # Called every frame before rendering
 ---@field onCaptureStart? fun(captureDir: string)          # Called when capture begins
 ---@field onCaptureStop? fun()                             # Called when capture ends
----@field onIncomingPacket? fun(id: number, data: string, size: number)  # Raw incoming packet handler
----@field onOutgoingPacket? fun(id: number, data: string, size: number)  # Raw outgoing packet handler
+---@field onIncomingPacket? fun(id: number, data: string, size: number, packet: table|nil)  # Incoming packet handler, packet is pre-parsed
+---@field onOutgoingPacket? fun(id: number, data: string, size: number, packet: table|nil)  # Outgoing packet handler, packet is pre-parsed
 ---@field onIncomingText? fun(mode:string, text: string)   # Chatlog text handler
 ---@field onZoneChange? fun(zoneId: number)                # Zone change handler - the client may not be ready, i.e. player name
 ---@field onClientReady? fun(zoneId: number)               # Zone change handler but waits for client to emit GAMEOK

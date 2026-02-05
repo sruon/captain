@@ -31,7 +31,7 @@ local addon            =
 
 local socket           = require('socket')
 
-addon.onIncomingPacket = function(id, data, size)
+addon.onIncomingPacket = function(id, data, size, packet)
     local time     = socket.gettime()
     local timestr  = os.date('%Y-%m-%d %H:%M:%S', math.floor(time)) ..
       string.format('.%03d', math.floor((time % 1) * 1000))
@@ -58,7 +58,7 @@ addon.onIncomingPacket = function(id, data, size)
     end
 end
 
-addon.onOutgoingPacket = function(id, data, size)
+addon.onOutgoingPacket = function(id, data, size, packet)
     local time     = socket.gettime()
     local timestr  = os.date('%Y-%m-%d %H:%M:%S', math.floor(time)) ..
       string.format('.%03d', math.floor((time % 1) * 1000))
