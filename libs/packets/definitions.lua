@@ -47,6 +47,21 @@ local definitions          =
 {
     incoming =
     {
+        [PacketId.GP_SERV_COMMAND_MISSION]           =
+        {
+            -- 0x04 - 0x23: data[8] - Mission/quest data
+            {
+                name   = 'Data',
+                type   = 'array',
+                count  = 8,
+                layout =
+                {
+                    { name = 'value', bits = 32 },
+                },
+            },
+            { name = 'Port',      bits = 16 }, -- 0x24 - Port value determines data type
+            { name = 'padding00', bits = 16 }, -- 0x26 - Padding
+        },
         [PacketId.GP_SERV_COMMAND_SCENARIOITEM]      =
         {
             {

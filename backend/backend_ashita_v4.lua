@@ -215,7 +215,7 @@ backend.register_event_prerender = function(func)
 
             if box.text ~= nil and box.visible and imgui.Begin(box.name, true, flags) then
                 local scale = (captain.settings and captain.settings.textBox and captain.settings.textBox.scale) or 1.0
-                -- SetWindowFontScale removed in 4.30
+                -- 4.30+
                 if ashita_version >= 4.30 then
                     imgui.PushFont(nil, imgui.GetFontSize() * scale)
                 else
@@ -798,7 +798,7 @@ backend.registerKeyBind          = function(params, command)
         command = '/' .. command
     end
 
-    -- Ashita 4.30+ added req_input_closed and req_input_open parameters
+    -- 4.30+
     if ashita_version >= 4.30 then
         kb:Bind(
             kb:S2D(params.key),
@@ -829,7 +829,7 @@ end
 backend.deregisterKeyBind        = function(params)
     local kb = AshitaCore:GetInputManager():GetKeyboard()
 
-    -- Ashita 4.30+ added req_input_closed and req_input_open parameters
+    -- 4.30+
     if ashita_version >= 4.30 then
         kb:Unbind(
             kb:S2D(params.key),
@@ -973,7 +973,7 @@ backend.notificationsRender = function(notifications)
         -- Create window with stable ID based on notification ID
         local window_id = string.format('##TOAST_%s', toast.id or i)
         if imgui.Begin(window_id, { true }, NOTIFY_TOAST_FLAGS) then
-            -- SetWindowFontScale removed in 4.30
+            -- 4.30+
             if ashita_version >= 4.30 then
                 imgui.PushFont(nil, imgui.GetFontSize() * captain.settings.notifications.scale)
             else
