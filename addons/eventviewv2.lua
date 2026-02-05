@@ -323,6 +323,34 @@ local addon            =
     lastMusic       = nil, -- Track last music packet for deduplication
 }
 
+-- LSB binding names for message packets
+local LSBBindings =
+{
+    [PacketId.GP_SERV_COMMAND_TALKNUM]      = 'messageText',
+    [PacketId.GP_SERV_COMMAND_TALKNUMNAME]  = 'messagePublic',
+    [PacketId.GP_SERV_COMMAND_TALKNUMWORK2] = 'messageName',
+    [PacketId.GP_SERV_COMMAND_SYSTEMMES]    = 'messageSystem',
+}
+
+-- Get dynamic LSB binding suffix for message packets
+local function getLSBBinding(id, packet)
+    local player   = backend.get_player_entity_data()
+    local isPlayer = player and packet.UniqueNo == player.serverId
+
+    -- TALKNUMWORK has different bindings for player vs npc
+    if id == PacketId.GP_SERV_COMMAND_TALKNUMWORK then
+        return isPlayer and 'player:messageSpecial' or 'npc:showText'
+    end
+
+    local binding = LSBBindings[id]
+    if not binding then
+        return nil
+    end
+
+    local prefix = isPlayer and 'player' or 'npc'
+    return prefix .. ':' .. binding
+end
+
 addon.onClientReady    = function(zoneId)
     addon.files.simple  = backend.fileOpen(string.format('%s/%s/%s.log', addon.rootDir, backend.player_name(),
         backend.zone_name(zoneId)))
@@ -366,6 +394,11 @@ addon.processPacket    = function(direction, id, data, packet)
         elseif packet.Mode == 1 then
             typeLabel = 'GP_CLI_COMMAND_EVENTEND (onEventUpdate)'
         end
+    end
+
+    local lsbBinding = getLSBBinding(id, packet)
+    if lsbBinding then
+        typeLabel = typeLabel .. ' (' .. lsbBinding .. ')'
     end
 
     local title      = string.format('%s%s',
