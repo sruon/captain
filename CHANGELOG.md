@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.9.1](https://github.com/sruon/captain/compare/v1.9.0...v1.9.1) (2026-02-17)
+
+
+### Bug Fixes
+
+* **eventview:** EventPara is the Event ID ([afed637](https://github.com/sruon/captain/commit/afed637d6983f8752430acf880c26a97566270f3))
+
 ## [1.9.0](https://github.com/sruon/captain/compare/v1.8.0...v1.9.0) (2026-02-05)
 
 
