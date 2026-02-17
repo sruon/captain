@@ -51,14 +51,14 @@ local addon            =
                 type               = 'GP_SERV_COMMAND_LOGIN',
                 notificationFields =
                 {
-                    'EventNum',
                     'EventPara',
+                    'EventNum',
                     'EventMode',
                     'ZoneNo',
                 },
                 fieldLabels        =
                 {
-                    EventNum = 'EventNum (EventId)',
+                    EventPara = 'EventPara (EventId)',
                 },
             },
             [PacketId.GP_SERV_COMMAND_EVENT]          = -- Test: !pos 112 0 -8 231 (A.M.A.N Liaison)
@@ -67,15 +67,15 @@ local addon            =
                 notificationFields =
                 {
                     'UniqueNo',
-                    'EventNum',
                     'EventPara',
+                    'EventNum',
                     'EventNum2',
                     'EventPara2',
                     'Mode',
                 },
                 fieldLabels        =
                 {
-                    EventNum = 'EventNum (EventId)',
+                    EventPara = 'EventPara (EventId)',
                 },
             },
             [PacketId.GP_SERV_COMMAND_EVENTNUM]       = -- Test: !pos 112 0 -8 231 (Explorer Moogle)
@@ -85,8 +85,8 @@ local addon            =
                 notificationFields =
                 {
                     'UniqueNo',
-                    'EventNum',
                     'EventPara',
+                    'EventNum',
                     'EventNum2',
                     'EventPara2',
                     'Mode',
@@ -94,7 +94,7 @@ local addon            =
                 },
                 fieldLabels        =
                 {
-                    EventNum = 'EventNum (EventId)',
+                    EventPara = 'EventPara (EventId)',
                 },
             },
             [PacketId.GP_SERV_COMMAND_EVENTMES]       = -- Test: ?? Figure out on retail
@@ -113,15 +113,15 @@ local addon            =
                 notificationFields =
                 {
                     'UniqueNo',
-                    'EventNum',
                     'EventPara',
+                    'EventNum',
                     'Mode',
                     'String',
                     'Data',
                 },
                 fieldLabels        =
                 {
-                    EventNum = 'EventNum (EventId)',
+                    EventPara = 'EventPara (EventId)',
                 },
             },
             [PacketId.GP_SERV_COMMAND_EVENTUCOFF]     = -- Test: !release
@@ -269,14 +269,14 @@ local addon            =
                 notificationFields =
                 {
                     'UniqueNo',
-                    'EventNum',
                     'EndPara',
+                    'EventNum',
                     'EventPara',
                 },
                 fieldLabels        =
                 {
-                    EventNum = 'EventNum (EventId)',
-                    EndPara  = 'EndPara (Option)',
+                    EventPara = 'EventPara (EventId)',
+                    EndPara   = 'EndPara (Option)',
                 },
             },
             [PacketId.GP_CLI_COMMAND_EVENTENDXZY] = -- Test: !pos -283 0 -52 78
@@ -285,8 +285,8 @@ local addon            =
                 notificationFields =
                 {
                     'UniqueNo',
-                    'EventNum',
                     'EndPara',
+                    'EventNum',
                     'EventPara',
                     'Mode',
                     'x',
@@ -296,8 +296,8 @@ local addon            =
                 },
                 fieldLabels        =
                 {
-                    EventNum = 'EventNum (EventId)',
-                    EndPara  = 'EndPara (Option)',
+                    EventPara = 'EventPara (EventId)',
+                    EndPara   = 'EndPara (Option)',
                 },
             },
             [PacketId.GP_CLI_COMMAND_PASSWARDS]   = -- Test: !zone 245, !cs 199
