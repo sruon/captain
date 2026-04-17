@@ -178,6 +178,7 @@ addon.onIncomingPacket = function(id, data, size, packet)
             local isPlayerAttack = playerData and packet.m_uID == playerData.serverId
 
             if isPlayerAttack then
+                local targetId = packet.target[1] and packet.target[1].m_uID
                 if not addon.player then
                     addon.player =
                     {
@@ -197,6 +198,7 @@ addon.onIncomingPacket = function(id, data, size, packet)
                         swings          = 0,
                         connects        = 0,
                         isTracking      = true,
+                        targetId        = targetId,
                     }
                 else
                     if not addon.player.isTracking then
@@ -544,7 +546,7 @@ addon.onIncomingPacket = function(id, data, size, packet)
                     end
                 end
 
-                if addon.player and #addon.player.delays > 0 then
+                if addon.player and #addon.player.delays > 0 and addon.player.targetId == defeatedId then
                     local player_output = {}
                     local sample_count = #addon.player.delays
                     local sorted_delays = utils.deepCopy(addon.player.delays)
