@@ -2960,9 +2960,31 @@ local definitions          =
             },                                 -- 0x24-0x33 (8 * 2 bytes)
             { name = 'padding01', bits = 32 }, -- 0x34
         },
+        [PacketId.GP_SERV_COMMAND_FISHING]           =
+        {
+            { name = 'stamina',        bits = 16 }, -- 0x04 - Fish maximum health
+            { name = 'arrow_delay',    bits = 16 }, -- 0x06 - Reaction time window
+            { name = 'regen',          bits = 16 }, -- 0x08 - Per-tick fish healing
+            { name = 'move_frequency', bits = 16 }, -- 0x0A - Fish thrashing frequency
+            { name = 'arrow_damage',   bits = 16 }, -- 0x0C - Damage on successful arrow
+            { name = 'arrow_regen',    bits = 16 }, -- 0x0E - Healing on failed arrow
+            { name = 'time',           bits = 16 }, -- 0x10 - Total battle duration
+            { name = 'angler_sense',   bits = 8 },  -- 0x12 - Sense flags (2 bits used)
+            { name = 'padding00',      bits = 8 },  -- 0x13 - Padding
+            { name = 'intuition',      bits = 32 }, -- 0x14 - Player fishing intuition value
+        },
     },
     outgoing =
     {
+        [PacketId.GP_CLI_COMMAND_FISHING_ACTION]  =
+        {
+            { name = 'UniqueNo',  bits = 32 }, -- 0x04 - Client's server ID
+            { name = 'para',      bits = 32 }, -- 0x08 - Fishing parameter (mode-dependent)
+            { name = 'ActIndex',  bits = 16 }, -- 0x0C - Client's target index
+            { name = 'mode',      bits = 8 },  -- 0x0E - Fishing mode state (2=cast, 3=reel, 4=release, 5=timeout)
+            { name = 'padding00', bits = 8 },  -- 0x0F - Padding
+            { name = 'para2',     bits = 32 }, -- 0x10 - Secondary fishing parameter
+        },
         [PacketId.GP_CLI_COMMAND_ACTION]          =
         {
             { name = 'UniqueNo', bits = 32 }, -- 0x04

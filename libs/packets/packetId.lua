@@ -155,7 +155,7 @@
 ---@field GP_SERV_COMMAND_UNKNOWN_0111 integer
 ---@field GP_SERV_COMMAND_UNKNOWN_0112 integer
 ---@field GP_SERV_COMMAND_UNKNOWN_0113 integer
----@field GP_SERV_COMMAND_UNKNOWN_0115 integer
+---@field GP_SERV_COMMAND_FISHING integer
 ---@field GP_SERV_COMMAND_UNKNOWN_0116 integer
 ---@field GP_SERV_COMMAND_UNKNOWN_0117 integer
 ---@field GP_SERV_COMMAND_UNKNOWN_0118 integer
@@ -301,7 +301,7 @@
 ---@field GP_CLI_COMMAND_UNKNOWN_010D integer
 ---@field GP_CLI_COMMAND_UNKNOWN_010E integer
 ---@field GP_CLI_COMMAND_UNKNOWN_010F integer
----@field GP_CLI_COMMAND_UNKNOWN_0110 integer
+---@field GP_CLI_COMMAND_FISHING_ACTION integer
 ---@field GP_CLI_COMMAND_UNKNOWN_0111 integer
 ---@field GP_CLI_COMMAND_UNKNOWN_0112 integer
 ---@field GP_CLI_COMMAND_UNKNOWN_0113 integer
@@ -324,7 +324,7 @@
 -- ---@field GP_CLI_COMMAND_ITEM_LIST integer
 
 ---@type PacketId
-PacketId =
+PacketId          =
 {
     GP_SERV_COMMAND_PACKETCONTROL       = 0x005,
     GP_SERV_COMMAND_NARAKU              = 0x006,
@@ -480,7 +480,7 @@ PacketId =
     GP_SERV_COMMAND_UNKNOWN_0111        = 0x111,
     GP_SERV_COMMAND_UNKNOWN_0112        = 0x112,
     GP_SERV_COMMAND_UNKNOWN_0113        = 0x113,
-    GP_SERV_COMMAND_UNKNOWN_0115        = 0x115,
+    GP_SERV_COMMAND_FISHING             = 0x115,
     GP_SERV_COMMAND_UNKNOWN_0116        = 0x116,
     GP_SERV_COMMAND_UNKNOWN_0117        = 0x117,
     GP_SERV_COMMAND_UNKNOWN_0118        = 0x118,
@@ -629,7 +629,7 @@ PacketId =
     GP_CLI_COMMAND_UNKNOWN_010D         = 0x10D,
     GP_CLI_COMMAND_UNKNOWN_010E         = 0x10E,
     GP_CLI_COMMAND_UNKNOWN_010F         = 0x10F,
-    GP_CLI_COMMAND_UNKNOWN_0110         = 0x110,
+    GP_CLI_COMMAND_FISHING_ACTION       = 0x110,
     GP_CLI_COMMAND_UNKNOWN_0111         = 0x111,
     GP_CLI_COMMAND_UNKNOWN_0112         = 0x112,
     GP_CLI_COMMAND_UNKNOWN_0113         = 0x113,
@@ -646,15 +646,16 @@ PacketId =
     MAGIC_ALL_PACKETS                   = 0x255,
 }
 
-_G.PacketId = PacketId
+_G.PacketId       = PacketId
 
 -- Create reverse lookup mapping for packet IDs
 ---@class PacketReverseLookup
 ---@field incoming table<number, string>
 ---@field outgoing table<number, string>
-_G.PacketIdToName = {
+_G.PacketIdToName =
+{
     incoming = {},
-    outgoing = {}
+    outgoing = {},
 }
 
 -- Build the reverse mapping with a loop
