@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.10.0](https://github.com/sruon/captain/compare/v1.9.0...v1.10.0) (2026-04-17)
+
+
+### Features
+
+* **addon:** FishMon, track fishing catchs ([7b74abe](https://github.com/sruon/captain/commit/7b74abeac09b992e9dd151d3e9298384d791a436))
+
+
+### Bug Fixes
+
+* **attackdelay:** only reset player stats if own mob died ([0990993](https://github.com/sruon/captain/commit/0990993acea8264ae04f3edbb166e8cbe25215f8))
+* **eventview:** EventPara is the Event ID ([afed637](https://github.com/sruon/captain/commit/afed637d6983f8752430acf880c26a97566270f3))
+
 ## [1.9.0](https://github.com/sruon/captain/compare/v1.8.0...v1.9.0) (2026-02-05)
 
 
