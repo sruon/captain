@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.10.1](https://github.com/sruon/captain/compare/v1.10.0...v1.10.1) (2026-04-17)
+
+
+### Bug Fixes
+
+* **fishmon:** track vana TOTD ([f3a1d38](https://github.com/sruon/captain/commit/f3a1d385c230f0b6a1a15503438c1aa3d8a4d99a))
+
 ## [1.10.0](https://github.com/sruon/captain/compare/v1.9.0...v1.10.0) (2026-04-17)
 
 
