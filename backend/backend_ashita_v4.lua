@@ -1117,6 +1117,12 @@ backend.get_vana_weekday = function()
 end
 if jit_available then jit.off(backend.get_vana_weekday) end
 
+backend.get_vana_hour = function()
+    if not vanatime_available then return 0 end
+    local time = get_game_time_raw()
+    return math.floor((time / 60) % 1440 / 60)
+end
+
 backend.get_moon_phase = function()
     if not vanatime_available then return 0 end
     local time = get_game_time_raw()

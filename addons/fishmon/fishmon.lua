@@ -21,7 +21,6 @@ local addon             =
         outgoing =
         {
             [0x01A] = true, -- ACTION (fishing cast)
-            [0x110] = true, -- Fishing action (reel/release)
         },
     },
     databases      = { global = nil, capture = nil },
@@ -73,6 +72,28 @@ local RESULT_STRINGS    =
     [FISH_MSG.GIVEUP_BAITLOSS]   = 'GIVEUP_BAITLOSS',
 }
 
+-- Results that happen AFTER a bite (require pending_catch from 0x115)
+local BITE_FAIL_RESULTS =
+{
+    [FISH_MSG.LOST]              = true,
+    [FISH_MSG.LOST_TOOBIG]       = true,
+    [FISH_MSG.LOST_TOOSMALL]     = true,
+    [FISH_MSG.LOST_LOWSKILL]     = true,
+    [FISH_MSG.LINEBREAK]         = true,
+    [FISH_MSG.RODBREAK]          = true,
+    [FISH_MSG.RODBREAK_TOOBIG]   = true,
+    [FISH_MSG.RODBREAK_TOOHEAVY] = true,
+    [FISH_MSG.MONSTER]           = true,
+    [FISH_MSG.GIVEUP]            = true,
+    [FISH_MSG.GIVEUP_BAITLOSS]   = true,
+}
+
+-- Results that happen when NOTHING bit (no 0x115, use cast_state)
+local NO_BITE_RESULTS   =
+{
+    [FISH_MSG.NOCATCH] = true, -- "You didn't catch anything."
+}
+
 local DB_SCHEMA         =
 {
     signature            = '',
@@ -83,6 +104,8 @@ local DB_SCHEMA         =
     fishing_skill        = 0,
     moon_phase           = 0,
     moon_percent         = 0,
+    vana_weekday         = 0,
+    vana_hour            = 0,
     rod_id               = 0,
     rod_name             = '',
     bait_id              = 0,
@@ -206,6 +229,109 @@ addon.onIncomingPacket = function(id, data, size)
                 if addon.pendingDbWrite then
                     addon.pendingDbWrite.data.result_type = RESULT_STRINGS[msg_type]
                 end
+
+                -- Write DB entry for bite failures (lost, rod break, line break, give up after bite)
+                if BITE_FAIL_RESULTS[msg_type] and addon.state.pending_catch then
+                    local catch                = addon.state.pending_catch
+                    local result_type          = RESULT_STRINGS[msg_type]
+                    local keen_sense_fish_name = addon.state.keen_sense_fish and addon.state.keen_sense_fish > 0
+                      and backend.get_item_name(addon.state.keen_sense_fish) or nil
+                    local sig                  = make_signature(catch.zone_id, catch.rod_id, catch.bait_id,
+                        catch.arrow_delay, catch.regen, catch.move_frequency)
+                    local catch_id             = string.format('%d_%d', os.time(), math.random(100000, 999999))
+
+                    schedule_db_write(catch_id,
+                        {
+                            signature            = sig,
+                            zone_id              = catch.zone_id or 0,
+                            pos_x                = catch.pos_x or 0,
+                            pos_y                = catch.pos_y or 0,
+                            pos_z                = catch.pos_z or 0,
+                            fishing_skill        = catch.fishing_skill or 0,
+                            moon_phase           = catch.moon_phase or 0,
+                            moon_percent         = catch.moon_percent or 0,
+                            vana_weekday         = catch.vana_weekday or 0,
+                            vana_hour            = catch.vana_hour or 0,
+                            rod_id               = catch.rod_id or 0,
+                            rod_name             = catch.rod_name or '',
+                            bait_id              = catch.bait_id or 0,
+                            bait_name            = catch.bait_name or '',
+                            item_id              = 0,
+                            item_name            = '',
+                            item_count           = 0,
+                            stamina              = catch.stamina or 0,
+                            arrow_delay          = catch.arrow_delay or 0,
+                            regen                = catch.regen or 0,
+                            move_frequency       = catch.move_frequency or 0,
+                            arrow_damage         = catch.arrow_damage or 0,
+                            arrow_regen          = catch.arrow_regen or 0,
+                            time                 = catch.time or 0,
+                            angler_sense         = catch.angler_sense or 0,
+                            intuition            = catch.intuition or 0,
+                            bite_delay           = catch.bite_delay or 0,
+                            bite_type            = addon.state.bite_type or '',
+                            bite_feeling         = addon.state.bite_feeling or '',
+                            result_type          = result_type,
+                            keen_sense_fish_id   = addon.state.keen_sense_fish or 0,
+                            keen_sense_fish_name = keen_sense_fish_name or '',
+                            skill_up             = 0,
+                            skill_level          = catch.fishing_skill or 0,
+                            caught_at            = os.time(),
+                        })
+
+                    addon.state.pending_catch   = nil
+                    addon.state.bite_type       = nil
+                    addon.state.bite_feeling    = nil
+                    addon.state.result_type     = nil
+                    addon.state.keen_sense_fish = nil
+                    -- Write DB entry for no-bite results (nothing bit at all)
+                elseif NO_BITE_RESULTS[msg_type] and addon.state.cast_time then
+                    local result_type = RESULT_STRINGS[msg_type]
+                    local sig         = make_signature(addon.state.zone_id, addon.state.rod_id, addon.state.bait_id, 0, 0,
+                        0)
+                    local catch_id    = string.format('%d_%d', os.time(), math.random(100000, 999999))
+
+                    schedule_db_write(catch_id,
+                        {
+                            signature            = sig,
+                            zone_id              = addon.state.zone_id or 0,
+                            pos_x                = addon.state.pos_x or 0,
+                            pos_y                = addon.state.pos_y or 0,
+                            pos_z                = addon.state.pos_z or 0,
+                            fishing_skill        = addon.state.fishing_skill or 0,
+                            moon_phase           = addon.state.moon_phase or 0,
+                            moon_percent         = addon.state.moon_percent or 0,
+                            vana_weekday         = addon.state.vana_weekday or 0,
+                            vana_hour            = addon.state.vana_hour or 0,
+                            rod_id               = addon.state.rod_id or 0,
+                            rod_name             = addon.state.rod_name or '',
+                            bait_id              = addon.state.bait_id or 0,
+                            bait_name            = addon.state.bait_name or '',
+                            item_id              = 0,
+                            item_name            = '',
+                            item_count           = 0,
+                            stamina              = 0,
+                            arrow_delay          = 0,
+                            regen                = 0,
+                            move_frequency       = 0,
+                            arrow_damage         = 0,
+                            arrow_regen          = 0,
+                            time                 = 0,
+                            angler_sense         = 0,
+                            intuition            = 0,
+                            bite_delay           = 0,
+                            bite_type            = '',
+                            bite_feeling         = '',
+                            result_type          = result_type,
+                            keen_sense_fish_id   = 0,
+                            keen_sense_fish_name = '',
+                            skill_up             = 0,
+                            skill_level          = addon.state.fishing_skill or 0,
+                            caught_at            = os.time(),
+                        })
+
+                    addon.state.cast_time = nil
+                end
             end
         end
         return
@@ -220,8 +346,8 @@ addon.onIncomingPacket = function(id, data, size)
         if not player or packet.UniqueNo ~= player.serverId then return end
 
         local msg_type = decode_fishing_message(addon.state.zone_id, packet.MesNum)
-        if msg_type == FISH_MSG.KEEN_ANGLERS_SENSE and packet.Num1 and packet.Num1[1] then
-            local entry   = packet.Num1[1]
+        if msg_type == FISH_MSG.KEEN_ANGLERS_SENSE and packet.num and packet.num[1] then
+            local entry   = packet.num[1]
             local fish_id = type(entry) == 'table' and entry.value or entry
             if fish_id and fish_id > 0 then
                 addon.state.keen_sense_fish = fish_id
@@ -273,6 +399,8 @@ addon.onIncomingPacket = function(id, data, size)
             fishing_skill  = addon.state.fishing_skill,
             moon_phase     = addon.state.moon_phase,
             moon_percent   = addon.state.moon_percent,
+            vana_weekday   = addon.state.vana_weekday,
+            vana_hour      = addon.state.vana_hour,
             rod_id         = addon.state.rod_id,
             rod_name       = addon.state.rod_name,
             bait_id        = addon.state.bait_id,
@@ -364,6 +492,8 @@ addon.onIncomingPacket = function(id, data, size)
                         fishing_skill        = catch.fishing_skill or 0,
                         moon_phase           = catch.moon_phase or 0,
                         moon_percent         = catch.moon_percent or 0,
+                        vana_weekday         = catch.vana_weekday or 0,
+                        vana_hour            = catch.vana_hour or 0,
                         rod_id               = catch.rod_id or 0,
                         rod_name             = catch.rod_name or '',
                         bait_id              = catch.bait_id or 0,
@@ -424,6 +554,8 @@ addon.onOutgoingPacket = function(id, data, size)
         addon.state.fishing_skill                  = get_fishing_skill()
         addon.state.moon_phase                     = backend.get_moon_phase()
         addon.state.moon_percent                   = backend.get_moon_percent()
+        addon.state.vana_weekday                   = backend.get_vana_weekday()
+        addon.state.vana_hour                      = backend.get_vana_hour()
 
         local playerData                           = backend.get_player_entity_data()
         if playerData then
@@ -432,15 +564,6 @@ addon.onOutgoingPacket = function(id, data, size)
             addon.state.pos_z = tonumber(playerData.z) or 0
         end
         return
-    end
-
-    -- 0x110: Fishing action (reel/release)
-    if id == 0x110 then
-        local packet = backend.parsePacket('outgoing', data)
-        if not packet then return end
-        if packet.mode == 4 or packet.mode == 5 then
-            addon.state.pending_catch = nil
-        end
     end
 end
 
@@ -463,14 +586,25 @@ end
 
 addon.onCaptureStart   = function(captureDir)
     addon.captureDir        = captureDir
-    addon.databases.capture = backend.databaseOpen(captureDir .. 'fishmon.db', { schema = DB_SCHEMA })
+    addon.databases.capture = backend.databaseOpen(string.format('%s/fishmon.db', captureDir), { schema = DB_SCHEMA })
 end
 
 addon.onCaptureStop    = function()
+    -- Flush any pending write before closing
+    if addon.pendingDbWrite and addon.databases.capture then
+        addon.databases.capture:add_or_update(addon.pendingDbWrite.id, addon.pendingDbWrite.data)
+    end
     addon.captureDir = nil
     if addon.databases.capture then
         addon.databases.capture:close()
         addon.databases.capture = nil
+    end
+end
+
+addon.onUnload         = function()
+    addon.onCaptureStop()
+    if addon.databases.global then
+        addon.databases.global:close()
     end
 end
 
