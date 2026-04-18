@@ -101,6 +101,7 @@ local DB_SCHEMA         =
     pos_x                = 0.0,
     pos_y                = 0.0,
     pos_z                = 0.0,
+    pos_rot              = 0.0,
     fishing_skill        = 0,
     moon_phase           = 0,
     moon_percent         = 0,
@@ -247,6 +248,7 @@ addon.onIncomingPacket = function(id, data, size)
                             pos_x                = catch.pos_x or 0,
                             pos_y                = catch.pos_y or 0,
                             pos_z                = catch.pos_z or 0,
+                            pos_rot              = catch.pos_rot or 0,
                             fishing_skill        = catch.fishing_skill or 0,
                             moon_phase           = catch.moon_phase or 0,
                             moon_percent         = catch.moon_percent or 0,
@@ -298,6 +300,7 @@ addon.onIncomingPacket = function(id, data, size)
                             pos_x                = addon.state.pos_x or 0,
                             pos_y                = addon.state.pos_y or 0,
                             pos_z                = addon.state.pos_z or 0,
+                            pos_rot              = addon.state.pos_rot or 0,
                             fishing_skill        = addon.state.fishing_skill or 0,
                             moon_phase           = addon.state.moon_phase or 0,
                             moon_percent         = addon.state.moon_percent or 0,
@@ -395,6 +398,7 @@ addon.onIncomingPacket = function(id, data, size)
             pos_x          = addon.state.pos_x,
             pos_y          = addon.state.pos_y,
             pos_z          = addon.state.pos_z,
+            pos_rot        = addon.state.pos_rot,
             bite_delay     = bite_delay,
             fishing_skill  = addon.state.fishing_skill,
             moon_phase     = addon.state.moon_phase,
@@ -489,6 +493,7 @@ addon.onIncomingPacket = function(id, data, size)
                         pos_x                = catch.pos_x or 0,
                         pos_y                = catch.pos_y or 0,
                         pos_z                = catch.pos_z or 0,
+                        pos_rot              = catch.pos_rot or 0,
                         fishing_skill        = catch.fishing_skill or 0,
                         moon_phase           = catch.moon_phase or 0,
                         moon_percent         = catch.moon_percent or 0,
@@ -559,9 +564,10 @@ addon.onOutgoingPacket = function(id, data, size)
 
         local playerData                           = backend.get_player_entity_data()
         if playerData then
-            addon.state.pos_x = tonumber(playerData.x) or 0
-            addon.state.pos_y = tonumber(playerData.y) or 0
-            addon.state.pos_z = tonumber(playerData.z) or 0
+            addon.state.pos_x   = tonumber(playerData.x) or 0
+            addon.state.pos_y   = tonumber(playerData.y) or 0
+            addon.state.pos_z   = tonumber(playerData.z) or 0
+            addon.state.pos_rot = tonumber(playerData.r) or 0
         end
         return
     end
