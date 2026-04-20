@@ -587,7 +587,8 @@ end
 addon.onInitialize     = function(rootDir)
     addon.rootDir          = rootDir
     addon.state.zone_id    = backend.zone()
-    addon.databases.global = backend.databaseOpen(rootDir .. 'fishmon.db', { schema = DB_SCHEMA })
+    local charname         = backend.player_name() or 'Unknown'
+    addon.databases.global = backend.databaseOpen(string.format('%s/%s/fishmon.db', rootDir, charname), { schema = DB_SCHEMA })
 end
 
 addon.onCaptureStart   = function(captureDir)

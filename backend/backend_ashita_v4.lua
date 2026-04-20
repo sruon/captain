@@ -1095,12 +1095,14 @@ ffi.cdef[[
 local vanatime_ptrs = {
     game_time    = ashita.memory.find(0, 0, 'E8????????0305????????C3', 0, 0),
     weekday      = ashita.memory.find(0, 0, '8B44240433D2B9006C0000F7F1', 0, 0),
+    hours        = ashita.memory.find(0, 0, '8B44240433D2B9800D0000F7F1', 0, 0),
     moon         = ashita.memory.find(0, 0, '8B4C2404B8DB4B682FF7E12BCA', 0, 0),
     moon_percent = ashita.memory.find(0, 0, '8B4C2404B8DB4B682FF7E18BC1', 0, 0),
 }
 
 local vanatime_available = vanatime_ptrs.game_time and vanatime_ptrs.game_time ~= 0
     and vanatime_ptrs.weekday and vanatime_ptrs.weekday ~= 0
+    and vanatime_ptrs.hours and vanatime_ptrs.hours ~= 0
     and vanatime_ptrs.moon and vanatime_ptrs.moon ~= 0
     and vanatime_ptrs.moon_percent and vanatime_ptrs.moon_percent ~= 0
 
@@ -1120,8 +1122,9 @@ if jit_available then jit.off(backend.get_vana_weekday) end
 backend.get_vana_hour = function()
     if not vanatime_available then return 0 end
     local time = get_game_time_raw()
-    return math.floor((time / 60) % 1440 / 60)
+    return ffi.cast('ntGameTimeFunc_f', vanatime_ptrs.hours)(time)
 end
+if jit_available then jit.off(backend.get_vana_hour) end
 
 backend.get_moon_phase = function()
     if not vanatime_available then return 0 end
