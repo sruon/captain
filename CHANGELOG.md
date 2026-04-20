@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.10.2](https://github.com/sruon/captain/compare/v1.10.1...v1.10.2) (2026-04-20)
+
+
+### Bug Fixes
+
+* **backend:** get correct vanahours ([b896c46](https://github.com/sruon/captain/commit/b896c4653d94df7ef145effe438200e03d5dc919))
+* **fishmon:** capture rot ([a962cd4](https://github.com/sruon/captain/commit/a962cd4d39add5ea6e8a11df03bc62d93e31478c))
+
 ## [1.10.1](https://github.com/sruon/captain/compare/v1.10.0...v1.10.1) (2026-04-17)
 
 
