@@ -480,11 +480,11 @@ addon.onIncomingPacket = function(id, _, _, packet)
                 local log_string
 
                 if totalHealing > 0 then
-                    log_string = string.format('Defeated %s: %d~%d HP (healed %d)',
-                        mob_name, minHp, maxHp, totalHealing)
+                    log_string = string.format('Defeated %s [%d]: %d~%d HP (healed %d)',
+                        mob_name, defeatedId, minHp, maxHp, totalHealing)
                 else
-                    log_string = string.format('Defeated %s: %d~%d HP',
-                        mob_name, minHp, maxHp)
+                    log_string = string.format('Defeated %s [%d]: %d~%d HP',
+                        mob_name, defeatedId, minHp, maxHp)
                 end
 
                 backend.msg('HPTrack', log_string)
