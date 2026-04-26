@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.10.3](https://github.com/sruon/captain/compare/v1.10.2...v1.10.3) (2026-04-26)
+
+
+### Bug Fixes
+
+* **hptrack:** print mob ID when defeated ([04ea2e1](https://github.com/sruon/captain/commit/04ea2e13573daf1fcafafe294f305c6d1daa1970))
+
 ## [1.10.2](https://github.com/sruon/captain/compare/v1.10.1...v1.10.2) (2026-04-20)
 
 
