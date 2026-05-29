@@ -2973,6 +2973,35 @@ local definitions          =
             { name = 'padding00',      bits = 8 },  -- 0x13 - Padding
             { name = 'intuition',      bits = 32 }, -- 0x14 - Player fishing intuition value
         },
+        [PacketId.GP_SERV_COMMAND_CONQUEST]       =
+        {
+            { name = 'Balance',  bits = 8 },  -- 0x04 - Conquest balance state
+            { name = 'Alliance', bits = 8 },  -- 0x05 - Alliance info
+            { name = 'padding06', type = 'raw', size = 20 }, -- 0x06-0x19 - Padding
+            {
+                name   = 'Regions', -- 0x1A - Region data (27 regions)
+                type   = 'array',
+                count  = 27,
+                layout =
+                {
+                    { name = 'RankWithBeastmen', bits = 8 }, -- Influence ranking including beastmen
+                    { name = 'RankNoBeastmen',   bits = 8 }, -- Influence ranking excluding beastmen
+                    { name = 'Graphics',         bits = 8 }, -- Display graphics flags
+                    { name = 'Owner',            bits = 8 }, -- 0=Sandy, 1=Bastok, 2=Windy, 3=Beastmen
+                },
+            },
+            { name = 'CurrentRegionSandoria',    bits = 8 },  -- 0x86 - Sandy % in current zone (with beastmen)
+            { name = 'CurrentRegionBastok',      bits = 8 },  -- 0x87 - Bastok % in current zone (with beastmen)
+            { name = 'CurrentRegionWindurst',    bits = 8 },  -- 0x88 - Windy % in current zone (with beastmen)
+            { name = 'CurrentRegionSandoriaPct', bits = 8 },  -- 0x89 - Sandy % in current zone (nations only)
+            { name = 'CurrentRegionBastokPct',   bits = 8 },  -- 0x8A - Bastok % in current zone (nations only)
+            { name = 'CurrentRegionWindurstPct', bits = 8 },  -- 0x8B - Windy % in current zone (nations only)
+            { name = 'NextTally',                bits = 8 },  -- 0x8C - Hours until next tally
+            { name = 'padding8D', type = 'raw', size = 3 },   -- 0x8D-0x8F - Padding
+            { name = 'ConquestPoints',           bits = 32 }, -- 0x90 - Player's conquest points
+            { name = 'CurrentRegionBeastmen',    bits = 8 },  -- 0x94 - Beastmen % in current zone
+            { name = 'padding95', type = 'raw', size = 7 },   -- 0x95-0x9B - Padding
+        },
     },
     outgoing =
     {
