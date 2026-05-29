@@ -152,15 +152,16 @@ addon.onIncomingPacket = function(id, data, size, packet)
             local xDiff            = packet.x - mob.x
             local yDiff            = packet.y - mob.y
             local zDiff            = packet.z - mob.z
+            local dist2d           = math.sqrt(xDiff * xDiff + zDiff * zDiff)
 
             table.insert(outputLines,
                 string.format('%s (%d) respawned at %s (X: %d, Y: %d, Z: %d)',
                     mob.name, packet.UniqueNo, os.date('%H:%M:%S', spawnTime), packet.x, packet.y, packet.z))
             table.insert(outputLines,
-                string.format('Defeat-to-spawn: %s, Despawn-to-spawn: %s, X diff: %d, Y diff: %d, Z diff: %d',
+                string.format('Defeat-to-spawn: %s, Despawn-to-spawn: %s, Distance: %.1f',
                     secondsToTimeString(defeatedTimeDiff),
                     despawnTimeDiff and secondsToTimeString(despawnTimeDiff) or 'N/A',
-                    xDiff, yDiff, zDiff))
+                    dist2d))
 
             for _, line in ipairs(outputLines) do
                 backend.msg('SpawnTrack', line)
