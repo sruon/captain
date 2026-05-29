@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.11.0](https://github.com/sruon/captain/compare/v1.10.3...v1.11.0) (2026-05-29)
+
+
+### Features
+
+* **addon:** conquesttrack prints conquest data ([548d6a3](https://github.com/sruon/captain/commit/548d6a34a467c4559e8af680c64803cf7de3f9d9))
+
+
+### Bug Fixes
+
+* **actionview:** print critical hits on physical spells ([0b9cebc](https://github.com/sruon/captain/commit/0b9cebca6318742b5beea905a1df864289d93d1b))
+* **capture:** print capture folder when stopping ([f17adeb](https://github.com/sruon/captain/commit/f17adeb5c8f3e252bb7e89a26d27c5e10d1f6814))
+* **npclogger:** dont rely on stale global DB data ([975d6df](https://github.com/sruon/captain/commit/975d6df7220fd8921633f2f84cd288fd33698c06))
+* **spawntrack:** print simpler distance diff on respawn ([4d95c32](https://github.com/sruon/captain/commit/4d95c32b70c852a835c6a81eb900d3ba58d2e05a))
+
 ## [1.10.3](https://github.com/sruon/captain/compare/v1.10.2...v1.10.3) (2026-04-26)
 
 
