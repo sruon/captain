@@ -490,6 +490,19 @@ function Database:get(id)
     end
 
     sqlite.sqlite3_finalize(stmt)
+
+    -- Strip inherited flat scalars whose names collide with nested tables that
+    -- callers rebuild before re-flattening. Without this, _flatten_data's
+    -- pairs() walk races: the stale flat scalar may overwrite the fresh
+    -- nested-table value (or vice versa) depending on hash order.
+    if result then
+        for k in pairs(result) do
+            if k:find('^GrapIdTbl_') or k:find('^legacy_') or k:find('^ws_') then
+                result[k] = nil
+            end
+        end
+    end
+
     return result
 end
 

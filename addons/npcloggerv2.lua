@@ -151,15 +151,13 @@ local function parseNpcUpdate(packet)
         return
     end
 
-    -- Use global db as source of truth for existing data
-    local npc = addon.databases.global and addon.databases.global:get(packet.UniqueNo)
-    if not npc then
-        npc = { UniqueNo = packet.UniqueNo }
-    end
+    -- Each session starts fresh; do not seed from the global DB, which can carry
+    -- stale fields across client version updates where the same npcid is a
+    -- different entity.
+    local npc = { UniqueNo = packet.UniqueNo }
 
     -- Always reassign, in case it changed
     npc.ActIndex = packet.ActIndex
-    npc.SubKind  = packet.SubKind
 
     -- Depending on the flags set, we can capture different fields
     if packet.SendFlg.Position then
@@ -183,10 +181,24 @@ local function parseNpcUpdate(packet)
     end
 
     if packet.SendFlg.Model then
+        npc.SubKind = packet.SubKind
+
         -- Determine the model type based on SubKind
         if packet.SubKind == 1 or packet.SubKind == 7 then
             -- Equipped NPCs (wearing gear)
             npc.GrapIdTbl = packet.Data.GrapIDTbl
+        end
+
+        -- Doors, Elevators, Transports
+        if packet.SubKind >= 2 and packet.SubKind <= 4 then
+            npc.DoorId = packet.Data.DoorId
+            if packet.Data.Time then
+                npc.Time = packet.Data.Time
+            end
+
+            if packet.Data.EndTime then
+                npc.EndTime = packet.Data.EndTime
+            end
         end
     end
 
@@ -196,18 +208,6 @@ local function parseNpcUpdate(packet)
 
     if packet.SendFlg.Name then
         npc.Name = packet.Data.Name
-    end
-
-    -- Doors, Elevators, Transports
-    if packet.SubKind >= 2 and packet.SubKind <= 4 then
-        npc.DoorId = packet.Data.DoorId
-        if packet.Data.Time then
-            npc.Time = packet.Data.Time
-        end
-
-        if packet.Data.EndTime then
-            npc.EndTime = packet.Data.EndTime
-        end
     end
 
     -- TODO: Fuck if I know
