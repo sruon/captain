@@ -101,6 +101,11 @@ function Commands:stopCapture()
         end
     end
 
+    local charname = backend.player_name()
+    if captain.captureName and charname then
+        backend.msg('captain', string.format('Capture saved to captures/%s/%s/', captain.captureName, charname))
+    end
+
     captain.isCapturing = false
     captain.captureName = nil
 end
