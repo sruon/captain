@@ -406,8 +406,8 @@ local function createActionNotification(result)
         table.insert(dataFields, { 'Knockback', result.knockback })
     end
 
-    -- Check if second bit of info is set for mob skills (11) and weapon skills (3)
-    if (result.category == 11 or result.category == 3) and result.info then
+    -- Check if second bit of info is set for mob skills (11), weapon skills (3), and spells (4)
+    if (result.category == 11 or result.category == 3 or result.category == 4) and result.info then
         local infoBit1 = bit.band(result.info, 2)
         if infoBit1 == 2 then
             table.insert(dataFields, { 'Critical Hit', 'YES' })
