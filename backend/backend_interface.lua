@@ -109,6 +109,12 @@
 ---@field get_inventory_items fun(container: integer): Item[]?
 ---@field get_server_ip fun(): integer
 ---@field get_client_build_string fun(): string
+---@field get_vana_weekday fun(): integer
+---@field get_vana_weekday_name fun(): string
+---@field get_vana_hour fun(): integer
+---@field get_moon_phase fun(): integer
+---@field get_moon_phase_name fun(): string
+---@field get_moon_percent fun(): integer
 ---@field is_mob fun(index: number): boolean
 ---@field is_npc fun(index: number): boolean
 ---@field schedule fun(func: fun(), delay: number)
