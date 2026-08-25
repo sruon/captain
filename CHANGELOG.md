@@ -1,5 +1,27 @@
 # Changelog
 
+## [1.12.0](https://github.com/sruon/captain/compare/v1.11.0...v1.12.0) (2026-08-25)
+
+
+### Features
+
+* **weathertrack:** print day and weather changes to the chatlog ([bc54513](https://github.com/sruon/captain/commit/bc5451328cf7e2282862ebfa9f1de756e5e48793))
+* **zonedump:** watch UniqueNos and announce when they spawn ([1c477ea](https://github.com/sruon/captain/commit/1c477eabe6e67c2e388b26bbca546c3aae12e40f))
+
+
+### Bug Fixes
+
+* **caplog:** drop duplicate text_in lines within a frame ([a712adf](https://github.com/sruon/captain/commit/a712adf49a11d60ffaa1c729e966b40e700a8db7))
+* **capture:** print capture stop and path on one line ([e3ccdac](https://github.com/sruon/captain/commit/e3ccdac232431d02eefbbc18f53481b71038cb21))
+* **hptrack:** classify effects by message and narrow HP with HP% ([41007ce](https://github.com/sruon/captain/commit/41007cea002c7cdd42041fbc17d7efc0a1a45e85))
+* **playerinfo:** derive vana time from earth time instead of memory scans ([7eeb958](https://github.com/sruon/captain/commit/7eeb95800716b19c9c60d8a3ca9765729cb4c1be))
+
+
+### Performance Improvements
+
+* cut per-frame and per-packet work, plug unbounded tables ([dbe9d50](https://github.com/sruon/captain/commit/dbe9d508f849aeb9adb1ad3bc2e00f8ef0118c3d))
+* **hud:** rebuild playerinfo and targetinfo strings only when inputs change ([f1891ec](https://github.com/sruon/captain/commit/f1891ec4f26faf5d4a5887b9ac89c27ae67ce48a))
+
 ## [1.11.0](https://github.com/sruon/captain/compare/v1.10.3...v1.11.0) (2026-05-29)
 
 
