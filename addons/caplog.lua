@@ -1,6 +1,7 @@
 -- Credits: sruon
 ---@class CapLogAddon : AddonInterface
 ---@field logs { global: File?, capture: File? }
+---@field seen table<string, boolean>
 local addon          =
 {
     name     = 'CapLog',
@@ -10,12 +11,25 @@ local addon          =
         global  = nil,
         capture = nil,
     },
+    seen     = {},
 }
 
-addon.onIncomingText = function(_, text)
+-- text_in can fire more than once for a single message
+addon.onPrerender    = function()
+    addon.seen = {}
+end
+
+addon.onIncomingText = function(mode, text)
     if not text then
         return
     end
+
+    local key = tostring(mode) .. '\30' .. text
+    if addon.seen[key] then
+        return
+    end
+
+    addon.seen[key] = true
 
     local tstamp = os.date('[%H:%M:%S]')
     if addon.logs.global then
