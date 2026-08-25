@@ -121,49 +121,84 @@ addon.onIncomingPacket = function(id, data, size, packet)
     end
 end
 
+local lastIndex, lastLevel, lastModel, lastHitbox, lastSize, lastAnimSub, lastSpeed, lastBase
+local lastX, lastY, lastZ, lastR, lastDistance
+local titleTable = { { text = '', color = { 1.0, 0.65, 0.26, 1.0 } } }
+local row1, row2, row3
+local outputStr  = ''
+
 addon.onPrerender      = function()
-    local targetData      = backend.get_target_entity_data()
-    local targetTitleStr  = ''
-    local targetOutputStr = ''
-    if targetData then
-        local checkData = addon.checkData[targetData.targIndex]
-        local levelStr  = 'Lv. ?'
-        if checkData and checkData.level ~= -1 then
-            levelStr = string.format('Lv. %d', checkData.level)
-        elseif not addon.pendingCheck[targetData.targIndex] then
-            if backend.is_mob(targetData.targIndex) and addon.settings.sendCheck then
-                backend.doCheck(targetData.targIndex)
-                addon.pendingCheck[targetData.targIndex] = true
-            end
-        end
-
-        targetTitleStr  = string.format('%s[%d/%d] %s', targetData.name, targetData.serverId, targetData.targIndex,
-            levelStr)
-
-        -- Row 1: Position and Distance (using monospace alignment)
-        local row1      = string.format('X:%-7.3f Y:%-7.3f Z:%-7.3f R:%-3d D:%.3f',
-            targetData.x, targetData.y, targetData.z, targetData.r, targetData.distance)
-        -- Row 2: Model info
-        local row2      = string.format('Model:%-4d Hitbox:%-2d Size:%-2d AnimSub:%d',
-            addon.modelIds[targetData.targIndex] or 0,
-            addon.hitboxSizes[targetData.targIndex] or 0,
-            addon.modelSizes[targetData.targIndex] or 0,
-            addon.animationSubs[targetData.targIndex] or 0)
-        -- Row 3: Speed info
-        local row3      = string.format('Speed:%-3d Base:%-3d',
-            addon.speeds[targetData.targIndex] or 0,
-            addon.speedBases[targetData.targIndex] or 0)
-
-        targetOutputStr = row1 .. '\n' .. row2 .. '\n' .. row3
-        if addon.targetInfo then
-            addon.targetInfo:updateTitle({ { text = targetTitleStr, color = { 1.0, 0.65, 0.26, 1.0 } } })
-            addon.targetInfo:updateText(targetOutputStr)
-            addon.targetInfo:show()
-        end
-    else
+    local targetData = backend.get_target_entity_data()
+    if not targetData then
+        lastIndex = nil
         if addon.targetInfo then
             addon.targetInfo:hide()
         end
+
+        return
+    end
+
+    local index     = targetData.targIndex
+    local checkData = addon.checkData[index]
+    local level     = checkData and checkData.level or nil
+
+    if not checkData and not addon.pendingCheck[index] then
+        if backend.is_mob(index) and addon.settings.sendCheck then
+            backend.doCheck(index)
+            addon.pendingCheck[index] = true
+        end
+    end
+
+    local model   = addon.modelIds[index] or 0
+    local hitbox  = addon.hitboxSizes[index] or 0
+    local size    = addon.modelSizes[index] or 0
+    local animSub = addon.animationSubs[index] or 0
+    local speed   = addon.speeds[index] or 0
+    local base    = addon.speedBases[index] or 0
+    local dirty   = false
+
+    if index ~= lastIndex or level ~= lastLevel then
+        lastIndex, lastLevel = index, level
+        dirty                = true
+
+        local levelStr = 'Lv. ?'
+        if level and level ~= -1 then
+            levelStr = string.format('Lv. %d', level)
+        end
+
+        titleTable[1].text = string.format('%s[%d/%d] %s', targetData.name, targetData.serverId, index, levelStr)
+    end
+
+    if targetData.x ~= lastX or targetData.y ~= lastY or targetData.z ~= lastZ or targetData.r ~= lastR
+      or targetData.distance ~= lastDistance then
+        lastX, lastY, lastZ, lastR = targetData.x, targetData.y, targetData.z, targetData.r
+        lastDistance               = targetData.distance
+        dirty                      = true
+        row1                       = string.format('X:%-7.3f Y:%-7.3f Z:%-7.3f R:%-3d D:%.3f',
+            targetData.x, targetData.y, targetData.z, targetData.r, targetData.distance)
+    end
+
+    if model ~= lastModel or hitbox ~= lastHitbox or size ~= lastSize or animSub ~= lastAnimSub then
+        lastModel, lastHitbox, lastSize, lastAnimSub = model, hitbox, size, animSub
+        dirty                                        = true
+        row2                                         = string.format('Model:%-4d Hitbox:%-2d Size:%-2d AnimSub:%d',
+            model, hitbox, size, animSub)
+    end
+
+    if speed ~= lastSpeed or base ~= lastBase then
+        lastSpeed, lastBase = speed, base
+        dirty               = true
+        row3                = string.format('Speed:%-3d Base:%-3d', speed, base)
+    end
+
+    if dirty then
+        outputStr = row1 .. '\n' .. row2 .. '\n' .. row3
+    end
+
+    if addon.targetInfo then
+        addon.targetInfo:updateTitle(titleTable)
+        addon.targetInfo:updateText(outputStr)
+        addon.targetInfo:show()
     end
 end
 

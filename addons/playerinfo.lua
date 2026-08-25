@@ -29,15 +29,17 @@ local function timeInZone()
     return string.format('%d:%02d:%02d', math.floor(elapsed / 3600), math.floor(elapsed / 60) % 60, elapsed % 60)
 end
 
-addon.onPrerender  = function()
-    addon.frame      = addon.frame + 1
-    local playerData = backend.get_player_entity_data()
-    if playerData == nil then
-        return
-    end
+local lastSecond   = -1
+local lastX, lastY, lastZ, lastR
+local lastCapture  = nil
+local text         = ''
+local title        = nil
+local blink        = nil
+local row1         = ''
+local row2         = ''
 
+local function buildTitle(playerData)
     local playerJobString = '(99NIN/49WAR) '
-
     if playerData.mJob then
         playerJobString = string.format('(%02d%s/%02d%s)', playerData.mJobLevel, playerData.mJob, playerData.sJobLevel,
             playerData.sJob)
@@ -48,7 +50,7 @@ addon.onPrerender  = function()
         retailCheck = { text = '\u{F058}', color = { 0.0, 1.0, 0.0, 1.0 } }
     end
 
-    local title =
+    title =
     {
         {
             text  = string.format('%s[%d/%d] %s',
@@ -61,19 +63,54 @@ addon.onPrerender  = function()
         },
         retailCheck,
     }
+
+    blink = nil
     if captain.isCapturing then
-        local alpha = (math.sin(addon.frame * 0.03) + 1) * 0.5
-        table.insert(title, { text = '\u{F0C7}', color = { 1.0, 0.0, 0.0, alpha } })
+        blink = { text = '\u{F0C7}', color = { 1.0, 0.0, 0.0, 1.0 } }
+        table.insert(title, blink)
+    end
+end
+
+addon.onPrerender  = function()
+    addon.frame      = addon.frame + 1
+    local playerData = backend.get_player_entity_data()
+    if playerData == nil then
+        return
     end
 
-    local row1 = string.format('X: %s  Y: %s  Z: %s  R: %s', playerData.x, playerData.y, playerData.z, playerData.r)
-    local row2 = string.format('%s %02d:%02d · %s %d%% · %s',
-        backend.get_vana_weekday_name(), backend.get_vana_hour(), backend.get_vana_minute(),
-        backend.get_moon_phase_name(), backend.get_moon_percent(), os.date('%H:%M:%S'))
+    local now   = os.time()
+    local dirty = false
+
+    if now ~= lastSecond or captain.isCapturing ~= lastCapture then
+        lastSecond  = now
+        lastCapture = captain.isCapturing
+        dirty       = true
+
+        buildTitle(playerData)
+
+        row2 = string.format('%s %02d:%02d · %s %d%% · %s',
+            backend.get_vana_weekday_name(), backend.get_vana_hour(), backend.get_vana_minute(),
+            backend.get_moon_phase_name(), backend.get_moon_percent(), os.date('%H:%M:%S'))
+    end
+
+    if playerData.x ~= lastX or playerData.y ~= lastY or playerData.z ~= lastZ or playerData.r ~= lastR then
+        lastX, lastY, lastZ, lastR = playerData.x, playerData.y, playerData.z, playerData.r
+        dirty                      = true
+        row1                       = string.format('X: %s  Y: %s  Z: %s  R: %s',
+            playerData.x, playerData.y, playerData.z, playerData.r)
+    end
+
+    if dirty then
+        text = row1 .. '\n' .. row2
+    end
+
+    if blink then
+        blink.color[4] = (math.sin(addon.frame * 0.03) + 1) * 0.5
+    end
 
     if addon.playerInfo then
         addon.playerInfo:updateTitle(title)
-        addon.playerInfo:updateText(row1 .. '\n' .. row2)
+        addon.playerInfo:updateText(text)
     end
 end
 
