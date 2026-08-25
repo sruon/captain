@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.12.1](https://github.com/sruon/captain/compare/v1.12.0...v1.12.1) (2026-08-25)
+
+
+### Bug Fixes
+
+* **hptrack:** drop resent action packets before counting damage ([58e51d8](https://github.com/sruon/captain/commit/58e51d822e0f69b25ed0f81af4e0aade0b10690a))
+
 ## [1.12.0](https://github.com/sruon/captain/compare/v1.11.0...v1.12.0) (2026-08-25)
 
 
