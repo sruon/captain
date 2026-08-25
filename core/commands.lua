@@ -91,8 +91,6 @@ function Commands:stopCapture()
         return
     end
 
-    backend.msg('captain', 'Stopping capture')
-
     for addonName, addon in pairs(captain.addons) do
         if type(addon.onCaptureStop) == 'function' then
             utils.withPerformanceMonitoring(addonName .. '.onCaptureStop', function()
@@ -103,7 +101,10 @@ function Commands:stopCapture()
 
     local charname = backend.player_name()
     if captain.captureName and charname then
-        backend.msg('captain', string.format('Capture saved to captures/%s/%s/', captain.captureName, charname))
+        backend.msg('captain', string.format('Capture stopped, saved to captures/%s/%s/',
+            captain.captureName, charname))
+    else
+        backend.msg('captain', 'Capture stopped')
     end
 
     captain.isCapturing = false
