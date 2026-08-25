@@ -523,11 +523,11 @@ end
 local RESEND_WINDOW           = 0.5
 
 local function isResend(data, size)
-    if not data or not size or size < 5 then
+    if type(data) ~= 'string' or not size or size < 5 then
         return false
     end
 
-    local key = table.concat(data, ',', 5, size)
+    local key = data:sub(5, size)
     local now = socket.gettime()
     local at  = addon.seen[key]
 
