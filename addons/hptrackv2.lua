@@ -4,6 +4,8 @@
 -- Ensure you test: skillchains, procs, reacts (counter, retaliation, etc).
 -- TODO: This code can be reused for the following:
 -- - Calculating proc rates on weapons / items
+local socket = require('socket')
+
 ---@class HpTrackAddon : AddonInterface
 local addon                   =
 {
@@ -27,6 +29,8 @@ local addon                   =
         debug_mode = false,
     },
     mobs            = {},
+    seen            = {}, -- action packet payload -> arrival time, to drop resends
+    seenCount       = 0,
     hpp             = {}, -- last known HP% per entity id
     prevHpp         = {}, -- the one before it, to anchor a fight at its starting HP%
     files           =
@@ -515,9 +519,40 @@ local function createReactData(effect, mobId, actorId)
     return nil
 end
 
-addon.onIncomingPacket = function(id, _, _, packet)
+-- Bytes 2-3 are the sync counter, which differs on a resend
+local RESEND_WINDOW           = 0.5
+
+local function isResend(data, size)
+    if not data or not size or size < 5 then
+        return false
+    end
+
+    local key = table.concat(data, ',', 5, size)
+    local now = socket.gettime()
+    local at  = addon.seen[key]
+
+    addon.seen[key] = now
+    if at and now - at < RESEND_WINDOW then
+        return true
+    end
+
+    addon.seenCount = addon.seenCount + 1
+    if addon.seenCount >= 64 then
+        addon.seenCount = 0
+        for k, t in pairs(addon.seen) do
+            if now - t >= RESEND_WINDOW then
+                addon.seen[k] = nil
+            end
+        end
+    end
+
+    return false
+end
+
+addon.onIncomingPacket = function(id, data, size, packet)
     if id == PacketId.GP_SERV_COMMAND_BATTLE2 then -- Action Message
         if not packet or not packet.target then return end
+        if isResend(data, size) then return end
         local cmd_no    = packet.cmd_no
         local actor_id  = packet.m_uID
         local roundDamage = {}
@@ -630,6 +665,8 @@ end
 
 addon.onClientReady    = function()
     addon.mobs         = {}
+    addon.seen         = {}
+    addon.seenCount    = 0
     addon.hpp          = {}
     addon.prevHpp      = {}
     addon.files.global = backend.fileOpen(addon.rootDir .. backend.player_name() .. '/' .. backend.zone_name() .. '.log')
