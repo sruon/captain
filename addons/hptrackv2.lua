@@ -14,6 +14,7 @@ local addon                   =
         {
             [PacketId.GP_SERV_COMMAND_BATTLE_MESSAGE] = true,
             [PacketId.GP_SERV_COMMAND_BATTLE2]        = true,
+            [PacketId.GP_SERV_COMMAND_CHAR_NPC]       = true,
         },
     },
     settings        = {},
@@ -26,6 +27,8 @@ local addon                   =
         debug_mode = false,
     },
     mobs            = {},
+    hpp             = {}, -- last known HP% per entity id
+    prevHpp         = {}, -- the one before it, to anchor a fight at its starting HP%
     files           =
     {
         global  = nil,
@@ -33,37 +36,144 @@ local addon                   =
     },
 }
 
--- Messages that indicate damage has been dealt
-local DAMAGE_MESSAGES         =
+-- [cmd_no][message] -> 1 = damage, -1 = healing, 0 = neither.
+-- Anything missing is skipped and logged in debug mode, never counted as damage.
+-- Names are the msg_basic.h enum in LSB.
+local MSG_TYPES               =
 {
-    [2]   = true, -- Magic damage
-    [252] = true, -- Magic burst damage
-    [264] = true, -- AOE Magic damage
-    [274] = true, -- Magic burst drain
-    [648] = true, -- Meteor damage
-    [650] = true, -- Meteor burst
-}
-
--- Messages that indicate healing or recovery (not damage)
-local HEAL_MESSAGES           =
-{
-    [7]   = true, -- Magic recovery
-    [24]  = true, -- Target recovers HP (simple)
-    [102] = true, -- Recovers HP (skill/ability)
-    [103] = true, -- Skill recovers HP
-    [238] = true, -- Uses skill recovers HP (AOE)
-    [263] = true, -- AOE recovery
-    [306] = true, -- Uses item recovers HP (AOE)
-    [318] = true, -- Uses item recovers HP (AOE2)
-    [367] = true, -- Target recovers HP
-    [373] = true, -- Spikes effect recover
-    [382] = true, -- Ranged attack absorbed (target recovers HP)
-    [383] = true, -- Spikes effect heal
-    [384] = true, -- Additional effect recovers HP
-    [451] = true, -- Gains HP (drain-type self heal)
-    [587] = true, -- Target regains HP
-    [606] = true, -- Counter absorbed (target recovers HP)
-    [651] = true, -- Meteor recovery
+    -- Melee attack
+    [1]  =
+    {
+        [1]   = 1,  -- AttackHits
+        [67]  = 1,  -- AttackCrit
+        [15]  = 0,  -- AttackMisses
+        [30]  = 0,  -- TargetAnticipates
+        [31]  = 0,  -- ShadowAbsorb
+        [32]  = 0,  -- TargetDodges
+        [33]  = 0,  -- AttackCounteredDamage, lands on the actor, see REACT_EFFECTS
+        [70]  = 0,  -- TargetParries
+    },
+    -- Ranged attack (finish)
+    [2]  =
+    {
+        [157] = 1,  -- UsesBarrageTakesDamage
+        [352] = 1,  -- RangedAttackHit
+        [353] = 1,  -- RangedAttackCrit
+        [576] = 1,  -- RangedAttackSquarely
+        [577] = 1,  -- RangedAttackPummels
+        [382] = -1, -- RangedAttackAbsorbs
+        [31]  = 0,  -- ShadowAbsorb
+        [354] = 0,  -- RangedAttackMiss
+    },
+    -- Weapon skill / job ability (finish)
+    [3]  =
+    {
+        [135] = 1,  -- WS damage, client-side variant
+        [185] = 1,  -- UsesSkillTakesDamage
+        [187] = 1,  -- UsesSkillHPDrained
+        [197] = 1,  -- UsesAbilityResistsDamage
+        [264] = 1,  -- TargetTakesDamage
+        [317] = 1,  -- UsesJobAbilityTakeDamage
+        [379] = 1,  -- JA magic burst damage
+        [102] = -1, -- UsesRecoversHP
+        [103] = -1, -- SkillRecoversHP
+        [238] = -1, -- UsesSkillRecoversHPAreaOfEffect
+        [263] = -1, -- TargetRecoversHP2
+        [318] = -1, -- UsesItemRecoversHPAreaOfEffect2
+        [539] = -1, -- WS recovers HP
+        [158] = 0,  -- AbilityMisses
+        [186] = 0,  -- UsesSkillGainsEffect
+        [188] = 0,  -- UsesSkillMisses
+        [189] = 0,  -- UsesSkillNoEffect
+        [194] = 0,  -- gains the effect of (value is a status id, not damage)
+        [224] = 0,  -- UsesSkillRecoversMP
+        [225] = 0,  -- UsesSkillMPDrained
+        [226] = 0,  -- UsesSkillTPDrained
+        [323] = 0,  -- UsesAbilityNoEffect
+        [324] = 0,  -- UsesButMisses
+    },
+    -- Magic (finish)
+    [4]  =
+    {
+        [2]   = 1,  -- MagicDamage
+        [227] = 1,  -- MagicDrainsHP
+        [252] = 1,  -- MagicBurstDamage
+        [262] = 1,  -- Magic burst damage (variant)
+        [264] = 1,  -- TargetTakesDamage
+        [274] = 1,  -- MagicBurstDrainsHP
+        [648] = 1,  -- Meteor damage
+        [650] = 1,  -- Meteor burst damage
+        [7]   = -1, -- MagicRecoversHP
+        [263] = -1, -- TargetRecoversHP2
+        [651] = -1, -- Meteor recovery
+    },
+    -- Weapon skill / monster TP move (start)
+    [7]  =
+    {
+        [43]  = 0,  -- ReadiesWeaponskill
+    },
+    -- Job ability
+    [6]  =
+    {
+        [110] = 1,  -- UsesAbilityTakesDamage
+        [264] = 1,  -- TargetTakesDamage
+        [317] = 1,  -- UsesJobAbilityTakeDamage
+        [263] = -1, -- TargetRecoversHP2
+        [318] = -1, -- UsesItemRecoversHPAreaOfEffect2
+        [158] = 0,  -- AbilityMisses
+        [323] = 0,  -- UsesAbilityNoEffect
+        [324] = 0,  -- UsesButMisses
+    },
+    -- Monster TP move / trust action (finish)
+    [11] =
+    {
+        [185] = 1,  -- UsesSkillTakesDamage
+        [187] = 1,  -- UsesSkillHPDrained
+        [197] = 1,  -- UsesAbilityResistsDamage
+        [264] = 1,  -- TargetTakesDamage
+        [238] = -1, -- UsesSkillRecoversHPAreaOfEffect
+        [263] = -1, -- TargetRecoversHP2
+        [43]  = 0,  -- ReadiesWeaponskill
+        [186] = 0,  -- UsesSkillGainsEffect
+        [188] = 0,  -- UsesSkillMisses
+        [189] = 0,  -- UsesSkillNoEffect
+        [194] = 0,  -- gains the effect of (value is a status id, not damage)
+    },
+    -- Pet ability
+    [13] =
+    {
+        [110] = 1,  -- UsesAbilityTakesDamage
+        [185] = 1,  -- UsesSkillTakesDamage
+        [264] = 1,  -- TargetTakesDamage
+        [317] = 1,  -- UsesJobAbilityTakeDamage
+        [238] = -1, -- UsesSkillRecoversHPAreaOfEffect
+        [263] = -1, -- TargetRecoversHP2
+        [188] = 0,  -- UsesSkillMisses
+        [189] = 0,  -- UsesSkillNoEffect
+        [323] = 0,  -- UsesAbilityNoEffect
+        [324] = 0,  -- UsesButMisses
+    },
+    -- Dancer job ability (waltzes, flourishes)
+    [14] =
+    {
+        [110] = 1,  -- UsesAbilityTakesDamage
+        [264] = 1,  -- TargetTakesDamage
+        [102] = -1, -- UsesRecoversHP
+        [103] = -1, -- SkillRecoversHP
+        [263] = -1, -- TargetRecoversHP2
+        [158] = 0,  -- AbilityMisses
+        [319] = 0,  -- UsesAbilityGainsEffect
+        [323] = 0,  -- UsesAbilityNoEffect
+    },
+    -- Rune Fencer effusion
+    [15] =
+    {
+        [2]   = 1,  -- MagicDamage
+        [110] = 1,  -- UsesAbilityTakesDamage
+        [252] = 1,  -- MagicBurstDamage
+        [264] = 1,  -- TargetTakesDamage
+        [323] = 0,  -- UsesAbilityNoEffect
+    },
 }
 
 -- Additional effect classifications for proc messages
@@ -97,7 +207,7 @@ local PROC_EFFECTS            =
 local KNOWN_NON_DAMAGE_PROCS  =
 {
     [0]   = true, -- Haste Samba (No Message)
-    [161] = true, -- Drain Samba
+    [161] = true, -- Drain Samba, absorbs damage already dealt and adds none
     [162] = true, -- Aspir Samba
     [164] = true, -- Added Effect: Status
 }
@@ -160,95 +270,90 @@ local function getReactEffectName(message_id)
     end
 end
 
-local function extractDamage(cmd_no, effect)
-    local damage  = 0
+-- Returns damage, healing
+local function extractEffect(cmd_no, effect, mobId)
     local message = effect.message or 0
+    local byCmd   = MSG_TYPES[cmd_no]
+    local sign    = byCmd and byCmd[message]
 
-    if cmd_no == 1 then
-        -- Basic attack, or weapon skill
-        -- 1 = Melee Attack
-        -- 67 = Melee Attack (Crit)
-        if message == 1 or message == 67 then
-            damage = effect.value
-        end
-    elseif cmd_no == 2 then
-        -- Range Attack (Finish)
-        -- 352 = Ranged Attack
-        -- 353 = Ranged Attack (Crit)
-        if message == 352 or message == 353 then
-            damage = effect.value
-        end
-    elseif cmd_no == 3 then
-        -- Skill (Finish) - filter out heals
-        if not HEAL_MESSAGES[message] then
-            damage = effect.value
-        end
-    elseif cmd_no == 4 then
-        -- Magic - check if message type indicates damage
-        if message and DAMAGE_MESSAGES[message] then
-            damage = effect.value
-        end
-    elseif cmd_no == 11 then
-        -- Trust Actions or Monster Skills
-        local kind = effect.kind or 0
-
-        if kind == 3 then
-            -- Trust Attack - damage is in value directly
-            damage = effect.value
-        elseif kind == 2 then
-            -- Monster Skill - similar to magic handling
-            if message > 0 and not HEAL_MESSAGES[message] then
-                -- Physical or magical damage
-                if message == 1 or message == 67 or DAMAGE_MESSAGES[message] then
-                    damage = effect.value
-                end
-            end
-        end
-    elseif cmd_no == 13 then
-        -- Pet Ability (SMN Blood Pacts, BST pet abilities, etc.)
-        if not HEAL_MESSAGES[message] then
-            damage = effect.value
-        end
-    elseif cmd_no == 14 and message ~= 0 then
-        -- Violent Flourish
-        if effect.sub_kind == 25 then
-            damage = effect.value
-        end
-    elseif cmd_no == 15 then
-        -- Rune Fencer Effusion (Swipe/Lunge)
-        if effect.sub_kind == 10 then
-            damage = effect.value
-        end
+    if sign == nil then
+        debug_msg('Unclassified effect on mob %d: [cmd_no: %d, message: %d, kind: %d, sub_kind: %d, value: %d]',
+            mobId, cmd_no, message, effect.kind or 0, effect.sub_kind or 0, effect.value or 0)
+        return 0, 0
     end
 
-    return damage
-end
-
-local function extractHealing(effect)
-    local message = effect.message or 0
-
-    if HEAL_MESSAGES[message] then
-        return effect.value
+    if sign == 1 then
+        return effect.value, 0
+    elseif sign == -1 then
+        return 0, effect.value
     end
 
-    return 0
+    return 0, 0
 end
 
-local function processHealing(mobId, healing, actionData)
+local function getTrackedMob(mobId)
     local trackedMob = addon.mobs[mobId]
     if not trackedMob then
-        addon.mobs[mobId] =
+        local hpp         = addon.hpp[mobId] or 100
+        -- The current HP% may already include damage from an action packet we have not
+        -- seen yet, so anchor on the higher of the last two
+        local startHpp    = math.max(hpp, addon.prevHpp[mobId] or 0)
+        trackedMob        =
         {
             id            = mobId,
             damageHistory = {},
             totalHealing  = 0,
+            startHpp      = startHpp,
+            hpp           = hpp,
+            hpMin         = 1,
+            hpMax         = nil, -- until the HP% stream proves one
+            invalidCalcs  = 0,
         }
-        trackedMob        = addon.mobs[mobId]
+        addon.mobs[mobId] = trackedMob
     end
 
-    if not trackedMob.totalHealing then
-        trackedMob.totalHealing = 0
+    return trackedMob
+end
+
+local function netDamageOf(trackedMob)
+    local total = 0
+    for _, entry in ipairs(trackedMob.damageHistory) do
+        total = total + entry.damage
     end
+
+    return total - trackedMob.totalHealing
+end
+
+-- Narrow the HP range from the mob's HP%. With hpp = floor(100 * hp / maxHp):
+--   maxHp >= 100 * netDamage / dHpp    and    maxHp < 100 * netDamage / (dHpp - 1)
+-- The 0.99999 keeps that upper bound strict when the division comes out even.
+-- HP% and the action packet behind it arrive in the same frame in either order, so the
+-- damage it was computed from is somewhere inside the last round: bound with both ends.
+local function refineHpRange(trackedMob, roundDamage)
+    local dHpp = trackedMob.startHpp - trackedMob.hpp
+
+    -- 0% is post-mortem, 1% spans 0.001-1.999% so its bounds are not whole numbers
+    if dHpp <= 0 or trackedMob.hpp <= 1 then
+        return
+    end
+
+    local netDamage = netDamageOf(trackedMob)
+    local minHp     = math.ceil((netDamage - roundDamage) * 100 / dHpp)
+    local maxHp     = math.floor(netDamage * 100 / (dHpp - 0.99999))
+
+    if maxHp < trackedMob.hpMin or (trackedMob.hpMax and minHp > trackedMob.hpMax) then
+        trackedMob.invalidCalcs = trackedMob.invalidCalcs + 1
+        debug_msg('Contradictory HP%% window on mob %d: %d~%d vs %d~%s (regen, DoT or a missed effect)',
+            trackedMob.id, minHp, maxHp, trackedMob.hpMin, tostring(trackedMob.hpMax))
+        return
+    end
+
+    trackedMob.hpMin = math.max(trackedMob.hpMin, minHp)
+    trackedMob.hpMax = trackedMob.hpMax and math.min(trackedMob.hpMax, maxHp) or maxHp
+end
+
+local function processHealing(mobId, healing, actionData)
+    local trackedMob = getTrackedMob(mobId)
 
     trackedMob.totalHealing = trackedMob.totalHealing + healing
 
@@ -257,23 +362,13 @@ local function processHealing(mobId, healing, actionData)
 end
 
 local function processDamage(mobId, damage, actionData)
-    local trackedMob = addon.mobs[mobId]
-    if not trackedMob then
-        addon.mobs[mobId] =
+    local trackedMob = getTrackedMob(mobId)
+
+    table.insert(trackedMob.damageHistory,
         {
-            id            = mobId,
-            damageHistory = {},
-        }
-        trackedMob        = addon.mobs[mobId]
-    end
-
-    local entry =
-    {
-        damage    = damage,
-        timestamp = os.time(),
-    }
-
-    table.insert(trackedMob.damageHistory, entry)
+            damage    = damage,
+            timestamp = os.time(),
+        })
 
     debug_msg('Damage to mob %d: %d [cmd_no: %d, message: %d]',
         mobId, damage, actionData.cmd_no, actionData.message or 0)
@@ -284,13 +379,10 @@ local function calculateHpRange(trackedMob)
         return 0, 0
     end
 
-    local totalDamage = 0
-    for i, entry in ipairs(trackedMob.damageHistory) do
-        totalDamage = totalDamage + entry.damage
-    end
+    local totalDamage = netDamageOf(trackedMob)
 
     if #trackedMob.damageHistory == 1 then
-        return 1, totalDamage
+        return math.max(1, trackedMob.hpMin), math.min(totalDamage, trackedMob.hpMax or totalDamage)
     end
 
     -- Find the last non-proc non-react damage entry
@@ -312,25 +404,27 @@ local function calculateHpRange(trackedMob)
     -- Combine the last main hit with any procs/reacts that followed it
     local lastCombinedDamage = lastDamage + additionalDamage
 
-    -- Min HP = total damage without last combined hit + 1
+    -- The killing blow overkills by an unknown amount, so death alone only proves HP
+    -- sat between everything but the last hit and everything
     local minHp              = totalDamage - lastCombinedDamage + 1
-
-    -- Max HP = total damage
     local maxHp              = totalDamage
 
-    return minHp, maxHp
+    -- Fold in what the HP% stream proved, which is usually far tighter
+    local narrowedMin = math.max(minHp, trackedMob.hpMin)
+    local narrowedMax = trackedMob.hpMax and math.min(maxHp, trackedMob.hpMax) or maxHp
+
+    -- Trust the damage total when the two disagree, rather than print a backwards range
+    if narrowedMin > narrowedMax then
+        debug_msg('HP%% range %d~%s does not overlap the damage total range %d~%d on mob %d',
+            trackedMob.hpMin, tostring(trackedMob.hpMax), minHp, maxHp, trackedMob.id)
+        return minHp, maxHp
+    end
+
+    return narrowedMin, narrowedMax
 end
 
 local function processProcDamage(mobId, procData)
-    local trackedMob = addon.mobs[mobId]
-    if not trackedMob then
-        addon.mobs[mobId] =
-        {
-            id            = mobId,
-            damageHistory = {},
-        }
-        trackedMob        = addon.mobs[mobId]
-    end
+    local trackedMob = getTrackedMob(mobId)
 
     local entry =
     {
@@ -350,15 +444,7 @@ local function processReactDamage(_, actorId, reactData)
     local mobId      = actorId
     local damage     = reactData.value
 
-    local trackedMob = addon.mobs[mobId]
-    if not trackedMob then
-        addon.mobs[mobId] =
-        {
-            id            = mobId,
-            damageHistory = {},
-        }
-        trackedMob        = addon.mobs[mobId]
-    end
+    local trackedMob = getTrackedMob(mobId)
 
     local entry =
     {
@@ -432,35 +518,59 @@ end
 addon.onIncomingPacket = function(id, _, _, packet)
     if id == PacketId.GP_SERV_COMMAND_BATTLE2 then -- Action Message
         if not packet or not packet.target then return end
-        local cmd_no   = packet.cmd_no
-        local actor_id = packet.m_uID
+        local cmd_no    = packet.cmd_no
+        local actor_id  = packet.m_uID
+        local roundDamage = {}
 
         for _, target in pairs(packet.target) do
             local mobId = target.m_uID
 
             for _, effect in pairs(target.result) do
-                local damage  = extractDamage(cmd_no, effect)
-                local healing = extractHealing(effect)
+                local damage, healing = extractEffect(cmd_no, effect, mobId)
 
                 if healing > 0 then
                     local actionData = createActionData(cmd_no, effect, actor_id)
                     processHealing(mobId, healing, actionData)
+                    roundDamage[mobId] = (roundDamage[mobId] or 0) - healing
                 elseif damage > 0 or (effect.has_react and effect.react and isTrustedReactId(effect.react.message)) then
                     local actionData = createActionData(cmd_no, effect, actor_id)
 
                     processDamage(mobId, damage, actionData)
+                    roundDamage[mobId] = (roundDamage[mobId] or 0) + damage
 
                     local proc_data  = createProcData(effect, mobId)
                     local react_data = createReactData(effect, mobId, actor_id)
 
                     if proc_data then
                         processProcDamage(mobId, proc_data)
+                        roundDamage[mobId] = roundDamage[mobId] + proc_data.value
                     end
 
                     if react_data then
-                        processReactDamage(mobId, packet.m_uID, react_data)
+                        processReactDamage(mobId, actor_id, react_data)
+                        roundDamage[actor_id] = (roundDamage[actor_id] or 0) + react_data.value
                     end
                 end
+            end
+        end
+
+        -- Narrow once the whole packet is accounted for, so the round total is known
+        for mobId, dealt in pairs(roundDamage) do
+            local trackedMob = addon.mobs[mobId]
+            if trackedMob then
+                refineHpRange(trackedMob, math.max(dealt, 0))
+            end
+        end
+    elseif id == PacketId.GP_SERV_COMMAND_CHAR_NPC then -- NPC update
+        if packet and packet.SendFlg and packet.SendFlg.General and packet.UniqueNo then
+            if addon.hpp[packet.UniqueNo] ~= packet.Hpp then
+                addon.prevHpp[packet.UniqueNo] = addon.hpp[packet.UniqueNo]
+                addon.hpp[packet.UniqueNo]     = packet.Hpp
+            end
+
+            local trackedMob = addon.mobs[packet.UniqueNo]
+            if trackedMob then
+                trackedMob.hpp = packet.Hpp
             end
         end
     elseif id == PacketId.GP_SERV_COMMAND_BATTLE_MESSAGE then -- Mob Defeated
@@ -520,6 +630,8 @@ end
 
 addon.onClientReady    = function()
     addon.mobs         = {}
+    addon.hpp          = {}
+    addon.prevHpp      = {}
     addon.files.global = backend.fileOpen(addon.rootDir .. backend.player_name() .. '/' .. backend.zone_name() .. '.log')
     if addon.files.capture then
         addon.files.capture = backend.fileOpen(addon.captureDir .. backend.zone_name() .. '.log')
