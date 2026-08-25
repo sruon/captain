@@ -78,10 +78,13 @@ function notificationManager:render()
     end
 
     -- Prepare notifications for rendering
+    self.bgMeta   = self.bgMeta or { __index = self.settings.bg }
+    self.textMeta = self.textMeta or { __index = self.settings.text }
+
     for i = 1, #self.notifications do
         local notification = self.notifications[i]
-        notification.bg    = setmetatable({}, { __index = self.settings.bg })
-        notification.text  = setmetatable({}, { __index = self.settings.text })
+        notification.bg    = setmetatable({}, self.bgMeta)
+        notification.text  = setmetatable({}, self.textMeta)
     end
 
     -- Render all notifications at once with the notifications renderer

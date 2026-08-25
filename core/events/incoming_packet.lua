@@ -37,10 +37,8 @@ function IncomingPacketHandler:handle(id, data, size)
         local filters = addon.filters and addon.filters.incoming
         if filters and (filters[id] or filters[0x255]) then
             if type(addon.onIncomingPacket) == 'function' then
-                local ok, result = utils.withPerformanceMonitoring(addonName .. '.onIncomingPacket', function()
-                    return utils.safe_call(addonName .. '.onIncomingPacket', addon.onIncomingPacket, id,
+                local ok, result = utils.safe_call(utils.handlerName(addonName, '.onIncomingPacket'), addon.onIncomingPacket, id,
                         modifiedPacket or data, size, parsed)
-                end)
                 if result == true then
                     shouldBlock = true
                 end

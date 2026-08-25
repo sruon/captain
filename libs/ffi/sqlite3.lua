@@ -314,6 +314,27 @@ function Database:commit_transaction()
     end
 end
 
+function Database:_prune_history(id_str)
+    if not self.max_history then
+        return
+    end
+
+    local stmt = sqlite_prepare(self.db, [[
+        DELETE FROM history
+        WHERE entry_id = ? AND id NOT IN (
+            SELECT id FROM history
+            WHERE entry_id = ?
+            ORDER BY version DESC
+            LIMIT ?
+        )
+    ]])
+    sqlite.sqlite3_bind_text(stmt, 1, id_str, -1, nil)
+    sqlite.sqlite3_bind_text(stmt, 2, id_str, -1, nil)
+    sqlite.sqlite3_bind_int(stmt, 3, self.max_history)
+    sqlite.sqlite3_step(stmt)
+    sqlite.sqlite3_finalize(stmt)
+end
+
 function Database:add_or_update(id, fragment)
     self:_ensure_initialized()
     self:begin_transaction()
@@ -396,6 +417,7 @@ function Database:add_or_update(id, fragment)
             sqlite.sqlite3_bind_text(stmt, 4, json.encode(diff), -1, nil)
             sqlite.sqlite3_step(stmt)
             sqlite.sqlite3_finalize(stmt)
+            self:_prune_history(id_str)
         end
 
         self._pending_operations = self._pending_operations + 1
@@ -421,22 +443,7 @@ function Database:add_or_update(id, fragment)
     sqlite.sqlite3_step(stmt)
     sqlite.sqlite3_finalize(stmt)
 
-    if self.max_history then
-        stmt = sqlite_prepare(self.db, [[
-            DELETE FROM history
-            WHERE entry_id = ? AND id NOT IN (
-                SELECT id FROM history
-                WHERE entry_id = ?
-                ORDER BY version DESC
-                LIMIT ?
-            )
-        ]])
-        sqlite.sqlite3_bind_text(stmt, 1, id_str, -1, nil)
-        sqlite.sqlite3_bind_text(stmt, 2, id_str, -1, nil)
-        sqlite.sqlite3_bind_int(stmt, 3, self.max_history)
-        sqlite.sqlite3_step(stmt)
-        sqlite.sqlite3_finalize(stmt)
-    end
+    self:_prune_history(id_str)
 
     self._pending_operations = self._pending_operations + 1
     if self._pending_operations >= BATCH_SIZE then

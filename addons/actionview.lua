@@ -489,6 +489,8 @@ end
 local function setupZone(zone)
     local current_zone = backend.zone_name()
 
+    addon.actionStartTimes = {}
+
     addon.files.simple = backend.fileOpen(addon.rootDir .. 'simple/' .. current_zone .. '.log')
 
     if captain.isCapturing then

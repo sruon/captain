@@ -150,4 +150,10 @@ addon.onIncomingPacket = function(id, data, size, packet)
     end
 end
 
+addon.onClientReady    = function()
+    addon.mobImmunities   = {}
+    addon.mobTraitResists = {}
+    addon.mobResists      = {}
+end
+
 return addon

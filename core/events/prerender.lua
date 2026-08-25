@@ -1,5 +1,6 @@
 -- Prerender event handler class
 local utils = require('utils')
+
 local backend = require('backend.backend')
 
 ---@class PrerenderHandler
@@ -30,9 +31,7 @@ function PrerenderHandler:handle()
     -- Notify addons of render event
     for addonName, addon in pairs(self.captain.addons) do
         if type(addon.onPrerender) == 'function' then
-            utils.withPerformanceMonitoring(addonName .. '.onPrerender', function()
-                return utils.safe_call(addonName .. '.onPrerender', addon.onPrerender)
-            end)
+            utils.safe_call(utils.handlerName(addonName, '.onPrerender'), addon.onPrerender)
         end
     end
 end

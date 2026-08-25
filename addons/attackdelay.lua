@@ -30,6 +30,8 @@ local addon =
     charTp          = 0,
     delayWindow     = nil,
     showPlayerView  = false,
+    dirty           = true,
+    lastTargetId    = nil,
     files           =
     {
         global  = nil,
@@ -49,6 +51,16 @@ local function estimateMonsterDelay(playerTpGain)
     return (playerTpGain / 21) * 240
 end
 
+local function sortedCopy(delays)
+    local copy = {}
+    for i = 1, #delays do
+        copy[i] = delays[i]
+    end
+
+    table.sort(copy)
+    return copy
+end
+
 local function updateDelayWindow()
     if not addon.settings.showWindow or not addon.delayWindow then
         return
@@ -56,8 +68,7 @@ local function updateDelayWindow()
 
     if addon.showPlayerView and addon.player and #addon.player.delays > 0 then
         local sample_count  = #addon.player.delays
-        local sorted_delays = utils.deepCopy(addon.player.delays)
-        table.sort(sorted_delays)
+        local sorted_delays = sortedCopy(addon.player.delays)
 
         local median      = stats.median(sorted_delays)
 
@@ -112,8 +123,7 @@ local function updateDelayWindow()
     end
 
     local sample_count  = #trackedMob.delays
-    local sorted_delays = utils.deepCopy(trackedMob.delays)
-    table.sort(sorted_delays)
+    local sorted_delays = sortedCopy(trackedMob.delays)
 
     local median      = stats.median(sorted_delays)
     local ffxi_min    = secondsToFFXIDelay(sorted_delays[1])
@@ -245,7 +255,7 @@ addon.onIncomingPacket = function(id, data, size, packet)
                             addon.player.roundsWithKicks = addon.player.roundsWithKicks + 1
                         end
 
-                        updateDelayWindow()
+                        addon.dirty = true
                     end
                 end
             end
@@ -325,7 +335,7 @@ addon.onIncomingPacket = function(id, data, size, packet)
                         end
 
                         -- Update window after tracking attack
-                        updateDelayWindow()
+                        addon.dirty = true
                     end
                 end
             end
@@ -385,7 +395,7 @@ addon.onIncomingPacket = function(id, data, size, packet)
             table.insert(mob.delayFromTpGain, estimatedDelay)
 
             -- Update window after TP gain
-            updateDelayWindow()
+            addon.dirty = true
         end
     elseif id == PacketId.GP_SERV_COMMAND_BATTLE_MESSAGE then
         -- Mob has been defeated, print and log the results
@@ -660,6 +670,7 @@ local function resetStats()
     addon.mobs   = {}
     addon.player = nil
     addon.charTp = 0
+    addon.dirty  = true
     if addon.delayWindow then
         addon.delayWindow:hide()
     end
@@ -672,7 +683,7 @@ local function toggleView()
         addon.delayWindow:addButton('Reset', resetStats)
         addon.delayWindow:addButton(addon.showPlayerView and 'Mob' or 'Player', toggleView)
     end
-    updateDelayWindow()
+    addon.dirty = true
 end
 
 addon.onInitialize     = function(rootDir)
@@ -692,7 +703,14 @@ addon.onClientReady    = function(zoneId)
 end
 
 addon.onPrerender      = function()
-    updateDelayWindow()
+    local target   = backend.get_target_entity_data()
+    local targetId = target and target.serverId or 0
+
+    if addon.dirty or targetId ~= addon.lastTargetId then
+        addon.dirty        = false
+        addon.lastTargetId = targetId
+        updateDelayWindow()
+    end
 end
 
 addon.onConfigMenu     = function()

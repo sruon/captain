@@ -451,9 +451,10 @@ addon.processPacket    = function(direction, id, data, packet)
     if addon.mappings[direction][id].legacyType then
         logTitle = logTitle .. ' - ' .. addon.mappings[direction][id].legacyType
     end
-    addon.files.simple:append(string.format('[%s] %s\n%s\n\n', tstamp, logTitle, utils.dump(packet)))
+    local line = string.format('[%s] %s\n%s\n\n', tstamp, logTitle, utils.dump(packet))
+    addon.files.simple:append(line)
     if addon.files.capture then
-        addon.files.capture:append(string.format('[%s] %s\n%s\n\n', tstamp, logTitle, utils.dump(packet)))
+        addon.files.capture:append(line)
     end
 
     backend.notificationCreate('EView', title, dataFields)

@@ -16,7 +16,9 @@ local addon          =
 
 -- text_in can fire more than once for a single message
 addon.onPrerender    = function()
-    addon.seen = {}
+    for key in pairs(addon.seen) do
+        addon.seen[key] = nil
+    end
 end
 
 addon.onIncomingText = function(mode, text)

@@ -251,7 +251,27 @@ utils.getProcessInfo            = function()
     return process_path, window_name
 end
 
----Performance monitoring wrapper that warns if execution exceeds threshold
+---Builds and caches an '<addon>.<event>' handler name
+---@param addonName string
+---@param event string
+---@return string name
+local handlerNames              = {}
+utils.handlerName               = function(addonName, event)
+    local byEvent = handlerNames[event]
+    if not byEvent then
+        byEvent             = {}
+        handlerNames[event] = byEvent
+    end
+
+    local name = byEvent[addonName]
+    if not name then
+        name               = addonName .. event
+        byEvent[addonName] = name
+    end
+
+    return name
+end
+
 ---Wraps a function call and warns if execution takes longer than threshold
 ---@param name string Name for performance reporting
 ---@param func function The function to monitor

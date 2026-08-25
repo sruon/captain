@@ -718,8 +718,9 @@ backend.schedule                 = function(func, delay)
             else
                 local slept = 0
                 while slept < delay and not captain.reloadSignal do
-                    coroutine.sleep(0.1)
-                    slept = slept + 0.1
+                    local chunk = math.min(1, delay - slept)
+                    coroutine.sleep(chunk)
+                    slept = slept + chunk
                 end
 
                 func()

@@ -35,9 +35,7 @@ function OutgoingPacketHandler:handle(id, data, size)
         local filters = addon.filters and addon.filters.outgoing
         if filters and (filters[id] or filters[0x255]) then
             if type(addon.onOutgoingPacket) == 'function' then
-                local ok, result = utils.withPerformanceMonitoring(addonName .. '.onOutgoingPacket', function()
-                    return utils.safe_call(addonName .. '.onOutgoingPacket', addon.onOutgoingPacket, id, data, size, parsed)
-                end)
+                local ok, result = utils.safe_call(utils.handlerName(addonName, '.onOutgoingPacket'), addon.onOutgoingPacket, id, data, size, parsed)
                 if result == true then
                     shouldBlock = true
                 end

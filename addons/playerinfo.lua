@@ -10,6 +10,7 @@ local addon        =
     playerInfo      = nil,
     isRetail        = false,
     frame           = 0,
+    zonedAt         = os.time(),
     filters         =
     {
     },
@@ -22,6 +23,11 @@ local addon        =
         },
     },
 }
+
+local function timeInZone()
+    local elapsed = os.time() - addon.zonedAt
+    return string.format('%d:%02d:%02d', math.floor(elapsed / 3600), math.floor(elapsed / 60) % 60, elapsed % 60)
+end
 
 addon.onPrerender  = function()
     addon.frame      = addon.frame + 1
@@ -50,7 +56,7 @@ addon.onPrerender  = function()
             color = { 1.0, 0.65, 0.26, 1.0 },
         },
         {
-            text  = string.format('- %s (%03d) ', backend.zone_name(), backend.zone()),
+            text  = string.format('- %s (%03d) %s ', backend.zone_name(), backend.zone(), timeInZone()),
             color = { 1.0, 0.65, 0.26, 1.0 },
         },
         retailCheck,
@@ -74,6 +80,10 @@ end
 addon.onInitialize = function(rootDir)
     addon.isRetail   = backend.is_retail()
     addon.playerInfo = backend.textBox('playerinfo')
+end
+
+addon.onZoneChange = function()
+    addon.zonedAt = os.time()
 end
 
 return addon

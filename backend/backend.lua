@@ -33,7 +33,7 @@ backend.fileOpen           = function(path)
         full_path = backend.script_path() .. path,
         locked    = false,
         scheduled = false,
-        buffer    = '',
+        buffer    = {},
         created   = backend.file_exists(path),
     }
 
@@ -61,7 +61,7 @@ end
 --------------------------------
 backend.fileAppend         = function(file, text)
     if not file.locked then
-        file.buffer = file.buffer .. text
+        file.buffer[#file.buffer + 1] = text
         if not file.scheduled then
             file.scheduled = true
             backend.schedule(function() backend.fileWrite(file) end, 0.5)
@@ -76,8 +76,8 @@ end
 --------------------------------
 backend.fileWrite          = function(file)
     file.locked    = true
-    local to_write = file.buffer
-    file.buffer    = ''
+    local to_write = table.concat(file.buffer)
+    file.buffer    = {}
     file.scheduled = false
 
     if to_write and to_write ~= '' then
@@ -121,7 +121,7 @@ backend.fileClear          = function(file)
             print('[backend] Failed to clear file: ' .. file.path)
         end
     end
-    file.buffer    = ''
+    file.buffer    = {}
     file.scheduled = false
     file.created   = true
 end

@@ -22,6 +22,7 @@ local addon =
         expectedRespawn     = 4 * 60 + 30, -- Start tracking around 4:30s
     },
     mobs            = {},
+    pollKey         = 0,
     files           =
     {
         globalCsv  = nil,
@@ -57,8 +58,9 @@ local function secondsToTimeString(seconds)
     end
 end
 
-local function trackMob(UniqueNo, ActIndex)
-    if not addon.mobs[UniqueNo] then
+local function trackMob(UniqueNo, ActIndex, pollKey)
+    local mob = addon.mobs[UniqueNo]
+    if not mob or mob.pollKey ~= pollKey then
         -- Stop looping if we're no longer tracking
         return
     end
@@ -89,7 +91,7 @@ local function trackMob(UniqueNo, ActIndex)
             })
 
         -- Keep rescheduling until we're no longer tracking
-        trackMob(UniqueNo, ActIndex)
+        trackMob(UniqueNo, ActIndex, pollKey)
     end, addon.settings.interval)
 end
 
@@ -123,8 +125,11 @@ addon.onIncomingPacket = function(id, data, size, packet)
 
                 -- Extended mode: Start polling with CHARREQ2 around expectedRespawn
                 if addon.settings.extendedMode then
+                    addon.pollKey                  = addon.pollKey + 1
+                    addon.mobs[defeatedId].pollKey = addon.pollKey
+                    local pollKey                  = addon.pollKey
                     backend.schedule(function()
-                        trackMob(packet.UniqueNoTar, packet.ActIndexTar)
+                        trackMob(packet.UniqueNoTar, packet.ActIndexTar, pollKey)
                     end, addon.settings.expectedRespawn)
                 end
             end
