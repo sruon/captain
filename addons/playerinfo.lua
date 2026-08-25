@@ -61,7 +61,9 @@ addon.onPrerender  = function()
     end
 
     local row1 = string.format('X: %s  Y: %s  Z: %s  R: %s', playerData.x, playerData.y, playerData.z, playerData.r)
-    local row2 = string.format('%s · %s %d%% · %s', backend.get_vana_weekday_name(), backend.get_moon_phase_name(), backend.get_moon_percent(), os.date('%H:%M:%S'))
+    local row2 = string.format('%s %02d:%02d · %s %d%% · %s',
+        backend.get_vana_weekday_name(), backend.get_vana_hour(), backend.get_vana_minute(),
+        backend.get_moon_phase_name(), backend.get_moon_percent(), os.date('%H:%M:%S'))
 
     if addon.playerInfo then
         addon.playerInfo:updateTitle(title)

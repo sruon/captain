@@ -1085,60 +1085,64 @@ backend.get_resolution_height = function()
     return AshitaCore:GetConfigurationManager():GetUInt32('boot', 'ffxi.registry', '0002', 1080)
 end
 
-local jit_available, jit = pcall(require, 'jit')
+local VANA_EPOCH              = 1009810800  -- unix time of the Vana'diel epoch
+local VANA_MINUTE             = 2.4         -- earth seconds
+local VANA_HOUR               = VANA_MINUTE * 60
+local VANA_DAY                = VANA_HOUR * 24
+local VANA_YEAR               = VANA_DAY * 360
 
-ffi.cdef[[
-    typedef uint32_t (__stdcall* ntGameTimeGet_f)(void);
-    typedef uint32_t (__stdcall* ntGameTimeFunc_f)(uint32_t);
-]]
-
-local vanatime_ptrs = {
-    game_time    = ashita.memory.find(0, 0, 'E8????????0305????????C3', 0, 0),
-    weekday      = ashita.memory.find(0, 0, '8B44240433D2B9006C0000F7F1', 0, 0),
-    hours        = ashita.memory.find(0, 0, '8B44240433D2B9800D0000F7F1', 0, 0),
-    moon         = ashita.memory.find(0, 0, '8B4C2404B8DB4B682FF7E12BCA', 0, 0),
-    moon_percent = ashita.memory.find(0, 0, '8B4C2404B8DB4B682FF7E18BC1', 0, 0),
-}
-
-local vanatime_available = vanatime_ptrs.game_time and vanatime_ptrs.game_time ~= 0
-    and vanatime_ptrs.weekday and vanatime_ptrs.weekday ~= 0
-    and vanatime_ptrs.hours and vanatime_ptrs.hours ~= 0
-    and vanatime_ptrs.moon and vanatime_ptrs.moon ~= 0
-    and vanatime_ptrs.moon_percent and vanatime_ptrs.moon_percent ~= 0
-
-local function get_game_time_raw()
-    if not vanatime_available then return 0 end
-    return ffi.cast('ntGameTimeGet_f', vanatime_ptrs.game_time)()
+local function vanaSeconds()
+    return os.time() - VANA_EPOCH
 end
-if jit_available then jit.off(get_game_time_raw) end
 
-backend.get_vana_weekday = function()
-    if not vanatime_available then return 0 end
-    local time = get_game_time_raw()
-    return ffi.cast('ntGameTimeFunc_f', vanatime_ptrs.weekday)(time)
+backend.get_vana_weekday      = function()
+    return math.floor(vanaSeconds() / VANA_DAY) % 8
 end
-if jit_available then jit.off(backend.get_vana_weekday) end
 
-backend.get_vana_hour = function()
-    if not vanatime_available then return 0 end
-    local time = get_game_time_raw()
-    return ffi.cast('ntGameTimeFunc_f', vanatime_ptrs.hours)(time)
+backend.get_vana_hour         = function()
+    return math.floor(vanaSeconds() % VANA_DAY / VANA_HOUR)
 end
-if jit_available then jit.off(backend.get_vana_hour) end
 
-backend.get_moon_phase = function()
-    if not vanatime_available then return 0 end
-    local time = get_game_time_raw()
-    return ffi.cast('ntGameTimeFunc_f', vanatime_ptrs.moon)(time)
+backend.get_vana_minute       = function()
+    return math.floor(vanaSeconds() % VANA_HOUR / VANA_MINUTE)
 end
-if jit_available then jit.off(backend.get_moon_phase) end
 
-backend.get_moon_percent = function()
-    if not vanatime_available then return 0 end
-    local time = get_game_time_raw()
-    return ffi.cast('ntGameTimeFunc_f', vanatime_ptrs.moon_percent)(time)
+-- Day of the 84 day lunar cycle. 0 is the full moon, 42 the new moon.
+local function moonCycleDay()
+    return (math.floor((vanaSeconds() + 886 * VANA_YEAR) / VANA_DAY) + 26) % 84
 end
-if jit_available then jit.off(backend.get_moon_percent) end
+
+backend.get_moon_percent      = function()
+    local day = moonCycleDay()
+    if day >= 42 then
+        return math.floor(100 * ((day - 42) / 42) + 0.5)
+    end
+
+    return math.floor(100 * (1 - day / 42) + 0.5)
+end
+
+-- Thresholds from getVanadielMoonCycle in scripts/utils/common.lua
+local waning_phases           = { { 94, 4 }, { 61, 5 }, { 41, 6 }, { 11, 7 }, { 0, 0 } }
+local waxing_phases           = { { 90, 4 }, { 56, 3 }, { 39, 2 }, { 6, 1 }, { 0, 0 } }
+
+backend.get_moon_phase        = function()
+    local day     = moonCycleDay()
+    local percent = backend.get_moon_percent()
+
+    if day == 0 then
+        return 4 -- Full Moon
+    elseif day == 42 then
+        return 0 -- New Moon
+    end
+
+    for _, entry in ipairs(day < 42 and waning_phases or waxing_phases) do
+        if percent >= entry[1] then
+            return entry[2]
+        end
+    end
+
+    return 0
+end
 
 local vana_weekdays = { 'Firesday', 'Earthsday', 'Watersday', 'Windsday', 'Iceday', 'Lightningday', 'Lightsday', 'Darksday' }
 backend.get_vana_weekday_name = function()
