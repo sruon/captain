@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.13.1](https://github.com/sruon/captain/compare/v1.13.0...v1.13.1) (2026-08-26)
+
+
+### Bug Fixes
+
+* **database:** prune history in bounded batches ([ebc208b](https://github.com/sruon/captain/commit/ebc208ba8c85c24ddffd987dfada17f3346c8aa7))
+
 ## [1.13.0](https://github.com/sruon/captain/compare/v1.12.1...v1.13.0) (2026-08-26)
 
 
