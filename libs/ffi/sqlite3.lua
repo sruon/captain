@@ -46,6 +46,7 @@ Database.RESULT_UPDATED = 2
 
 local SQLITE_ROW        = 100
 local BATCH_SIZE        = 50
+local PRUNE_BATCH       = 256
 local FLUSH_INTERVAL    = 30 -- Flush every 30 seconds
 local _last_flush_time  = os.time()
 local function sqlite_exec(db, sql)
@@ -314,6 +315,11 @@ function Database:commit_transaction()
     end
 end
 
+-- Trim at most PRUNE_BATCH rows per call. A database that predates pruning can hold
+-- hundreds of thousands of rows for a single entry, and deleting them in one statement
+-- stalls the client for hundreds of milliseconds. Repeated calls work the backlog down.
+-- id is the autoincrement rowid so it orders the same as version, and unlike version it
+-- is covered by idx_history_entry_id, which keeps this a plain index walk.
 function Database:_prune_history(id_str)
     if not self.max_history then
         return
@@ -321,15 +327,15 @@ function Database:_prune_history(id_str)
 
     local stmt = sqlite_prepare(self.db, [[
         DELETE FROM history
-        WHERE entry_id = ? AND id NOT IN (
+        WHERE id IN (
             SELECT id FROM history
             WHERE entry_id = ?
-            ORDER BY version DESC
-            LIMIT ?
+            ORDER BY id DESC
+            LIMIT ? OFFSET ?
         )
     ]])
     sqlite.sqlite3_bind_text(stmt, 1, id_str, -1, nil)
-    sqlite.sqlite3_bind_text(stmt, 2, id_str, -1, nil)
+    sqlite.sqlite3_bind_int(stmt, 2, PRUNE_BATCH)
     sqlite.sqlite3_bind_int(stmt, 3, self.max_history)
     sqlite.sqlite3_step(stmt)
     sqlite.sqlite3_finalize(stmt)
