@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.13.0](https://github.com/sruon/captain/compare/v1.12.1...v1.13.0) (2026-08-26)
+
+
+### Features
+
+* **captain:** add opt-in handler profiling ([b122a0c](https://github.com/sruon/captain/commit/b122a0cd3c35363b4d998bac6c02b414fe186c18))
+
+
+### Bug Fixes
+
+* **hptrack:** read the action packet payload as a string ([a4ad9d8](https://github.com/sruon/captain/commit/a4ad9d8f8ce0aad689cd717cd34ac275a92e319a))
+* **weathertrack:** stop scanning client memory every frame ([f5b2667](https://github.com/sruon/captain/commit/f5b266776b74e58f714a61d572dde67e133ac575))
+* **zonedump:** only inspect NPC updates for watched entities ([332276b](https://github.com/sruon/captain/commit/332276b7f3db3becc5db3125b00781bf35784620))
+
 ## [1.12.1](https://github.com/sruon/captain/compare/v1.12.0...v1.12.1) (2026-08-25)
 
 
