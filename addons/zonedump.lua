@@ -62,8 +62,10 @@ local function isSpawned(packet)
         return false
     end
 
-    -- Hpp and Flags1 only carry a value when the general block is present
-    if packet.SendFlg.General and (packet.Hpp == 0 or packet.Flags1.HideFlag == 1) then
+    -- Hpp and Flags1 only carry a value when the general block is present, and the
+    -- block itself is missing on some updates
+    if packet.SendFlg and packet.SendFlg.General
+      and (packet.Hpp == 0 or (packet.Flags1 and packet.Flags1.HideFlag == 1)) then
         return false
     end
 
@@ -196,6 +198,11 @@ addon.onIncomingPacket = function(id, data, size, packet)
         return
     end
 
+    local watch = addon.watched[packet.UniqueNo]
+    if not watch and not addon.pendingWhereIs[packet.UniqueNo] then
+        return
+    end
+
     local spawned = isSpawned(packet)
 
     if addon.pendingWhereIs[packet.UniqueNo] then
@@ -207,7 +214,6 @@ addon.onIncomingPacket = function(id, data, size, packet)
             tostring(spawned), packet.Hpp, packet.server_status))
     end
 
-    local watch = addon.watched[packet.UniqueNo]
     if watch then
         -- Announce the rising edge only, the polling answers every interval
         if spawned and not watch.spawned then
