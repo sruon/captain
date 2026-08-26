@@ -661,8 +661,16 @@ backend.get_inventory_items      = function(container)
 end
 
 -- credits: atom0s accounts lib
+-- The scan is the expensive part and the module does not move, so keep the address.
+-- The IP behind it still changes per zone, so that is re-read every call.
+local server_ip_ptr              = nil
+
 backend.get_server_ip            = function()
-    local main_sys = ashita.memory.find('FFXiMain.dll', 0, '8B0D????????8D04808B8481????????C3', 0, 0)
+    if server_ip_ptr == nil then
+        server_ip_ptr = ashita.memory.find('FFXiMain.dll', 0, '8B0D????????8D04808B8481????????C3', 0, 0) or false
+    end
+
+    local main_sys = server_ip_ptr
     if not main_sys then
         return 0
     end
@@ -681,12 +689,16 @@ backend.get_server_ip            = function()
 end
 
 -- credits: atom0s
-backend.get_client_build_string  = function()
-    local sig      = ashita.memory.find('FFXiMain.dll', 0, '68????????E8????????83C4046AFF', 0, 0)
-    local ptr      = ashita.memory.read_uint32(sig + 0x01)
-    local buildStr = ashita.memory.read_string(ptr, 48)
+local build_string               = nil
 
-    return buildStr
+backend.get_client_build_string  = function()
+    if build_string == nil then
+        local sig    = ashita.memory.find('FFXiMain.dll', 0, '68????????E8????????83C4046AFF', 0, 0)
+        local ptr    = ashita.memory.read_uint32(sig + 0x01)
+        build_string = ashita.memory.read_string(ptr, 48)
+    end
+
+    return build_string
 end
 
 -- credits: Thorny

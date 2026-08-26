@@ -24,6 +24,7 @@ local addon            =
     currentWeather  = nil,
     currentDay      = nil,
     announceAt      = nil,
+    isRetail        = false,
     rootDir         = nil,
 }
 
@@ -91,6 +92,8 @@ local function announceCurrent(weatherNumber)
 end
 
 addon.onInitialize     = function(rootDir)
+    addon.isRetail = backend.is_retail()
+
     local dbPath   = string.format('%s/%s.db', rootDir, backend.player_name())
     addon.database = backend.databaseOpen(
         dbPath,
@@ -114,7 +117,7 @@ addon.onCaptureStart   = function()
 end
 
 addon.onPrerender      = function()
-    if not backend.is_retail() then
+    if not addon.isRetail then
         return
     end
 
@@ -138,7 +141,7 @@ addon.onUnload         = function()
 end
 
 addon.onIncomingPacket = function(id, data, size, packet)
-    if not backend.is_retail() then
+    if not addon.isRetail then
         return
     end
 
