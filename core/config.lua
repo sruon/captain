@@ -32,6 +32,7 @@ config.commandsMap =
     { cmd = 'toggle', desc = 'Start/stop capturing',         keybind = { key = 'x', down = true, ctrl = true } },
     { cmd = 'split',  desc = 'Stop and start a new capture', keybind = nil },
     { cmd = 'reload', desc = 'Reload captain',               keybind = { key = 'z', down = true, ctrl = true } },
+    { cmd = 'profile', args = { 'on|off|reset' }, desc = 'Profile addon handlers, blank to report.' },
 }
 
 return config

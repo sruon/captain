@@ -31,7 +31,7 @@ function PrerenderHandler:handle()
     -- Notify addons of render event
     for addonName, addon in pairs(self.captain.addons) do
         if type(addon.onPrerender) == 'function' then
-            utils.safe_call(utils.handlerName(addonName, '.onPrerender'), addon.onPrerender)
+            utils.profiled(utils.handlerName(addonName, '.onPrerender'), addon.onPrerender)
         end
     end
 end

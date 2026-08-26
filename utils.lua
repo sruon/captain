@@ -251,6 +251,46 @@ utils.getProcessInfo            = function()
     return process_path, window_name
 end
 
+---Opt in profiler for the per frame and per packet dispatch paths. Off by default, so
+---the cost when disabled is one table lookup. Totals rather than per call warnings,
+---because a handler costing 2ms that runs 800 times at zone in never trips a threshold.
+utils.profiling                 = false
+utils.profileStats              = {}
+
+utils.profiled                  = function(name, func, ...)
+    if not utils.profiling then
+        return utils.safe_call(name, func, ...)
+    end
+
+    local start      = os.clock()
+    local ok, result = utils.safe_call(name, func, ...)
+    local elapsed    = os.clock() - start
+
+    local stat = utils.profileStats[name]
+    if not stat then
+        stat                     = { calls = 0, total = 0, worst = 0 }
+        utils.profileStats[name] = stat
+    end
+
+    stat.calls = stat.calls + 1
+    stat.total = stat.total + elapsed
+    if elapsed > stat.worst then
+        stat.worst = elapsed
+    end
+
+    return ok, result
+end
+
+utils.profileReport             = function()
+    local rows = {}
+    for name, stat in pairs(utils.profileStats) do
+        rows[#rows + 1] = { name = name, calls = stat.calls, total = stat.total, worst = stat.worst }
+    end
+
+    table.sort(rows, function(a, b) return a.total > b.total end)
+    return rows
+end
+
 ---Builds and caches an '<addon>.<event>' handler name
 ---@param addonName string
 ---@param event string

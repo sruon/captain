@@ -206,6 +206,38 @@ function Commands:handleCommand(args)
         self:startCapture()
     elseif args[1] == 'reload' then
         backend.reload()
+    elseif args[1] == 'profile' then
+        self:profile(args[2])
+    end
+end
+
+---Turn dispatch profiling on or off, or print what it collected
+---@param mode string|nil 'on', 'off', 'reset', or nil to report
+function Commands:profile(mode)
+    if mode == 'on' or mode == 'off' then
+        utils.profiling    = mode == 'on'
+        utils.profileStats = {}
+        backend.msg('captain', 'Profiling ' .. mode .. '. Run /captain profile to see totals.')
+        return
+    end
+
+    if mode == 'reset' then
+        utils.profileStats = {}
+        backend.msg('captain', 'Profiling counters reset.')
+        return
+    end
+
+    local rows = utils.profileReport()
+    if #rows == 0 then
+        backend.msg('captain', 'Nothing recorded. Run /captain profile on first.')
+        return
+    end
+
+    backend.msg('captain', string.format('%-34s %6s %9s %9s', 'Handler', 'calls', 'total', 'worst'))
+    for i = 1, math.min(#rows, 15) do
+        local row = rows[i]
+        backend.msg('captain', string.format('%-34s %6d %7.0fms %7.1fms',
+            row.name, row.calls, row.total * 1000, row.worst * 1000))
     end
 end
 
