@@ -1,4 +1,5 @@
 -- Conquest tracking addon
+-- Use /cap regiontrack poll for a steady series.
 ---@class ConquestTrackAddon : AddonInterface
 local addon =
 {
@@ -12,10 +13,8 @@ local addon =
         },
         outgoing = {},
     },
-    rootDir   = nil,
-    polling   = false,
-    pollKey   = 0,
-    csvFile   = nil,
+    csvFile  = nil,
+    lastLine = nil,
 }
 
 local csvSchema = (function()
@@ -76,8 +75,6 @@ local function writeToCsv(csvFile, packet)
 end
 
 addon.onIncomingPacket = function(id, data, size, packet)
-    if id ~= PacketId.GP_SERV_COMMAND_CONQUEST then return end
-
     if not packet then
         backend.msg('ConquestTrack', 'packet is nil')
         return
@@ -87,7 +84,7 @@ addon.onIncomingPacket = function(id, data, size, packet)
         writeToCsv(addon.csvFile, packet)
     end
 
-    backend.msg('ConquestTrack', string.format(
+    local line = string.format(
         'CP: %d | Sandy: %d/%d%% | Bastok: %d/%d%% | Windy: %d/%d%% | Beastmen: %d | Tally: %d | Balance: %d | Alliance: %d',
         packet.ConquestPoints or 0,
         packet.CurrentRegionSandoria or 0, packet.CurrentRegionSandoriaPct or 0,
@@ -96,62 +93,21 @@ addon.onIncomingPacket = function(id, data, size, packet)
         packet.CurrentRegionBeastmen or 0,
         packet.NextTally or 0,
         packet.Balance or 0,
-        packet.Alliance or 0))
-end
+        packet.Alliance or 0)
 
-local function requestConquest()
-    local packet = { 0x5A, 0x04, 0x00, 0x00 }
-    backend.injectPacket(PacketId.GP_CLI_COMMAND_REQCONQUEST, packet)
-end
-
-local function startPolling()
-    if addon.polling then return end
-    addon.polling = true
-    addon.pollKey = addon.pollKey + 1
-    local key = addon.pollKey
-
-    local function poll()
-        if not addon.polling or addon.pollKey ~= key then return end
-        requestConquest()
-        ashita.tasks.once(10, poll)
-    end
-
-    poll()
-    backend.msg('ConquestTrack', 'Polling started (every 10s).')
-end
-
-local function stopPolling()
-    addon.polling = false
-    addon.pollKey = addon.pollKey + 1
-    backend.msg('ConquestTrack', 'Polling stopped.')
-end
-
-addon.onCommand = function(args)
-    if not args or #args == 0 then
-        backend.msg('ConquestTrack', 'Usage: /conquesttrack <request|poll|stop>')
-        return
-    end
-
-    local cmd = args[1]:lower()
-    if cmd == 'request' or cmd == 'req' then
-        requestConquest()
-        backend.msg('ConquestTrack', 'Requested conquest data.')
-    elseif cmd == 'poll' or cmd == 'start' then
-        startPolling()
-    elseif cmd == 'stop' then
-        stopPolling()
+    if line ~= addon.lastLine then
+        addon.lastLine = line
+        backend.msg('ConquestTrack', line)
     end
 end
 
 addon.onInitialize = function(rootDir)
-    addon.rootDir = rootDir
     addon.csvFile = backend.csvOpen(
-        string.format('%s/%s_conquest.csv', rootDir, backend.player_name()),
+        string.format('%s%s_conquest.csv', rootDir, backend.player_name()),
         csvSchema)
 end
 
 addon.onUnload = function()
-    addon.polling = false
     if addon.csvFile then
         addon.csvFile:close()
         addon.csvFile = nil
