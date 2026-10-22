@@ -3001,6 +3001,150 @@ local definitions          =
             { name = 'ConquestPoints',           bits = 32 }, -- 0x90 - Player's conquest points
             { name = 'CurrentRegionBeastmen',    bits = 8 },  -- 0x94 - Beastmen % in current zone
             { name = 'padding95', type = 'raw', size = 7 },   -- 0x95-0x9B - Padding
+            { name = 'Unknown9C', bits = 8 },                 -- 0x9C
+            { name = 'padding9D', type = 'raw', size = 3 },   -- 0x9D-0x9F - Padding
+            {
+                name   = 'Besieged', -- 0xA0-0xB3 - Besieged map
+                type   = 'struct',
+                layout =
+                {
+                    {
+                        name   = 'Overview', -- 0xA0-0xA3
+                        type   = 'struct',
+                        layout =
+                        {
+                            { name = 'AstralCandescence', bits = 2 }, -- 0=Al Zahbi, 1=Mamook, 2=Halvung, 3=Arrapago
+                            { name = 'AlZahbiOrders',     bits = 2 }, -- 0=Defend, 1=Intercept, 2=Infiltrate, 3=Recover
+                            { name = 'MamookLevel',       bits = 4 },
+                            { name = 'HalvungLevel',      bits = 4 },
+                            { name = 'ArrapagoLevel',     bits = 4 },
+                            { name = 'MamookOrders',      bits = 3 },
+                            { name = 'HalvungOrders',     bits = 3 },
+                            { name = 'ArrapagoOrders',    bits = 3 },
+                            { name = 'Unknown',           bits = 1 },
+                            { name = 'unused',            bits = 6 },
+                        },
+                    },
+                    {
+                        name   = 'Strongholds', -- 0xA4-0xAF - Mamook, Halvung, Arrapago
+                        type   = 'array',
+                        count  = 3,
+                        layout =
+                        {
+                            { name = 'Orders',    bits = 3 }, -- 0=Train, 1=Advance, 2=Attack, 3=Retreat, 4=Defend, 5=Prepare
+                            { name = 'Forces',    bits = 8 },
+                            { name = 'Level',     bits = 4 },
+                            { name = 'Mirrors',   bits = 4 },
+                            { name = 'Unknown',   bits = 1 },
+                            { name = 'Prisoners', bits = 4 },
+                            { name = 'unused',    bits = 8 },
+                        },
+                    },
+                    { name = 'ImperialStanding', bits = 32 }, -- 0xB0-0xB3
+                },
+            },
+        },
+        [PacketId.GP_SERV_COMMAND_INFLUENCE]      =
+        {
+            { name = 'Mode',      bits = 8 },  -- 0x04 - 2=Campaign, 3=Colonization
+            { name = 'Unknown05', bits = 8 },  -- 0x05
+            { name = 'Length',    bits = 16 }, -- 0x06-0x07 - Payload size after this field, without padding
+            {
+                name   = 'Data', -- 0x08+
+                type   = 'struct',
+                layout = function(ctx)
+                    if ctx.Mode == 2 then
+                        return
+                        {
+                            { name = 'Unknown08',   bits = 8 },                 -- 0x08
+                            { name = 'ZoneOffset',  bits = 8 },                 -- 0x09 - First zone index in this packet, 0 or 13
+                            { name = 'padding0A',   type = 'raw', size = 2 },   -- 0x0A-0x0B
+                            { name = 'AlliedNotes', bits = 32, signed = true }, -- 0x0C-0x0F
+                            {
+                                name   = 'ControlledAreas', -- 0x10-0x13
+                                type   = 'struct',
+                                layout =
+                                {
+                                    { name = 'Sandoria', bits = 5 },
+                                    { name = 'Bastok',   bits = 5 },
+                                    { name = 'Windurst', bits = 5 },
+                                    { name = 'Beastman', bits = 5 },
+                                    { name = 'unused',   bits = 12 },
+                                },
+                            },
+                            {
+                                name   = 'Nations', -- 0x14-0x2F - Sandoria, Bastok, Windurst, Orc, Quadav, Yagudo, Dark Kindred
+                                type   = 'array',
+                                count  = 7,
+                                layout =
+                                {
+                                    { name = 'Reconnaissance', bits = 4 },
+                                    { name = 'unused',         bits = 14 }, -- Not zero on retail, meaning unknown
+                                    { name = 'Morale',         bits = 7 },
+                                    { name = 'Prosperity',     bits = 7 },
+                                },
+                            },
+                            {
+                                name   = 'Zones', -- 0x30-0xCB
+                                type   = 'array',
+                                count  = 13,
+                                layout =
+                                {
+                                    { name = 'unused00',              bits = 1 },  -- Not zero on retail, meaning unknown
+                                    { name = 'Owner',                 bits = 3 },
+                                    { name = 'CurrentFortifications', bits = 10 },
+                                    { name = 'CurrentResources',      bits = 10 },
+                                    { name = 'Heroism',               bits = 8 },
+                                    { name = 'InfluenceSandoria',     bits = 8 },
+                                    { name = 'InfluenceBastok',       bits = 8 },
+                                    { name = 'InfluenceWindurst',     bits = 8 },
+                                    { name = 'InfluenceBeastman',     bits = 8 },
+                                    { name = 'MaxFortifications',     bits = 10 },
+                                    { name = 'MaxResources',          bits = 10 },
+                                    { name = 'unused01',              bits = 12 }, -- Not zero on retail, meaning unknown
+                                },
+                            },
+                        }
+                    end
+
+                    if ctx.Mode == 3 then
+                        return
+                        {
+                            { name = 'Unknown08', bits = 32 }, -- 0x08-0x0B
+                            { name = 'Unknown0C', bits = 32 }, -- 0x0C-0x0F
+                            {
+                                name   = 'Ranks', -- 0x10-0x13
+                                type   = 'struct',
+                                layout =
+                                {
+                                    { name = 'Pioneers',     bits = 4 },
+                                    { name = 'Peacekeepers', bits = 4 },
+                                    { name = 'Couriers',     bits = 4 },
+                                    { name = 'Scouts',       bits = 4 },
+                                    { name = 'Inventors',    bits = 4 },
+                                    { name = 'Mummers',      bits = 4 },
+                                    { name = 'unused',       bits = 8 },
+                                },
+                            },
+                            {
+                                name   = 'Zones', -- 0x14-0x37 - unused, Yahse, Ceizak, Foret, Yorcia, Morimar, Marjami, Kamihr, Ra'Kaznar
+                                type   = 'array',
+                                count  = 9,
+                                layout =
+                                {
+                                    { name = 'ColonizationRate', bits = 7 },
+                                    { name = 'CurrentBivouacs',  bits = 3 },
+                                    { name = 'MaxBivouacs',      bits = 3 },
+                                    { name = 'unused',           bits = 19 },
+                                },
+                            },
+                            { name = 'Bayld', bits = 32, signed = true }, -- 0x38-0x3B
+                        }
+                    end
+
+                    return {}
+                end,
+            },
         },
     },
     outgoing =
