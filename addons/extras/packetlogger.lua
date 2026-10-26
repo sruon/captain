@@ -29,7 +29,7 @@ local addon            =
 local socket           = require('socket')
 
 addon.onIncomingPacket = function(id, data, size, packet)
-    if not captain.isCapturing then
+    if not addon.captureDir then
         return
     end
 
@@ -54,7 +54,7 @@ addon.onIncomingPacket = function(id, data, size, packet)
 end
 
 addon.onOutgoingPacket = function(id, data, size, packet)
-    if not captain.isCapturing then
+    if not addon.captureDir then
         return
     end
 
@@ -89,6 +89,7 @@ addon.onCaptureStart   = function(captureDir)
 end
 
 addon.onCaptureStop    = function()
+    addon.captureDir          = nil
     addon.files.bothAll       = nil
 
     -- Clear per-ID file handles

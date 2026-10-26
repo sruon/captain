@@ -147,6 +147,13 @@ function LoadHandler:handle()
     end
     self.captain.needsInitialization = false
 
+    -- a /cap start that arrived before the addons loaded
+    if self.captain.pendingCaptureArgs then
+        local args                      = self.captain.pendingCaptureArgs
+        self.captain.pendingCaptureArgs = nil
+        self.captain.commands:startCapture(args)
+    end
+
     -- Report total time and slowest operations
     local total_time = os.clock() - load_start_time
 
