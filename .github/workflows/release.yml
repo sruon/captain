@@ -122,10 +122,13 @@ jobs:
         rm -rf timerwheel.zip timerwheel.lua-1.0.2
 
     - name: Bundle Memoria
+      env:
+        # ffxi-dev/memoria is private for now: MEMORIA_TOKEN reads its releases.
+        GH_TOKEN: ${{ secrets.MEMORIA_TOKEN || github.token }}
       run: |
         version=$(jq -r .version memoria.json)
         sha256=$(jq -r .sha256 memoria.json)
-        curl -fsSL -o deps/Memoria.dll "https://memoria.sruon.dev/v${version}/Memoria.dll"
+        gh release download "v${version}" --repo ffxi-dev/memoria --pattern Memoria.dll --dir deps
         echo "${sha256}  deps/Memoria.dll" | sha256sum -c -
 
     - name: Make release zipball
