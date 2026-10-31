@@ -73,6 +73,9 @@ function Commands:startCapture(args)
         backend.msg('captain', 'Starting capture at ' .. baseDir)
         recordManifest(baseDir)
         captain.isCapturing = true
+        -- Memoria's session xicap holds every packet of the session, in place of
+        -- PacketLogger's text log; the note marks the start in both captures.
+        memoria.sessionStart(addon.path .. baseDir .. 'memoria.xicap')
         memoria.note('cap start ' .. foldername)
         for addonName, addon in pairs(captain.addons) do
             if type(addon.onCaptureStart) == 'function' then
@@ -111,6 +114,7 @@ function Commands:stopCapture()
     end
 
     memoria.note('cap stop ' .. (captain.captureName or ''))
+    memoria.sessionStop()
     captain.isCapturing = false
     captain.captureName = nil
 end
