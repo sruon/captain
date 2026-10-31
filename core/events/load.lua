@@ -3,6 +3,7 @@ local utils = require('utils')
 local backend = require('backend.backend')
 local colors = require('colors')
 local database = require('ffi.sqlite3')
+local memoria = require('core.memoria')
 
 ---@class LoadHandler
 ---@field captain table The captain instance this handler is bound to
@@ -21,6 +22,9 @@ end
 ---Handle the load event - initializes addons, registers keybinds, and reports performance
 ---Automatically loads all addons from the addons directory and sets up their configurations
 function LoadHandler:handle()
+    -- Before the login check: Memoria must be recording before the first zone-in.
+    memoria.start()
+
     -- Check if player is logged in and has a valid name
     local loginStatus = AshitaCore:GetMemoryManager():GetPlayer():GetLoginStatus()
     local playerName = backend.player_name()
@@ -55,6 +59,11 @@ function LoadHandler:handle()
                 addonName  = dirName
                 modulePath = string.format('addons/%s/%s', dirName, dirFile)
             end
+        end
+
+        -- Memoria records every packet, so PacketLogger's text copy is not needed.
+        if addonName == 'packetlogger' and memoria.loaded() then
+            addonName = nil
         end
 
         if addonName then
