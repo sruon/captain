@@ -84,10 +84,12 @@ Green checkmark indicates this is a legitimate retail server. Notifies if curren
 Also displayed in the chatlog
 <img width="1048" height="107" alt="image" src="https://github.com/user-attachments/assets/f5c1fd7a-94f9-4b93-a3a3-4eb003004116" />
 
+### Memoria
+Captain installs and loads Memoria, a plugin that records every packet of every session to `captures/memoria/` in Ashita's folder. Each `/cap` session also gets a `memoria.xicap` in its capture folder. Chat packets keep their header; their text is dropped.
+
 ### Addons
 #### PacketLogger
-- Captures all received/emitted packets, by ID and by stream direction.
-- Format is compatible with PVLV/VieweD.
+Replaced by Memoria. Move it from `addons/extras/` back to `addons/` for PVLV/VieweD text logs.
 
 #### PacketBridge
 Re-emits all received/emitted packets to any UDP port.

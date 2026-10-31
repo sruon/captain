@@ -21,11 +21,16 @@ local packets              = require('packets.parser')
 local serpent              = require('serpent')
 local database             = require('ffi.sqlite3')
 local csv                  = require('csv')
+-- The path fileOpen writes to.
+backend.safePath           = function(path)
+    return (path:gsub('%s+', '_'):gsub(':', '_'):gsub('%?', 'qm'):gsub("'", '_'):gsub('"', '_'))
+end
+
 --------------------------------
 -- Handles opening, or creating, a file object. Returns it.
 --------------------------------
 backend.fileOpen           = function(path)
-    path        = path:gsub('%s+', '_'):gsub(':', '_'):gsub('%?', 'qm'):gsub("'", '_'):gsub('"', '_')
+    path        = backend.safePath(path)
 
     local file  =
     {

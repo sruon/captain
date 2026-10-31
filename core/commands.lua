@@ -1,5 +1,7 @@
 -- Core command handling class for captain
 
+local memoria    = require('core.memoria')
+
 ---@class Commands
 ---@field commandsMap table[] Array of command configuration entries
 local Commands   = {}
@@ -71,6 +73,8 @@ function Commands:startCapture(args)
         backend.msg('captain', 'Starting capture at ' .. baseDir)
         recordManifest(baseDir)
         captain.isCapturing = true
+        memoria.sessionStart(backend.script_path() .. backend.safePath(baseDir .. 'memoria.xicap'))
+        memoria.note('cap start ' .. foldername)
         for addonName, addon in pairs(captain.addons) do
             if type(addon.onCaptureStart) == 'function' then
                 utils.withPerformanceMonitoring(addonName .. '.onCaptureStart', function()
@@ -107,6 +111,8 @@ function Commands:stopCapture()
         backend.msg('captain', 'Capture stopped')
     end
 
+    memoria.note('cap stop ' .. (captain.captureName or ''))
+    memoria.sessionStop()
     captain.isCapturing = false
     captain.captureName = nil
 end
