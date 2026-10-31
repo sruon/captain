@@ -1,14 +1,15 @@
--- Memoria, Vault's recorder plugin: captain installs it, keeps it current, and
--- loads it. Captain loads at boot, so Memoria records from the first login.
--- Releases are published at https://memoria.sruon.dev/latest.json.
-local backend  = require('backend.backend')
-local json     = require('json')
+-- Memoria, Vault's recorder plugin: it records every packet of every session to
+-- xicap. Captain's release bundles a pinned build in deps/Memoria.dll (see
+-- memoria.json), installs it into Ashita's plugins folder, and loads it when
+-- captain loads, which is at boot, before character select: Memoria then
+-- records from the first login. /cap start and /cap stop put a session xicap
+-- in each capture folder.
+local backend = require('backend.backend')
 
-local memoria  = {}
-local LATEST   = 'https://memoria.sruon.dev/latest.json'
-local started  = false
+local memoria = {}
+local started = false
 
-local function path(name)
+local function plugin(name)
     return string.format('%s/plugins/%s', AshitaCore:GetInstallPath(), name)
 end
 
@@ -32,13 +33,10 @@ local function write(p, data)
     return true
 end
 
-local function exists(p)
-    local f = io.open(p, 'rb')
-    if f then
-        f:close()
-        return true
+local function command(text)
+    if memoria.loaded() then
+        AshitaCore:GetChatManager():QueueCommand(-1, text)
     end
-    return false
 end
 
 ---@return boolean loaded Memoria is loaded and recording
@@ -46,98 +44,56 @@ function memoria.loaded()
     return AshitaCore:GetPluginManager():IsLoaded('Memoria')
 end
 
--- Moves a downloaded Memoria.dll.new into place and records its hash.
-local function install(sha256)
-    os.remove(path('Memoria.dll.old'))
-    os.rename(path('Memoria.dll'), path('Memoria.dll.old'))
-    if not os.rename(path('Memoria.dll.new'), path('Memoria.dll')) then
-        os.rename(path('Memoria.dll.old'), path('Memoria.dll')) -- put the old one back
-        return false
+-- Puts the bundled build in plugins/ when the one there differs. A loaded DLL
+-- cannot be overwritten but can be renamed, so a running Memoria keeps going
+-- and the new one takes over at the next start.
+local function install()
+    local bundled = read(addon.path .. 'deps/Memoria.dll')
+    if not bundled then
+        return -- a git checkout without a release's deps: use whatever is installed
     end
-    write(path('Memoria.sha256'), sha256)
-    os.remove(path('Memoria.dll.pending'))
-    return true
-end
-
--- Swaps in an update downloaded during an earlier session. Only before login:
--- unloading Memoria mid-session would split that session's capture.
-local function applyPending()
-    local pending = read(path('Memoria.dll.pending'))
-    if not pending or not exists(path('Memoria.dll.new')) then
+    if read(plugin('Memoria.dll')) == bundled then
         return
     end
-    if AshitaCore:GetMemoryManager():GetPlayer():GetLoginStatus() == 2 then
+    os.remove(plugin('Memoria.dll.old'))
+    os.rename(plugin('Memoria.dll'), plugin('Memoria.dll.old'))
+    if not write(plugin('Memoria.dll'), bundled) then
+        os.rename(plugin('Memoria.dll.old'), plugin('Memoria.dll'))
+        backend.errMsg('captain', 'Cannot install Memoria in ' .. plugin(''))
         return
     end
     if memoria.loaded() then
-        AshitaCore:GetPluginManager():Unload('Memoria')
-    end
-    if install(pending) then
-        backend.msg('captain', 'Memoria updated')
+        backend.msg('captain', 'Memoria updated; the new version takes over at the next start')
     end
 end
 
-local function load()
-    if not memoria.loaded() and exists(path('Memoria.dll')) then
-        AshitaCore:GetPluginManager():Load('Memoria', '')
-    end
-end
-
--- Downloads a newer Memoria in the background. A first install loads at once;
--- an update waits for the next start.
-local function checkForUpdate()
-    local copas = require('copas_clients')
-    copas.http_request(LATEST, nil, {
-        on_success = function(body)
-            local ok, latest = pcall(json.decode, body)
-            if not ok or type(latest) ~= 'table' or not latest.sha256 or not latest.url or not latest.size then
-                return
-            end
-            if read(path('Memoria.sha256')) == latest.sha256 or read(path('Memoria.dll.pending')) == latest.sha256 then
-                return
-            end
-            copas.http_request(latest.url, nil, {
-                on_success = function(dll)
-                    if #dll ~= latest.size or dll:sub(1, 2) ~= 'MZ' then
-                        backend.errMsg('captain', 'Memoria download was incomplete; keeping what is installed')
-                        return
-                    end
-                    if not write(path('Memoria.dll.new'), dll) then
-                        return
-                    end
-                    write(path('Memoria.dll.pending'), latest.sha256)
-                    if not exists(path('Memoria.dll')) then
-                        -- Nothing recording yet, so nothing to split: install now.
-                        if install(latest.sha256) then
-                            load()
-                            backend.msg('captain', 'Memoria ' .. latest.version .. ' installed: every session is recorded')
-                        end
-                    else
-                        backend.msg('captain', 'Memoria ' .. latest.version .. ' downloaded; it takes over at the next start')
-                    end
-                end,
-            })
-        end,
-    })
-end
-
----Installs, updates, and loads Memoria. Runs once, when captain loads.
+---Installs and loads Memoria. Runs once, when captain loads.
 function memoria.start()
     if started or not AshitaCore then
         return
     end
     started = true
-    applyPending()
-    load()
-    checkForUpdate()
+    install()
+    if not memoria.loaded() and read(plugin('Memoria.dll')) then
+        AshitaCore:GetPluginManager():Load('Memoria', '')
+    end
 end
 
----Places a note in Memoria's capture, such as the start of a captain session.
+---Places a note in Memoria's captures.
 ---@param text string
 function memoria.note(text)
-    if memoria.loaded() then
-        AshitaCore:GetChatManager():QueueCommand(-1, '/memoria note ' .. text)
-    end
+    command('/memoria note ' .. text)
+end
+
+---Starts a session xicap at path: the same packets as Memoria's own capture,
+---until sessionStop.
+---@param path string
+function memoria.sessionStart(path)
+    command('/memoria session start ' .. path)
+end
+
+function memoria.sessionStop()
+    command('/memoria session stop')
 end
 
 return memoria

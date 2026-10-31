@@ -61,11 +61,6 @@ function LoadHandler:handle()
             end
         end
 
-        -- Memoria records every packet, so PacketLogger's text copy is not needed.
-        if addonName == 'packetlogger' and memoria.loaded() then
-            addonName = nil
-        end
-
         if addonName then
             local requirePath                     = modulePath:gsub('[/\\]', '.')
 
