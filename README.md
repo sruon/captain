@@ -85,13 +85,11 @@ Also displayed in the chatlog
 <img width="1048" height="107" alt="image" src="https://github.com/user-attachments/assets/f5c1fd7a-94f9-4b93-a3a3-4eb003004116" />
 
 ### Memoria
-Captain installs and loads [Memoria](https://memoria.sruon.dev/latest.json), a plugin that records every packet of every session to an xicap file in `captures/memoria/`. Its build comes in the release zip; captain never downloads code. `/cap start` and `/cap stop` also put a `memoria.xicap` holding that session's packets in the capture folder.
-
-Memoria leaves out chat: the xicap keeps each chat packet's header and drops its text.
+Captain installs and loads Memoria, a plugin that records every packet of every session to `captures/memoria/` in Ashita's folder. Each `/cap` session also gets a `memoria.xicap` in its capture folder. Chat packets keep their header; their text is dropped.
 
 ### Addons
 #### PacketLogger
-Replaced by Memoria and no longer loaded. It stays in `addons/extras/`: move it back to `addons/` for its PVLV/VieweD text logs.
+Replaced by Memoria. Move it from `addons/extras/` back to `addons/` for PVLV/VieweD text logs.
 
 #### PacketBridge
 Re-emits all received/emitted packets to any UDP port.
