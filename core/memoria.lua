@@ -1,9 +1,5 @@
--- Memoria, Vault's recorder plugin: it records every packet of every session to
--- xicap. Captain's release bundles a pinned build in deps/Memoria.dll (see
--- memoria.json), installs it into Ashita's plugins folder, and loads it when
--- captain loads, which is at boot, before character select: Memoria then
--- records from the first login. /cap start and /cap stop put a session xicap
--- in each capture folder.
+-- Memoria, Vault's recorder plugin. The release bundles the build pinned in
+-- memoria.json as deps/Memoria.dll.
 local backend = require('backend.backend')
 
 local memoria = {}
@@ -39,20 +35,15 @@ local function command(text)
     end
 end
 
----@return boolean loaded Memoria is loaded and recording
 function memoria.loaded()
     return AshitaCore:GetPluginManager():IsLoaded('Memoria')
 end
 
--- Puts the bundled build in plugins/ when the one there differs. A loaded DLL
--- cannot be overwritten but can be renamed, so a running Memoria keeps going
--- and the new one takes over at the next start.
+-- A loaded DLL cannot be overwritten but can be renamed: a running Memoria
+-- keeps going and the new build takes over at the next start.
 local function install()
     local bundled = read(addon.path .. 'deps/Memoria.dll')
-    if not bundled then
-        return -- a git checkout without a release's deps: use whatever is installed
-    end
-    if read(plugin('Memoria.dll')) == bundled then
+    if not bundled or read(plugin('Memoria.dll')) == bundled then
         return
     end
     os.remove(plugin('Memoria.dll.old'))
@@ -67,26 +58,23 @@ local function install()
     end
 end
 
----Installs and loads Memoria. Runs once, when captain loads.
 function memoria.start()
-    if started or not AshitaCore then
+    if started then
         return
     end
     started = true
     install()
-    if not memoria.loaded() and read(plugin('Memoria.dll')) then
+    if not memoria.loaded() and ashita.fs.exists(plugin('Memoria.dll')) then
         AshitaCore:GetPluginManager():Load('Memoria', '')
     end
 end
 
----Places a note in Memoria's captures.
 ---@param text string
 function memoria.note(text)
     command('/memoria note ' .. text)
 end
 
----Starts a session xicap at path: the same packets as Memoria's own capture,
----until sessionStop.
+---Writes the session's packets to path until sessionStop.
 ---@param path string
 function memoria.sessionStart(path)
     command('/memoria session start ' .. path)

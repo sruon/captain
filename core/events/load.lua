@@ -22,7 +22,7 @@ end
 ---Handle the load event - initializes addons, registers keybinds, and reports performance
 ---Automatically loads all addons from the addons directory and sets up their configurations
 function LoadHandler:handle()
-    -- Before the login check: Memoria must be recording before the first zone-in.
+    -- Before the login check, so Memoria sees the first zone-in.
     memoria.start()
 
     -- Check if player is logged in and has a valid name
