@@ -95,7 +95,8 @@ function memoria.start()
     started = true
     install()
     if not memoria.loaded() and ashita.fs.exists(plugin('Memoria.dll')) then
-        AshitaCore:GetPluginManager():Load('Memoria', '')
+        -- Addons cannot load a plugin through the plugin manager, so captain types the command a player would.
+        AshitaCore:GetChatManager():QueueCommand(-1, '/load memoria')
     end
 end
 
