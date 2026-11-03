@@ -39,12 +39,42 @@ function memoria.loaded()
     return AshitaCore:GetPluginManager():IsLoaded('Memoria')
 end
 
--- A loaded DLL cannot be overwritten but can be renamed: a running Memoria
--- keeps going and the new build takes over at the next start.
+-- A build's version, from its user agent text "Memoria/0.6.0-rc.1", as
+-- { major, minor, patch, rc }. A release sorts after its pre-releases.
+local function version(dll)
+    local a, b, c, pre = dll:match('Memoria/(%d+)%.(%d+)%.(%d+)%-?([%w%.]*)')
+    if not a then
+        return nil
+    end
+    -- ponytail: the pre-release label is ignored (rc.2 == beta.2); fine while Memoria only tags rc.N.
+    return { tonumber(a), tonumber(b), tonumber(c), tonumber(pre:match('(%d+)$')) or math.huge }
+end
+
+local function older(x, y)
+    for i = 1, 4 do
+        if x[i] ~= y[i] then
+            return x[i] < y[i]
+        end
+    end
+    return false
+end
+
+-- Installs the bundled build when none is installed or the installed one is
+-- older; a newer or unrecognised build stays. A loaded DLL cannot be
+-- overwritten but can be renamed: a running Memoria keeps going and the new
+-- build takes over at the next start.
 local function install()
     local bundled = read(addon.path .. 'deps/Memoria.dll')
-    if not bundled or read(plugin('Memoria.dll')) == bundled then
+    local want = bundled and version(bundled)
+    if not want then
         return
+    end
+    local installed = read(plugin('Memoria.dll'))
+    if installed then
+        local have = version(installed)
+        if not have or not older(have, want) then
+            return
+        end
     end
     os.remove(plugin('Memoria.dll.old'))
     os.rename(plugin('Memoria.dll'), plugin('Memoria.dll.old'))
