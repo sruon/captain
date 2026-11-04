@@ -65,6 +65,7 @@ function Commands:startCapture(args)
     end
 
     captain.captureName = foldername
+    captain.sessionName = memoria.sessionName(args)
 
     local charname      = backend.player_name()
     if charname then
@@ -74,7 +75,7 @@ function Commands:startCapture(args)
         recordManifest(baseDir)
         captain.isCapturing = true
         memoria.sessionStart(backend.script_path() .. backend.safePath(baseDir .. 'memoria.xicap'))
-        memoria.note('cap start ' .. foldername)
+        memoria.note('cap start ' .. captain.sessionName)
         for addonName, addon in pairs(captain.addons) do
             if type(addon.onCaptureStart) == 'function' then
                 utils.withPerformanceMonitoring(addonName .. '.onCaptureStart', function()
@@ -111,10 +112,11 @@ function Commands:stopCapture()
         backend.msg('captain', 'Capture stopped')
     end
 
-    memoria.note('cap stop ' .. (captain.captureName or ''))
+    memoria.note('cap stop ' .. (captain.sessionName or ''))
     memoria.sessionStop()
     captain.isCapturing = false
     captain.captureName = nil
+    captain.sessionName = nil
 end
 
 ---Build argument string for command help display

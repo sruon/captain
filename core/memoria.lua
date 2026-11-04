@@ -100,6 +100,20 @@ function memoria.start()
     end
 end
 
+---The session's name in the cap start and stop notes: /cap's arguments and the
+---time in UTC, so a public capture never tells the player's time zone.
+---@param args string[]|nil
+---@param time number|nil defaults to now
+---@return string
+function memoria.sessionName(args, time)
+    local d    = os.date('!*t', time)
+    local name = string.format('%d-%d-%d_%d_%dZ', d.year, d.month, d.day, d.hour, d.min)
+    if args and #args > 0 then
+        name = table.concat(args, '_') .. '_' .. name
+    end
+    return name
+end
+
 ---@param text string
 function memoria.note(text)
     command('/memoria note ' .. text)
