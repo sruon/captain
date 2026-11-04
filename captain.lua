@@ -63,6 +63,7 @@ captain                       =
     needsInitialization = false,
     captureName         = nil,
     captureArgsPrefix   = nil,
+    sessionName         = nil,
     pendingCaptureArgs  = nil,
     settings            = require('settings_schema').get_defaults(), -- Load defaults, actual settings loaded in load handler
     notificationMgr     = nil,
