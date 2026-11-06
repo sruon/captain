@@ -39,14 +39,15 @@ function memoria.loaded()
     return AshitaCore:GetPluginManager():IsLoaded('Memoria')
 end
 
--- A build's version, from its user agent text "Memoria/0.6.0-rc.1", as
--- { major, minor, patch, rc }. A release sorts after its pre-releases.
+-- A build's version, from the text "Memoria/0.6.0-rc.1" (rc.3 and older) or
+-- "Memoria 0.6.0-rc.4" it holds, as { major, minor, patch, rc }. A release sorts
+-- after its pre-releases.
 local function version(dll)
-    local a, b, c, pre = dll:match('Memoria/(%d+)%.(%d+)%.(%d+)%-?([%w%.]*)')
+    local a, b, c, pre = dll:match('Memoria[/ ](%d+)%.(%d+)%.(%d+)%-?([%w%.]*)')
     if not a then
         return nil
     end
-    -- ponytail: the pre-release label is ignored (rc.2 == beta.2); fine while Memoria only tags rc.N.
+    -- Only the pre-release number counts (rc.2 == beta.2); Memoria only tags rc.N.
     return { tonumber(a), tonumber(b), tonumber(c), tonumber(pre:match('(%d+)$')) or math.huge }
 end
 
