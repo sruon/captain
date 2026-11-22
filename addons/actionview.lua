@@ -493,7 +493,7 @@ local function setupZone(zone)
 
     addon.files.simple = backend.fileOpen(addon.rootDir .. 'simple/' .. current_zone .. '.log')
 
-    if captain.isCapturing then
+    if addon.captureDir then
         addon.files.capture.simple = backend.fileOpen(addon.captureDir .. 'simple/' .. current_zone .. '.log')
     end
 end

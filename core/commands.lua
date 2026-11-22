@@ -1,5 +1,7 @@
 -- Core command handling class for captain
 
+local memoria    = require('core.memoria')
+
 ---@class Commands
 ---@field commandsMap table[] Array of command configuration entries
 local Commands   = {}
@@ -47,8 +49,23 @@ end
 ---Creates timestamped capture directory and calls onCaptureStart for all addons
 ---@param args string[]|nil Optional command arguments array
 function Commands:startCapture(args)
+    local argsPrefix = nil
+    if args and #args > 0 then
+        argsPrefix = table.concat(args, '_')
+    end
+
     if captain.isCapturing then
-        backend.msg('captain', 'Already capturing')
+        -- a repeat start for the capture already running is a no-op
+        if argsPrefix == nil or argsPrefix ~= captain.captureArgsPrefix then
+            backend.msg('captain', 'Already capturing')
+        end
+        return
+    end
+
+    -- loaded before login, sub-addons load at the first client ready: start then, or none of them would capture
+    if captain.needsInitialization then
+        captain.pendingCaptureArgs = args or {}
+        backend.msg('captain', 'Capture will start once in game')
         return
     end
 
@@ -57,12 +74,13 @@ function Commands:startCapture(args)
         date['min'])
 
     -- Prepend args if provided
-    if args and #args > 0 then
-        local argsPrefix = table.concat(args, '_')
-        foldername       = argsPrefix .. '_' .. foldername
+    if argsPrefix then
+        foldername = argsPrefix .. '_' .. foldername
     end
 
-    captain.captureName = foldername
+    captain.captureName       = foldername
+    captain.captureArgsPrefix = argsPrefix
+    captain.sessionName       = memoria.sessionName(args)
 
     local charname      = backend.player_name()
     if charname then
@@ -71,6 +89,8 @@ function Commands:startCapture(args)
         backend.msg('captain', 'Starting capture at ' .. baseDir)
         recordManifest(baseDir)
         captain.isCapturing = true
+        memoria.sessionStart(backend.script_path() .. backend.safePath(baseDir .. 'memoria.xicap'))
+        memoria.note('cap start ' .. captain.sessionName)
         for addonName, addon in pairs(captain.addons) do
             if type(addon.onCaptureStart) == 'function' then
                 utils.withPerformanceMonitoring(addonName .. '.onCaptureStart', function()
@@ -87,6 +107,7 @@ end
 ---Notify addons of a capture stopping
 ---Calls onCaptureStop for all addons and marks capturing as false
 function Commands:stopCapture()
+    captain.pendingCaptureArgs = nil
     if not captain.isCapturing then
         return
     end
@@ -107,8 +128,12 @@ function Commands:stopCapture()
         backend.msg('captain', 'Capture stopped')
     end
 
-    captain.isCapturing = false
-    captain.captureName = nil
+    memoria.note('cap stop ' .. (captain.sessionName or ''))
+    memoria.sessionStop()
+    captain.isCapturing       = false
+    captain.captureName       = nil
+    captain.captureArgsPrefix = nil
+    captain.sessionName       = nil
 end
 
 ---Build argument string for command help display

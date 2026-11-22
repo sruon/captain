@@ -1,0 +1,143 @@
+-- Memoria, Vault's recorder plugin. The release bundles the build pinned in
+-- memoria.json as deps/Memoria.dll.
+local backend = require('backend.backend')
+
+local memoria = {}
+local started = false
+
+local function plugin(name)
+    return string.format('%s/plugins/%s', AshitaCore:GetInstallPath(), name)
+end
+
+local function read(p)
+    local f = io.open(p, 'rb')
+    if not f then
+        return nil
+    end
+    local data = f:read('*a')
+    f:close()
+    return data
+end
+
+local function write(p, data)
+    local f = io.open(p, 'wb')
+    if not f then
+        return false
+    end
+    local wrote = f:write(data)
+    local closed = f:close()
+    if not (wrote and closed) then
+        os.remove(p)
+        return false
+    end
+    return true
+end
+
+local function command(text)
+    if memoria.loaded() then
+        AshitaCore:GetChatManager():QueueCommand(-1, text)
+    end
+end
+
+function memoria.loaded()
+    return AshitaCore:GetPluginManager():IsLoaded('Memoria')
+end
+
+-- A build's version, from the text "Memoria/0.6.0-rc.1" (rc.3 and older) or
+-- "Memoria 0.6.0-rc.4" it holds, as { major, minor, patch, rc }. A release sorts
+-- after its pre-releases.
+local function version(dll)
+    local a, b, c, pre = dll:match('Memoria[/ ](%d+)%.(%d+)%.(%d+)%-?([%w%.]*)')
+    if not a then
+        return nil
+    end
+    -- Only the pre-release number counts (rc.2 == beta.2); Memoria only tags rc.N.
+    return { tonumber(a), tonumber(b), tonumber(c), tonumber(pre:match('(%d+)$')) or math.huge }
+end
+
+local function older(x, y)
+    for i = 1, 4 do
+        if x[i] ~= y[i] then
+            return x[i] < y[i]
+        end
+    end
+    return false
+end
+
+-- Installs the bundled build when none is installed or the installed one is
+-- older; a newer or unrecognised build stays. A loaded DLL cannot be
+-- overwritten but can be renamed: a running Memoria keeps going and the new
+-- build takes over at the next start.
+local function install()
+    local bundled = read(addon.path .. 'deps/Memoria.dll')
+    local want = bundled and version(bundled)
+    if not want then
+        return
+    end
+    local installed = read(plugin('Memoria.dll'))
+    if installed then
+        local have = version(installed)
+        if not have or not older(have, want) then
+            return
+        end
+    end
+    -- Written in full beside the old build first, so a failed write never leaves a truncated Memoria.dll.
+    if not write(plugin('Memoria.dll.new'), bundled) then
+        backend.errMsg('captain', 'Cannot install Memoria in ' .. plugin(''))
+        return
+    end
+    os.remove(plugin('Memoria.dll.old'))
+    os.rename(plugin('Memoria.dll'), plugin('Memoria.dll.old'))
+    if not os.rename(plugin('Memoria.dll.new'), plugin('Memoria.dll')) then
+        os.remove(plugin('Memoria.dll.new'))
+        os.rename(plugin('Memoria.dll.old'), plugin('Memoria.dll'))
+        backend.errMsg('captain', 'Cannot install Memoria in ' .. plugin(''))
+        return
+    end
+    if memoria.loaded() then
+        backend.msg('captain', 'Memoria updated; the new version takes over at the next start')
+    end
+end
+
+function memoria.start()
+    if started then
+        return
+    end
+    started = true
+    install()
+    if not memoria.loaded() and ashita.fs.exists(plugin('Memoria.dll')) then
+        -- Addons cannot load a plugin through the plugin manager, so captain types the command a player would.
+        AshitaCore:GetChatManager():QueueCommand(-1, '/load memoria')
+    end
+end
+
+---The session's name in the cap start and stop notes: /cap's arguments and the
+---time in UTC, so a public capture never tells the player's time zone.
+---@param args string[]|nil
+---@param time number|nil defaults to now
+---@return string
+function memoria.sessionName(args, time)
+    local d    = os.date('!*t', time)
+    local name = string.format('%d-%d-%d_%d_%dZ', d.year, d.month, d.day, d.hour, d.min)
+    if args and #args > 0 then
+        name = table.concat(args, '_') .. '_' .. name
+    end
+    return name
+end
+
+---@param text string
+function memoria.note(text)
+    command('/memoria note ' .. text)
+end
+
+---Writes the session's packets to path until sessionStop.
+---@param path string
+function memoria.sessionStart(path)
+    command('/memoria session start ' .. path)
+end
+
+function memoria.sessionStop()
+    command('/memoria session stop')
+end
+
+return memoria

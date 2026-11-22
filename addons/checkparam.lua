@@ -70,7 +70,7 @@ local function checkParam()
 end
 
 addon.onIncomingPacket = function(id, data, size, packet)
-    if not addon.settings.enabled or not captain.isCapturing then
+    if not addon.settings.enabled or not addon.csvFile then
         return false
     end
 
