@@ -26,6 +26,8 @@ Captain captures the remote server IP to allow verifying if a capture was obtain
 
 Understand that making captures available to the public may leak such information.
 
+Captain also loads Memoria, which records every session on your PC and uploads it to Mogsafe only once you link it. See [Memoria](#memoria).
+
 ## Goal
 
 While the original `captain` attempted to bridge the gap between Windower and Ashita, it is not a stated goal of this fork as maintaining, creating addons and testing while accounting for the quirks of several launchers is not feasible at this time.
@@ -85,7 +87,13 @@ Also displayed in the chatlog
 <img width="1048" height="107" alt="image" src="https://github.com/user-attachments/assets/f5c1fd7a-94f9-4b93-a3a3-4eb003004116" />
 
 ### Memoria
-Captain installs and loads Memoria, a plugin that records every packet of every session to `captures/memoria/` in Ashita's folder. Each `/cap` session also gets a `memoria.xicap` in its capture folder. Chat packets keep their header; their text is dropped.
+Captain installs and loads [Memoria](https://github.com/ffxi-dev/memoria), a plugin that records every packet of every session, from login, to `captures/memoria/` in Ashita's folder. Captain's release carries a pinned Memoria build and replaces an older installed one at the next start; a newer one is left alone. Memoria does not delete old captures: clear `captures/memoria/` yourself when it grows.
+
+Nothing leaves your PC until you run `/memoria link` and sign in on [Mogsafe](https://mogsafe.sruon.dev). Once linked, Memoria uploads every capture as it records, and other Mogsafe users can see them. `/memoria upload off` pauses uploads, `/memoria unlink` stops them, and `/memoria status` shows which applies.
+
+Memoria zeroes the text of chat and tells unless you turn on **Save chat** on Mogsafe. Everything else stays in the capture: your character's name and id, the names of players who talk to you or whom you send a tell, positions, inventory, party and linkshell data.
+
+`/cap start` and `/cap stop` mark the session in Memoria's capture, named by `/cap`'s arguments and the time in UTC. On Mogsafe that name is the session's title. Unlinked, the session is also written to `memoria.xicap` in the capture folder.
 
 ### Addons
 #### PacketLogger
