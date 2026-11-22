@@ -74,7 +74,7 @@ jobs:
         rm -rf sqlite3.zip sqlite-amalgamation-3460100
 
     - name: Upload SQLite3 artifact
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: sqlite3-dll
         path: deps/sqlite3.dll
@@ -92,7 +92,7 @@ jobs:
         token: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Download SQLite3 artifact
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v8
       with:
         name: sqlite3-dll
         path: deps/
