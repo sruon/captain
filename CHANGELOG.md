@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.14.0](https://github.com/sruon/captain/compare/v1.13.1...v1.14.0) (2026-11-22)
+
+
+### Features
+
+* **memoria:** install Memoria from the release, session xicap per capture ([#30](https://github.com/sruon/captain/issues/30)) ([61fdbaa](https://github.com/sruon/captain/commit/61fdbaa18a4b23bf34e58f3143f2352c0831e21d))
+
 ## [1.13.1](https://github.com/sruon/captain/compare/v1.13.0...v1.13.1) (2026-08-26)
 
 
