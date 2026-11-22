@@ -24,8 +24,12 @@ local function write(p, data)
     if not f then
         return false
     end
-    f:write(data)
-    f:close()
+    local wrote = f:write(data)
+    local closed = f:close()
+    if not (wrote and closed) then
+        os.remove(p)
+        return false
+    end
     return true
 end
 
@@ -77,9 +81,15 @@ local function install()
             return
         end
     end
+    -- Written in full beside the old build first, so a failed write never leaves a truncated Memoria.dll.
+    if not write(plugin('Memoria.dll.new'), bundled) then
+        backend.errMsg('captain', 'Cannot install Memoria in ' .. plugin(''))
+        return
+    end
     os.remove(plugin('Memoria.dll.old'))
     os.rename(plugin('Memoria.dll'), plugin('Memoria.dll.old'))
-    if not write(plugin('Memoria.dll'), bundled) then
+    if not os.rename(plugin('Memoria.dll.new'), plugin('Memoria.dll')) then
+        os.remove(plugin('Memoria.dll.new'))
         os.rename(plugin('Memoria.dll.old'), plugin('Memoria.dll'))
         backend.errMsg('captain', 'Cannot install Memoria in ' .. plugin(''))
         return
